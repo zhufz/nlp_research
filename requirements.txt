@@ -1,0 +1,7 @@
+xgboost
+jieba
+gensim
+pyyaml
+sklearn
+pandas
+tensorflow>=1.10

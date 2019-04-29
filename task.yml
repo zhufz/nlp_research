@@ -1,0 +1,92 @@
+task_type: 'classify'
+task_type: 'match'
+
+classify:
+  path: "data"
+  train_path: "data/classify_train.csv"
+  test_path: "data/classify_test.csv"
+  predict_path: "data/test1.csv"
+  dict_path: "data/dict.pkl"
+  classes_path: "data/classes"
+
+  checkpoint_path: "data/checkpoint"
+  model_path: "data/model/model.pb"
+  learning_rate: 0.001
+  batch_size: 64
+  num_epochs: 350
+  num_class: 84
+  # embedding: char_embedding, word_embedding, subword_embedding
+  embedding: 'char_embedding'
+  rand_embedding: True
+  # encoder: "text_cnn" #88.6
+  # encoder: "cnn"  # 84.7
+
+  config_type: 0
+  config: 
+    0: {encoder: "fasttext", learning_rate: 0.0001}
+    1: {encoder: "transformer", learning_rate: 0.0001}
+    2: {encoder: "transformer", embedding: 'subword_embedding', learning_rate: 0.0001}
+    3: {encoder: "rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
+    4: {encoder: "rnn", rnn_type: "lstm", embedding: 'char_embedding', learning_rate: 0.001}
+    5: {encoder: "attention_rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
+    6: {encoder: "rcnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
+
+  mode: "train"  #train\test\test_one
+  # mode: "test"  #train\test\test_one
+  # mode: "test_one"
+  # mode: "predict"
+match:
+  path: "data"
+  index_path: "data/match_index.csv"
+  relation_path: "data/match_relation.csv"
+  test_path: "data/match_test.csv"
+  dict_path: "data/dict.pkl"
+  classes_path: "data/classes"
+
+  checkpoint_path: "data/checkpoint_match"
+  model_path: "data/model/model_match.pb"
+
+  batch_mode: "random"  #(random/supervised)
+  #batch_mode: "supervised"
+
+  batch_size: 64
+  num_epochs: 15000
+  num_class: 84
+  learning_rate: 0.0001
+  margin: 1
+  score_thre: 0.8
+
+  # embedding: 'word_embedding'
+  embedding: 'char_embedding'
+  # embedding: 'subword_embedding'
+  rand_embedding: True
+  # rand_embedding: False
+  # loss_type: 包括pairwise和pointwise,
+  # sim_mode=cross: 对于交互的匹配方法
+  # sim_mode=represent: 基于表示的匹配方法
+  # loss_type: "pointwise"
+  keep_prob: 0.5
+  loss_type: "pairwise"
+  config_type: 0
+  config: 
+    0: {encoder: "match_pyramid", sim_mode: "cross", num_output: 1}
+    1: {encoder: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
+    2: {encoder: "esim", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
+    3: {encoder: "drmm", sim_mode: "cross", num_output: 1, learning_rate: 0.1}
+
+    #fine tuned
+    10: {encoder: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}
+    11: {encoder: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
+    12: {encoder: "rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+    13: {encoder: "rcnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+    14: {encoder: "attention_rnn", rnn_type: "gru", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+    15: {encoder: "attention_rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+    21: {encoder: "text_cnn", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
+    22: {encoder: "transformer", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
+
+  mode: "train"  #train\test\test_one
+  #mode: "test_one"  #train\test\test_one
+  #mode: "test"  #train\test\test_one
+
+
+
