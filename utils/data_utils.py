@@ -67,6 +67,24 @@ def load_classify_data(path):
     df = pd.read_csv(path, header = 0)
     return df['text'],df['intent']
 
+def load_ner_data(path):
+    data = []
+    data_label = []
+    with open(path) as fr:
+        lines = fr.readlines()
+    sent_, tag_ = [], []
+    for line in lines:
+        if line != '\n':
+            [char, label] = line.strip().split()
+            sent_.append(char)
+            tag_.append(label)
+        else:
+            data.append(' '.join(sent_))
+            #data_label.append(' '.join(tag_))
+            data_label.append(tag_)
+            sent_, tag_ = [], []
+
+    return data, data_label
 
 
 class Recall():

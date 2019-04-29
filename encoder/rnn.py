@@ -16,7 +16,7 @@ class RNN(object):
         self.num_output = args['num_output']
         self.placeholder = {}
 
-    def __call__(self, embed, scope_name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, scope_name = 'encoder', ner_flag = False, reuse = tf.AUTO_REUSE):
         length_name = scope_name + "_length" 
         self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
                                                     shape=[None], 
@@ -32,11 +32,16 @@ class RNN(object):
                               keep_prob = self.keep_prob)
             #flatten:
             outputs_shape = outputs.shape.as_list()
-            #使用所有time的输出
-            outputs = tf.reshape(outputs, [-1, outputs_shape[1]*outputs_shape[2]])
+            if ner_flag:
+                outputs = tf.reshape(outputs, [-1, outputs_shape[2]])
+                dense = tf.layers.dense(outputs, self.num_output, name='fc')
+                dense = tf.reshape(dense, [-1, outputs_shape[1], self.num_output])
+            else:
+                outputs = tf.reshape(outputs, [-1, outputs_shape[1]*outputs_shape[2]])
+                dense = tf.layers.dense(outputs, self.num_output, name='fc')
             #使用最后一个time的输出
             #outputs = outputs[:, -1, :]
-            dense = tf.layers.dense(outputs, self.num_output, name='fc')
+
             return dense
 
     def feed_dict(self, scope_name = 'encoder', **kwargs):

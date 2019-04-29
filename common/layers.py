@@ -75,6 +75,29 @@ def get_initializer(type = 'random_uniform', **kwargs):
     else:
         raise ValueError('unknown type of initializer!')
 
+def get_trainp_op(global_step, optimizer, loss, clip_grad, lr_pl):
+    with tf.variable_scope("train_step"):
+        #self.global_step = tf.Variable(0, name="global_step", trainable=False)
+        if optimizer == 'Adam':
+            optim = tf.train.AdamOptimizer(learning_rate=lr_pl)
+        elif optimizer == 'Adadelta':
+            optim = tf.train.AdadeltaOptimizer(learning_rate=lr_pl)
+        elif optimizer == 'Adagrad':
+            optim = tf.train.AdagradOptimizer(learning_rate=lr_pl)
+        elif optimizer == 'RMSProp':
+            optim = tf.train.RMSPropOptimizer(learning_rate=lr_pl)
+        elif optimizer == 'Momentum':
+            optim = tf.train.MomentumOptimizer(learning_rate=lr_pl, momentum=0.9)
+        elif optimizer == 'SGD':
+            optim = tf.train.GradientDescentOptimizer(learning_rate=lr_pl)
+        else:
+            optim = tf.train.GradientDescentOptimizer(learning_rate=lr_pl)
+
+        grads_and_vars = optim.compute_gradients(loss)
+        grads_and_vars_clip = [[tf.clip_by_value(g, -clip_grad, clip_grad), v] for g, v in grads_and_vars]
+        train_op = optim.apply_gradients(grads_and_vars_clip, global_step=global_step)
+        return train_op
+
 def conv(inputs, output_units, bias=True, activation=None, dropout=None,
                                  scope='conv-layer', reuse=False):
     with tf.variable_scope(scope, reuse=reuse):

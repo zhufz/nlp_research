@@ -85,6 +85,15 @@ class CharEmbedding():
         x = list(map(lambda d: d + (self.maxlen - len(d)) * [vocab_dict["<pad>"]], x))
         return text_list, x, x_len
 
+    def pad_sequences(self, sequences, pad_mark = 0):
+        seq_list, seq_len_list = [], []
+        for seq in sequences:
+            seq = list(seq)
+            seq_ = seq[:self.maxlen] + [pad_mark] * max(self.maxlen - len(seq), 0)
+            seq_list.append(seq_)
+            seq_len_list.append(min(len(seq), self.maxlen))
+        return seq_list, seq_len_list
+
     def _get_embedding(self, vocab_dict):
         """get embedding vector by dict and embedding_file"""
         model = self._load_embedding_file(self.embedding_path)
