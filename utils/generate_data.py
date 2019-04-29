@@ -2,25 +2,26 @@ import pandas as pd
 import pdb
 import sys
 import random
+import yaml
 from collections import defaultdict
 
 class GenerateData():
-    def __init__(self, path):
-        self.path = path
-        #csv = pd.read_csv(self.path, sep="\t", header = 0, error_bad_lines=False)
-        csv = pd.read_csv(self.path, header = 0, error_bad_lines=False)
+    def __init__(self):
+        self.conf = yaml.load(open('task.yml'))
+
+    def process(self, train_rate = 0.9):
+        ori_file = self.conf['classify']['ori_path']
+        csv = pd.read_csv(ori_file, header = 0, error_bad_lines=False)
         self.text = csv['text']
         self.label = csv['target']
         self.data = defaultdict(list)
 
-
-    def process(self, train_rate = 0.9):
         """train:test = 8:2"""
-        #train_path = '.'.join(self.path.split('.')[:-1]) + '_train.csv'
-        #test_path = '.'.join(self.path.split('.')[:-1])+ '_test.csv'
 
-        train_path = 'data/classify_train.csv'
-        test_path = 'data/classify_test.csv'
+        #train_path = 'data/classify_train.csv'
+        #test_path = 'data/classify_test.csv'
+        train_path = self.conf['classify']['train_path']
+        test_path = self.conf['classify']['test_path']
 
         for idx in range(len(self.text)):
             self.data[self.label[idx]].append(self.text[idx])
@@ -33,8 +34,8 @@ class GenerateData():
             train_len = int(all_len*train_rate)
             test_len = all_len - train_len
             for idx,item in enumerate(self.data[key]):
-                #if idx<train_len:
-                if idx<all_len-2:
+                if idx<train_len:
+                #if idx<all_len-2:
                     train_x.append(self.data[key][idx])
                     train_y.append(key)
                 else:
@@ -90,9 +91,18 @@ class GenerateData():
 
 
     def process_match(self):
-        index_path = 'data/match_index.csv'
-        relation_path = 'data/match_relation.csv'
-        test_path = 'data/match_test.csv'
+        ori_file = self.conf['match']['ori_path']
+        csv = pd.read_csv(ori_file, header = 0, error_bad_lines=False)
+        self.text = csv['text']
+        self.label = csv['target']
+        self.data = defaultdict(list)
+        index_path = self.conf['match']['index_path']
+        test_path = self.conf['match']['test_path']
+        relation_path = self.conf['match']['relation_path']
+
+        #index_path = 'data/match_index.csv'
+        #relation_path = 'data/match_relation.csv'
+        #test_path = 'data/match_test.csv'
         #label_path = 'data/match_label.csv'
         index_datas = []
         for idx in range(len(self.text)):
@@ -133,7 +143,7 @@ class GenerateData():
                     f_test.write("{}\t{}\t{}\n".format(item[0], data[0], data[1]))
 
 if __name__ == '__main__':
-    split = GenerateData('./data/intent.csv')
+    split = GenerateData()
     if len(sys.argv) > 1:
         if sys.argv[1] == 'match':
             split.process_match()

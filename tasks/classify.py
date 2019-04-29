@@ -106,7 +106,7 @@ class Classify(object):
         for batch in train_batches:
             x_batch, y_batch = zip(*batch)
             len_batch = self.get_batch_len(x_batch)
-            _, x_batch = self.embedding.text2id(x_batch, self.vocab_dict, need_preprocess = False)
+            _, x_batch, _ = self.embedding.text2id(x_batch, self.vocab_dict, need_preprocess = False)
             train_feed_dict = {
                 self.y: y_batch,
                 self.is_training: True
@@ -125,7 +125,7 @@ class Classify(object):
 
                     valid_x_batch, valid_y_batch = zip(*valid_batch)
                     len_batch = self.get_batch_len(valid_x_batch)
-                    _, valid_x_batch = self.embedding.text2id(valid_x_batch, self.vocab_dict, need_preprocess = False)
+                    _, valid_x_batch, _ = self.embedding.text2id(valid_x_batch, self.vocab_dict, need_preprocess = False)
                     valid_feed_dict = {
                         self.y: valid_y_batch,
                         self.is_training: False
@@ -181,7 +181,7 @@ class Classify(object):
         for batch in batches:
             batch_x, batch_y = zip(*batch)
             len_batch = self.get_batch_len(batch_x)
-            preprocess_x, batch_x_id = self.embedding.text2id(batch_x, vocab_dict, need_preprocess = True)
+            preprocess_x, batch_x_id, _ = self.embedding.text2id(batch_x, vocab_dict, need_preprocess = True)
             feed_dict = {
                 self.y: batch_y,
                 self.is_training: False
@@ -239,7 +239,7 @@ class Classify(object):
                 feed_dict = {
                     self.is_training: False
                 }
-                preprocess_x, batch_x = self.embedding.text2id(batch_x, vocab_dict)
+                preprocess_x, batch_x, _ = self.embedding.text2id(batch_x, vocab_dict)
                 feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
                 feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
                 predictions_out, scores_out = sess.run([self.predictions,
@@ -277,7 +277,7 @@ class Classify(object):
             feed_dict = {
                 self.is_training: False
             }
-            preprocess_x, batch_x = self.embedding.text2id(batch_x, vocab_dict)
+            preprocess_x, batch_x, _ = self.embedding.text2id(batch_x, vocab_dict)
             feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
             feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
             predictions_out, scores_out = sess.run([self.predictions,

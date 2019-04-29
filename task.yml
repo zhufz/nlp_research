@@ -2,19 +2,20 @@ task_type: 'classify'
 task_type: 'match'
 
 classify:
-  path: "data"
-  train_path: "data/classify_train.csv"
-  test_path: "data/classify_test.csv"
-  predict_path: "data/test1.csv"
-  dict_path: "data/dict.pkl"
-  classes_path: "data/classes"
+  path: "data/classify/"
+  ori_path: "data/classify/intent.csv"
+  train_path: "data/classify/train.csv"
+  test_path: "data/classify/test.csv"
+  predict_path: "data/classify/test1.csv"
+  dict_path: "data/classify/dict.pkl"
+  classes_path: "data/classify/classes"
 
-  checkpoint_path: "data/checkpoint"
-  model_path: "data/model/model.pb"
+  checkpoint_path: "data/classify/checkpoint"
+  model_path: "data/classify/model.pb"
   learning_rate: 0.001
   batch_size: 64
   num_epochs: 350
-  num_class: 84
+  num_class: 89
   # embedding: char_embedding, word_embedding, subword_embedding
   embedding: 'char_embedding'
   rand_embedding: True
@@ -23,7 +24,7 @@ classify:
 
   config_type: 0
   config: 
-    0: {encoder: "fasttext", learning_rate: 0.0001}
+    0: {encoder: "fasttext", learning_rate: 0.001}
     1: {encoder: "transformer", learning_rate: 0.0001}
     2: {encoder: "transformer", embedding: 'subword_embedding', learning_rate: 0.0001}
     3: {encoder: "rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
@@ -36,15 +37,16 @@ classify:
   # mode: "test_one"
   # mode: "predict"
 match:
-  path: "data"
-  index_path: "data/match_index.csv"
-  relation_path: "data/match_relation.csv"
-  test_path: "data/match_test.csv"
-  dict_path: "data/dict.pkl"
-  classes_path: "data/classes"
+  path: "data/match/"
+  ori_path: "data/classify/intent.csv"
+  index_path: "data/match/index.csv"
+  relation_path: "data/match/relation.csv"
+  test_path: "data/match/test.csv"
+  dict_path: "data/match/dict.pkl"
+  classes_path: "data/match/classes"
 
-  checkpoint_path: "data/checkpoint_match"
-  model_path: "data/model/model_match.pb"
+  checkpoint_path: "data/match/checkpoint_match"
+  model_path: "data/match/model_match.pb"
 
   batch_mode: "random"  #(random/supervised)
   #batch_mode: "supervised"
