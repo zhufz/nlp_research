@@ -17,21 +17,37 @@ nlp一些任务集成：classify，match，sequence tagging, translation...
 
 匹配任务
 
-3.ner
+3. ner
 
 标注任务
 
 ## 模块说明
 
-1.encoder
+1. encoder
 
 存放编码器
 
-2.common
+2. common
 
 存放一些通用网络中间层
 
-3.utils
+3. utils
 
 数据处理工具
+
+## 计划
+1.集成序列标注模型
+
+2.小样本学习支持
+
+3.集成bert
+
+4.强化学习（基于任务型对话）
+
+
+
+
+
+
+
 
