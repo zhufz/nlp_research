@@ -15,9 +15,10 @@ if __name__ == '__main__':
         config_type = conf['config_type']
         for k,v in (conf['config'][config_type]).items():
             conf[k] = v
+    path_root = conf['path_root']
     for k,v in conf.items():
         if k.endswith('_path'):
-            conf[k] = os.path.join(ROOT_PATH, conf[k])
+            conf[k] = os.path.join(ROOT_PATH, path_root, conf[k])
 
     if len(sys.argv) >1:
         #additional params from cmd

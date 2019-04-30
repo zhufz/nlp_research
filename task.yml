@@ -3,16 +3,16 @@ task_type: 'match'
 task_type: 'ner'
 
 classify:
-  path: "data/classify/"
-  ori_path: "data/classify/intent.csv"
-  train_path: "data/classify/train.csv"
-  test_path: "data/classify/test.csv"
-  predict_path: "data/classify/test1.csv"
-  dict_path: "data/classify/dict.pkl"
-  classes_path: "data/classify/classes"
+  path_root: "data/classify/"
+  ori_path: "intent.csv"
+  train_path: "train.csv"
+  test_path: "test.csv"
+  predict_path: "test1.csv"
+  dict_path: "dict.pkl"
+  classes_path: "classes"
 
-  checkpoint_path: "data/classify/checkpoint"
-  model_path: "data/classify/model.pb"
+  checkpoint_path: "checkpoint"
+  model_path: "model.pb"
   learning_rate: 0.001
   batch_size: 64
   num_epochs: 350
@@ -38,16 +38,16 @@ classify:
   # mode: "test_one"
   # mode: "predict"
 match:
-  path: "data/match/"
-  ori_path: "data/classify/intent.csv"
-  index_path: "data/match/index.csv"
-  relation_path: "data/match/relation.csv"
-  test_path: "data/match/test.csv"
-  dict_path: "data/match/dict.pkl"
-  classes_path: "data/match/classes"
+  path_root: "data/match/"
+  ori_path: "intent.csv"
+  index_path: "index.csv"
+  relation_path: "relation.csv"
+  test_path: "test.csv"
+  dict_path: "dict.pkl"
+  classes_path: "classes"
 
-  checkpoint_path: "data/match/checkpoint"
-  model_path: "data/match/model.pb"
+  checkpoint_path: "checkpoint"
+  model_path: "model.pb"
 
   batch_mode: "random"  #(random/supervised)
   #batch_mode: "supervised"
@@ -94,15 +94,15 @@ match:
 
 
 ner:
-  path: "data/ner/"
-  train_path: "data/ner/train_data"
-  test_path: "data/ner/test_data"
-  result_path: "data/ner/result"
-  dict_path: "data/ner/word2id.pkl"
-  classes_path: "data/ner/classes"
+  path_root: "data/ner/"
+  train_path: "train_data"
+  test_path: "test_data"
+  result_path: "result"
+  dict_path: "word2id.pkl"
+  classes_path: "classes"
 
-  checkpoint_path: "data/ner/checkpoint"
-  model_path: "data/ner/model.pb"
+  checkpoint_path: "checkpoint"
+  model_path: "model.pb"
 
   batch_size: 64
   num_epochs: 30
