@@ -9,20 +9,29 @@ nlp一些任务集成：classify，match，sequence tagging, translation...
 
 任务都是定义在task.yml中
 
-### 分类任务classify
+1. classify
 
-### 匹配任务match
+分类任务
 
-### 标注任务ner
+2. match
+
+匹配任务
+
+3.ner
+
+标注任务
 
 ## 模块说明
 
-### encoder
+1.encoder
+
 存放编码器
 
-### common
+2.common
+
 存放一些通用网络中间层
 
-### utils
+3.utils
+
 数据处理工具
 
