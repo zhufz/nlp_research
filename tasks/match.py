@@ -1,7 +1,6 @@
 import tensorflow as tf
 from embedding import embedding
 from encoder import encoder
-import mysetting as ms
 import pdb
 import os,sys
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])

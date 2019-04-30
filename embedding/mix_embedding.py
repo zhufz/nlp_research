@@ -11,7 +11,6 @@ import pdb
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 from utils.preprocess import *
-import mysetting as ms
 from char_embedding import CharEmbedding
 from word_embedding import WordEmbedding
 

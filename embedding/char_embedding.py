@@ -2,7 +2,6 @@ import gensim
 import sys,os
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
-import mysetting as ms
 import numpy as np
 from itertools import chain
 import tensorflow as tf
@@ -16,10 +15,10 @@ import pdb
 
 class CharEmbedding():
     def __init__(self, text_list, dict_path, vocab_dict = None, random = False,
-                 **kwargs):
-        self.embedding_path = ms.CHAR_EMBEDDING
+                 maxlen = 40, **kwargs):
+        self.embedding_path = None
         self.dict_path = dict_path
-        self.maxlen = 40
+        self.maxlen = maxlen
         self.size = 128
         self.vocab_dict = vocab_dict
         self.embedding = tf.get_variable("embeddings",
@@ -79,7 +78,7 @@ class CharEmbedding():
             pre = Preprocess()
             text_list = [pre.get_dl_input_by_text(text) for text in text_list]
         x = list(map(lambda d: char_tokenize(clean_str(d)), text_list))
-        x_len = [len(text) for text in x]
+        x_len = [min(len(text), self.maxlen) for text in x]
         x = list(map(lambda d: list(map(lambda w: vocab_dict.get(w,vocab_dict["<unk>"]), d)), x))
         x = list(map(lambda d: d[:self.maxlen], x))
         x = list(map(lambda d: d + (self.maxlen - len(d)) * [vocab_dict["<pad>"]], x))
@@ -90,6 +89,7 @@ class CharEmbedding():
         for seq in sequences:
             seq = list(seq)
             seq_ = seq[:self.maxlen] + [pad_mark] * max(self.maxlen - len(seq), 0)
+            #seq = list(map(lambda d: d[:self.maxlen], seq))
             seq_list.append(seq_)
             seq_len_list.append(min(len(seq), self.maxlen))
         return seq_list, seq_len_list

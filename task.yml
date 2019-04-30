@@ -97,6 +97,7 @@ ner:
   path: "data/ner/"
   train_path: "data/ner/train_data"
   test_path: "data/ner/test_data"
+  result_path: "data/ner/result"
   dict_path: "data/ner/word2id.pkl"
   classes_path: "data/ner/classes"
 
@@ -104,14 +105,18 @@ ner:
   model_path: "data/ner/model.pb"
 
   batch_size: 64
-  num_epochs: 15000
+  num_epochs: 30
+  maxlen: 60
   num_tag: 7
-  learning_rate: 0.0001
+  learning_rate: 0.001
   keep_prob: 0.5
   embedding: 'char_embedding'
   rand_embedding: True
   rnn_type: "lstm"
   encoder: "rnn"
+  tag2label: {"O": 0, "B-PER": 1, "I-PER": 2, 
+              "B-LOC": 3, "I-LOC": 4, "B-ORG": 5, "I-ORG": 6,
+              "0": 7}
   config_type: 0
   config: 
     0: {encoder: "rnn"}

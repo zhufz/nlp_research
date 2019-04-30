@@ -2,7 +2,6 @@ import gensim
 import sys,os
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
-import mysetting as ms
 import numpy as np
 from itertools import chain
 import tensorflow as tf
@@ -15,9 +14,10 @@ import pdb
 
 
 class WordEmbedding():
-    def __init__(self, text_list, dict_path, vocab_dict, random = False, **kwargs):
-        self.embedding_path = ms.WORD_EMBEDDING
-        self.maxlen= 20
+    def __init__(self, text_list, dict_path, vocab_dict, random = False,\
+                 maxlen = 20, **kwargs):
+        self.embedding_path = "data/baike_26g_news_13g_novel_229g.bin.sub"
+        self.maxlen= maxlen
         self.dict_path = dict_path
         self.size = 128
         self.embedding = tf.get_variable("embeddings",
