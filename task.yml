@@ -10,9 +10,9 @@ classify:
   predict_path: "test1.csv"
   dict_path: "dict.pkl"
   classes_path: "classes"
-
   checkpoint_path: "checkpoint"
   model_path: "model.pb"
+
   learning_rate: 0.001
   batch_size: 64
   num_epochs: 350
@@ -45,7 +45,6 @@ match:
   test_path: "test.csv"
   dict_path: "dict.pkl"
   classes_path: "classes"
-
   checkpoint_path: "checkpoint"
   model_path: "model.pb"
 
@@ -100,7 +99,6 @@ ner:
   result_path: "result"
   dict_path: "word2id.pkl"
   classes_path: "classes"
-
   checkpoint_path: "checkpoint"
   model_path: "model.pb"
 
@@ -113,8 +111,6 @@ ner:
   keep_prob: 0.5
   embedding: 'char_embedding'
   rand_embedding: True
-  rnn_type: "lstm"
-  encoder: "rnn"
   use_crf: True
   num_hidden: 256
   num_layers: 1

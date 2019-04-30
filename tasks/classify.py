@@ -136,9 +136,7 @@ class Classify(object):
                 if valid_accuracy > max_accuracy:
                     max_accuracy = valid_accuracy
                     self.saver.save(self.sess,
-                                    #"{0}/{1}/{2}.ckpt".format(self.conf['path'],
                                     "{0}/{1}.ckpt".format(self.conf['checkpoint_path'],
-                                                              #self.task_type,
                                                               self.task_type),
                                     global_step=step)
                     write_pb(self.conf['checkpoint_path'],

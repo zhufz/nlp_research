@@ -180,9 +180,7 @@ class Match(object):
             if step % 1000 == 0:
                 # Save model
                 self.saver.save(self.sess,
-                                #"{0}/{1}/{2}.ckpt".format(self.conf['path'],
                                 "{0}/{1}.ckpt".format(self.conf['checkpoint_path'],
-                                                          #self.task_type,
                                                           self.task_type),
                                 global_step=step)
                 write_pb(self.conf['checkpoint_path'],self.conf['model_path'],["is_training", self.output_nodes])

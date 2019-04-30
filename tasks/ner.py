@@ -160,7 +160,6 @@ class NER(object):
                 if result['acc'] > max_acc:
                     max_acc = result['acc']
                     self.saver.save(self.sess,
-                                    #"{0}/{1}/{2}.ckpt".format(self.conf['path'],
                                     "{0}/{1}.ckpt".format(self.conf['checkpoint_path'],
                                                               self.task_type),
                                     global_step=step)
