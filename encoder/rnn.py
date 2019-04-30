@@ -7,9 +7,8 @@ from common.layers import rnn_layer
 class RNN(object):
     def __init__(self, **args):
         self.maxlen = args['maxlen']
-        self.num_hidden = 256
-        self.num_hidden = 64
-        self.num_layers = 3
+        self.num_hidden = args['num_hidden'] if 'num_hidden' in args else 256
+        self.num_layers = args['num_layers'] if 'num_layers' in args else 2
         self.keep_prob = args['keep_prob']
         self.batch_size = args['batch_size']
         self.rnn_type = args['rnn_type']

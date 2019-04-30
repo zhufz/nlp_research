@@ -2,29 +2,44 @@ import tensorflow as tf
 from tensorflow.contrib import rnn
 
 def rnn_layer(inputs, seq_len, num_hidden, num_layers, rnn_type, keep_prob):
+    assert num_layers >0, "num_layers need larger than 0"
+    assert num_hidden >0, "num_hidden need larger than 0"
     if rnn_type == 'lstm':
-        cells = [tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True) for n in range(num_layers)]
-        stack = tf.contrib.rnn.MultiRNNCell(cells)
+        cells = [rnn.LSTMCell(num_hidden, state_is_tuple=True) for n in range(num_layers)]
+        stack = rnn.MultiRNNCell(cells)
         outputs, state = tf.nn.dynamic_rnn(stack, inputs, seq_len, dtype=tf.float32)
         #state = state[-1][1]
     elif rnn_type == 'gru':
-        cells = [tf.contrib.rnn.GRUCell(num_hidden) for n in range(num_layers)]
-        stack = tf.contrib.rnn.MultiRNNCell(cells)
+        cells = [rnn.GRUCell(num_hidden) for n in range(num_layers)]
+        stack = rnn.MultiRNNCell(cells)
         outputs, state = tf.nn.dynamic_rnn(stack, inputs, seq_len, dtype=tf.float32)
+    elif rnn_type == 'bi_lstm' and num_layers == 1:
+        #sigle layer lstm
+        cell_fw = rnn.LSTMCell(num_hidden)
+        cell_bw = rnn.LSTMCell(num_hidden)
+        (fw_outputs,bw_outputs), (fw_state,bw_state) = tf.nn.bidirectional_dynamic_rnn(
+            cell_fw=cell_fw,
+            cell_bw=cell_bw,
+            inputs=inputs,
+            sequence_length=seq_len,
+            dtype=tf.float32)
+        outputs = tf.concat((fw_outputs, bw_outputs), 2)
+        state = tf.concat((fw_state, bw_state), 2)
     elif rnn_type == 'bi_lstm':
-        fw_cells = cells = [tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True) for n in range(num_layers)]
-        bw_cells = cells = [tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True) for n in range(num_layers)]
-        stack_fw = tf.contrib.rnn.MultiRNNCell(fw_cells)
-        stack_bw = tf.contrib.rnn.MultiRNNCell(bw_cells)
+        #multi layer lstm
+        fw_cells = cells = [rnn.LSTMCell(num_hidden, state_is_tuple=True) for n in range(num_layers)]
+        bw_cells = cells = [rnn.LSTMCell(num_hidden, state_is_tuple=True) for n in range(num_layers)]
+        stack_fw = rnn.MultiRNNCell(fw_cells)
+        stack_bw = rnn.MultiRNNCell(bw_cells)
         (fw_outputs,bw_outputs), (fw_state,bw_state) = tf.nn.bidirectional_dynamic_rnn(stack_fw,stack_bw,inputs, seq_len, dtype=tf.float32)
         outputs = tf.concat((fw_outputs, bw_outputs), 2)
         state = tf.concat((fw_state, bw_state), 2)
         #state = state[-1][1]
     elif rnn_type == 'bi_gru':
-        fw_cells = [tf.contrib.rnn.GRUCell(num_hidden) for n in range(num_layers)]
-        bw_cells = [tf.contrib.rnn.GRUCell(num_hidden) for n in range(num_layers)]
-        stack_fw = tf.contrib.rnn.MultiRNNCell(fw_cells)
-        stack_bw = tf.contrib.rnn.MultiRNNCell(bw_cells)
+        fw_cells = [rnn.GRUCell(num_hidden) for n in range(num_layers)]
+        bw_cells = [rnn.GRUCell(num_hidden) for n in range(num_layers)]
+        stack_fw = rnn.MultiRNNCell(fw_cells)
+        stack_bw = rnn.MultiRNNCell(bw_cells)
         (fw_outputs,bw_outputs), (fw_state,bw_state) = tf.nn.bidirectional_dynamic_rnn(stack_fw,stack_bw,inputs, seq_len, dtype=tf.float32)
         outputs = tf.concat((fw_outputs, bw_outputs), 2)
         state = tf.concat((fw_state, bw_state), 2)
@@ -75,20 +90,20 @@ def get_initializer(type = 'random_uniform', **kwargs):
     else:
         raise ValueError('unknown type of initializer!')
 
-def get_trainp_op(global_step, optimizer, loss, clip_grad, lr_pl):
+def get_trainp_op(global_step, optimizer_type, loss, clip_grad, lr_pl):
     with tf.variable_scope("train_step"):
         #self.global_step = tf.Variable(0, name="global_step", trainable=False)
-        if optimizer == 'Adam':
+        if optimizer_type == 'Adam':
             optim = tf.train.AdamOptimizer(learning_rate=lr_pl)
-        elif optimizer == 'Adadelta':
+        elif optimizer_type == 'Adadelta':
             optim = tf.train.AdadeltaOptimizer(learning_rate=lr_pl)
-        elif optimizer == 'Adagrad':
+        elif optimizer_type == 'Adagrad':
             optim = tf.train.AdagradOptimizer(learning_rate=lr_pl)
-        elif optimizer == 'RMSProp':
+        elif optimizer_type == 'RMSProp':
             optim = tf.train.RMSPropOptimizer(learning_rate=lr_pl)
-        elif optimizer == 'Momentum':
+        elif optimizer_type == 'Momentum':
             optim = tf.train.MomentumOptimizer(learning_rate=lr_pl, momentum=0.9)
-        elif optimizer == 'SGD':
+        elif optimizer_type == 'SGD':
             optim = tf.train.GradientDescentOptimizer(learning_rate=lr_pl)
         else:
             optim = tf.train.GradientDescentOptimizer(learning_rate=lr_pl)

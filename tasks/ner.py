@@ -16,6 +16,7 @@ from embedding import embedding
 from encoder import encoder
 from utils.data_utils import *
 from utils.tf_utils import load_pb,write_pb
+from common.layers import get_trainp_op
 import pdb
 
 class NER(object):
@@ -31,9 +32,11 @@ class NER(object):
         self.result_path = self.conf['result_path']
         self.maxlen = self.conf['maxlen']
         self.tag2label = self.conf['tag2label']
+        self.clip_grad = 5.0
+        self.optimizer_type = self.conf['optimizer_type']
         self.label2tag = {self.tag2label[item]:item for item in self.tag2label}
         self.shuffle = True
-        self.CRF = True
+        self.use_crf = self.conf['use_crf']
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
@@ -41,6 +44,8 @@ class NER(object):
 
         self.pre = Preprocess()
         self.text_list, self.label_list = load_ner_data(self.conf['train_path'])
+        if self.maxlen == -1:
+            self.maxlen = max([len(text.split()) for text in self.text_list])
         self.trans_label_list(self.label_list, self.tag2label)
 
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
@@ -57,12 +62,8 @@ class NER(object):
                                                         batch_size = self.conf['batch_size'],
                                                         maxlen = self.maxlen)
         self.embed = self.embedding('x')
-        #self.y = tf.placeholder(tf.int32, [None], name="y")
-        self.word_ids = tf.placeholder(tf.int32, shape=[None, None], name="word_ids")
         self.labels = tf.placeholder(tf.int32, shape=[None, None], name="labels")
         self.sequence_lengths = tf.placeholder(tf.int32, shape=[None], name="sequence_lengths")
-        #self.dropout_pl = tf.placeholder(dtype=tf.float32, shape=[], name="dropout")
-        #self.lr_pl = tf.placeholder(dtype=tf.float32, shape=[], name="lr")
 
         #model params
         params = {
@@ -78,7 +79,12 @@ class NER(object):
         self.out = self.encoder(self.embed, 'query', ner_flag = True)
         self.output_nodes = self.out.name.split(':')[0]
         self.loss(self.out)
-
+        self.optimizer = get_trainp_op(self.global_step, 
+                                       self.optimizer_type, 
+                                       self.loss, 
+                                       self.clip_grad, 
+                                       self.learning_rate)
+        #self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver(tf.global_variables())
@@ -86,10 +92,10 @@ class NER(object):
     def loss(self, out):
         out_shape = tf.shape(out)
         self.logits = tf.reshape(out, [-1, out_shape[1], self.num_class])
-        if not self.CRF:
+        if not self.use_crf:
             self.labels_softmax_ = tf.argmax(self.logits, axis=-1)
             self.labels_softmax_ = tf.cast(self.labels_softmax_, tf.int32)
-        if self.CRF:
+        if self.use_crf:
             log_likelihood, self.transition_params = crf_log_likelihood(inputs=self.logits,
                                                                    tag_indices=self.labels,
                                                                    sequence_lengths=self.sequence_lengths)
@@ -109,25 +115,6 @@ class NER(object):
             for idy,label in enumerate(labels):
                 label_list[idx][idy] = tag2label[label_list[idx][idy]]
 
-    def test(self):
-        #saver = tf.train.Saver()
-        #with tf.Session() as sess:
-        #    print('=========== testing ===========')
-        #    saver.restore(sess, self.model_path)
-        #    label_list, seq_len_list = self.dev_one_epoch(sess, test)
-        #    self.evaluate(label_list, seq_len_list, test)
-
-        self.raw_dev_text_list, self.dev_label_list = load_ner_data(self.conf['test_path'])
-        #self.raw_dev_text_list, self.dev_label_list = \
-        #    self.raw_dev_text_list[:50], self.dev_label_list[:50]
-        self.dev_text_list = [self.pre.get_dl_input_by_text(text) for \
-                              text in self.raw_dev_text_list]
-        self.trans_label_list(self.dev_label_list, self.tag2label)
-        dev_data = zip(self.dev_text_list, self.dev_label_list)
-        out_label_list, seq_len_list = self.dev_one_epoch(self.sess, dev_data)
-        self.evaluate(self.dev_label_list, out_label_list,
-                      self.raw_dev_text_list, seq_len_list)
-
 
     def demo_one(self, sess, sent):
         label_list = []
@@ -146,6 +133,7 @@ class NER(object):
         train_data = zip(self.text_list, self.label_list)
         batches = batch_iter(train_data, self.batch_size, self.epoch_num, shuffle = True)
 
+        max_acc = -1
         for step, batch in enumerate(batches):
             x_batch, labels = zip(*batch)
             sys.stdout.write(' processing: {}.'.format(step + 1) + '\r')
@@ -157,14 +145,52 @@ class NER(object):
             feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
             feed_dict.update(self.encoder.feed_dict(query = len_batch))
 
-            loss_train, step_num_ = self.sess.run([self.loss, self.global_step],
-                                                         feed_dict=feed_dict)
+            _, loss_train, step_num_ = self.sess.run([self.optimizer,
+                                                      self.loss, 
+                                                      self.global_step],
+                                                      feed_dict=feed_dict)
             if step_num % 100 == 0:
                 print('step {}, loss: {:.4}'.format(\
                     step_num,
                     loss_train))
-        print('===========validation / test===========')
-        self.test()
+            if step_num % 1000 == 0:
+                print('===========validation / test===========')
+                result = self.test()
+                print("result:", result)
+                if result['acc'] > max_acc:
+                    max_acc = result['acc']
+                    self.saver.save(self.sess,
+                                    #"{0}/{1}/{2}.ckpt".format(self.conf['path'],
+                                    "{0}/{1}.ckpt".format(self.conf['checkpoint_path'],
+                                                              self.task_type),
+                                    global_step=step)
+                    write_pb(self.conf['checkpoint_path'],
+                             self.conf['model_path'],
+                             ["is_training", self.output_nodes])
+                else:
+                    print(f'train finished! accuracy: {max_acc}')
+                    sys.exit(0)
+
+    def test(self):
+        #saver = tf.train.Saver()
+        #with tf.Session() as sess:
+        #    print('=========== testing ===========')
+        #    saver.restore(sess, self.model_path)
+        #    label_list, seq_len_list = self.dev_one_epoch(sess, test)
+        #    self.evaluate(label_list, seq_len_list, test)
+
+        self.raw_dev_text_list, self.dev_label_list = load_ner_data(self.conf['test_path'])
+        #self.raw_dev_text_list, self.dev_label_list = \
+        #    self.raw_dev_text_list[:50], self.dev_label_list[:50]
+        self.dev_text_list = [self.pre.get_dl_input_by_text(text) for \
+                              text in self.raw_dev_text_list]
+        self.trans_label_list(self.dev_label_list, self.tag2label)
+        dev_data = zip(self.dev_text_list, self.dev_label_list)
+        out_label_list, seq_len_list = self.dev_one_epoch(self.sess, dev_data)
+        result = self.evaluate(self.dev_label_list, out_label_list, \
+                               self.raw_dev_text_list, seq_len_list)
+        return result
+
 
 
     def dev_one_epoch(self, sess, dev):
@@ -196,7 +222,7 @@ class NER(object):
         feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
         feed_dict.update(self.encoder.feed_dict(query = len_batch))
 
-        if self.CRF:
+        if self.use_crf:
             logits, transition_params = sess.run([self.logits, self.transition_params],
                                                  feed_dict=feed_dict)
             label_list = []
@@ -223,8 +249,7 @@ class NER(object):
             model_predict.append(sent_res)
         #label_path = os.path.join(self.result_path, 'label')
         #metric_path = os.path.join(self.result_path, 'result_metric')
-        result =  self.conlleval(model_predict)
-        print(result)
+        return self.conlleval(model_predict)
 
     def conlleval(self, model_predict):
         accs = []
@@ -244,6 +269,5 @@ class NER(object):
         r   = correct_preds / total_correct if correct_preds > 0 else 0
         f1  = 2 * p * r / (p + r) if correct_preds > 0 else 0
         acc = np.mean(accs)
-
         return {"acc": 100*acc, "f1": 100*f1}
 
