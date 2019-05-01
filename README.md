@@ -33,7 +33,40 @@ nlp一些任务集成：classify，match，sequence tagging, translation...
 
 1. encoder
 
-    存放编码器
+    存放编码器，目前已支持的编码器列表：
+    
+    abcnn
+    
+    attention_rnn
+    
+    capsule
+    
+    cnn
+    
+    dcnn
+    
+    dpcnn
+    
+    esim
+    
+    fast_attention_text
+    
+    fasttext
+    
+    han
+    
+    matchramid
+    
+    rcnn
+    
+    rnn
+    
+    text_cnn
+    
+    transformer
+    
+    vdcnn
+    
 
 2. common
 
