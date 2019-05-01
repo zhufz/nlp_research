@@ -1,7 +1,9 @@
-xgboost
-jieba
-gensim
-pyyaml
-sklearn
-pandas
+xgboost>=0.82
+jieba>=0.39
+gensim>=3.7.1
+pyyaml>=3.12
+sklearn>=0.19.2
+pandas>=0.22.0
 tensorflow>=1.10
+keras>=2.2.4
+numpy>=1.14.5
