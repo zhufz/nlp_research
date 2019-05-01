@@ -246,11 +246,7 @@ class NER(object):
                 sent_res.append([sent[idx], label[idx],
                                  label_pred[idx]])
             model_predict.append(sent_res)
-        #label_path = os.path.join(self.result_path, 'label')
-        #metric_path = os.path.join(self.result_path, 'result_metric')
-        return self.conlleval(model_predict)
 
-    def conlleval(self, model_predict):
         accs = []
         correct_preds, total_correct, total_preds = 0., 0., 0.
         for item in model_predict:

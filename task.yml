@@ -1,6 +1,6 @@
 task_type: 'classify'
-task_type: 'match'
-task_type: 'ner'
+#task_type: 'match'
+#task_type: 'ner'
 
 classify:
   path_root: "data/classify/"
@@ -22,8 +22,9 @@ classify:
   rand_embedding: True
   # encoder: "text_cnn" #88.6
   # encoder: "cnn"  # 84.7
+  loss_type: "softmax_loss"
 
-  config_type: 0
+  config_type: 7
   config: 
     0: {encoder: "fasttext", learning_rate: 0.001}
     1: {encoder: "transformer", learning_rate: 0.0001}
@@ -32,6 +33,7 @@ classify:
     4: {encoder: "rnn", rnn_type: "lstm", embedding: 'char_embedding', learning_rate: 0.001}
     5: {encoder: "attention_rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
     6: {encoder: "rcnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
+    7: {encoder: "capsule", embedding: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
 
   mode: "train"  #train\test\test_one
   # mode: "test"  #train\test\test_one
@@ -53,7 +55,7 @@ match:
 
   batch_size: 64
   num_epochs: 15000
-  num_class: 84
+  num_class: 89
   learning_rate: 0.0001
   margin: 1
   score_thre: 0.8

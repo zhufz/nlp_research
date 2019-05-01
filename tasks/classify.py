@@ -10,6 +10,7 @@ from encoder import encoder
 from utils.data_utils import *
 from utils.tf_utils import load_pb,write_pb
 from tensorflow.python.platform import gfile
+from common.loss import get_loss
 
 import pdb
 
@@ -24,6 +25,7 @@ class Classify(object):
 
         self.embedding_type = self.conf['embedding']
         self.encoder_type = self.conf['encoder']
+        self.loss_type = self.conf['loss_type']
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
@@ -85,8 +87,10 @@ class Classify(object):
             self.predictions = tf.argmax(tf.nn.softmax(out, axis=1, name="scores"), -1, output_type=tf.int32,
                                          name = 'predictions')
         with tf.name_scope("loss"):
-            self.loss = tf.reduce_mean(
-                tf.nn.sparse_softmax_cross_entropy_with_logits(logits=out, labels=self.y))
+            #self.loss = tf.reduce_mean(
+            #    tf.nn.sparse_softmax_cross_entropy_with_logits(logits=out, labels=self.y))
+            self.loss = get_loss(type = self.loss_type, logits = out, labels =
+                                 self.y, labels_sparse = True, **self.conf)
             self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
 
         with tf.name_scope("accuracy"):
@@ -99,7 +103,7 @@ class Classify(object):
         self.valid_data = list(self.valid_data)
         train_batches = batch_iter(self.train_data, self.batch_size, self.conf['num_epochs'])
         num_batches_per_epoch = (len(self.train_data) - 1) // self.batch_size + 1
-        max_accuracy = 0
+        max_accuracy = -1
         for batch in train_batches:
             x_batch, y_batch = zip(*batch)
             _, x_batch, len_batch = self.embedding.text2id(x_batch, self.vocab_dict, need_preprocess = False)
@@ -145,7 +149,7 @@ class Classify(object):
                     print("Model is saved.\n")
                 else:
                     print(f"train finished! accuracy: {max_accuracy}")
-                    #sys.exit(0)
+                    sys.exit(0)
 
     def test(self):
         graph = load_pb(self.conf['model_path'])

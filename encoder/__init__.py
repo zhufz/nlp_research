@@ -16,6 +16,7 @@ from transformer import Transformer
 from fasttext import FastText
 from fast_attention_text import FastAttentionText
 from han import HAN
+from capsule import Capsule
 
 encoder["cnn"] = CNN
 encoder["dcnn"] = DCNN
@@ -29,6 +30,7 @@ encoder["transformer"] = Transformer
 encoder["fasttext"] = FastText
 encoder["fast_attention_text"] = FastAttentionText
 encoder["han"] = HAN
+encoder["capsule"] = Capsule
 
 
 #pair sentence encoder
