@@ -233,7 +233,7 @@ class Transformer():
         feed_dict = {}
         return feed_dict
 
-    def __call__(self, enc, scope_name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, enc, name = 'encoder', reuse = tf.AUTO_REUSE):
         '''
         Returns
         memory: encoder outputs. (N, T1, d_model)

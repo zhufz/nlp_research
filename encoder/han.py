@@ -13,7 +13,7 @@ class HAN(object):
         self.keep_prob = args['keep_prob']
 
 
-    def __call__(self, embed, scope_name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
 
         def _get_cell():
             if self.rnn_type == "vanilla":

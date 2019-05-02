@@ -81,7 +81,7 @@ class DCNN():
             fold = tf.stack(out, axis=2)#[batch_size, k2, embed_dim/2, num_filters[1]]
         return fold
 
-    def __call__(self, embed, scope_name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
         with tf.variable_scope("dcnn"):
             sent = tf.expand_dims(embed, -1)
             conv1 = self.per_dim_conv_layer(sent, self.W1, self.b1, reuse)

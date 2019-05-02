@@ -240,6 +240,10 @@ class Capsule():
         self.embedding_size = kwargs['embedding_size']
         self.keep_prob = kwargs['keep_prob']
         self.num_output = kwargs['num_output']
+        if 'caps_type' in kwargs:
+            self.caps_type = kwargs['caps_type']
+        else:
+            self.caps_type = "A"
 
     def capsules_init(self, inputs, shape, strides, padding, pose_shape, add_bias, name):
         with tf.variable_scope(name):
@@ -400,4 +404,9 @@ class Capsule():
 
     def __call__(self, embed, reuse = tf.AUTO_REUSE):
         embed = tf.expand_dims(embed, -1)
-        return self.capsule_model_A(embed)
+        if self.caps_type == 'A':
+            return self.capsule_model_A(embed)
+        elif self.caps_type == 'B':
+            return self.capsule_model_B(embed)
+        else:
+            raise ValueError('unknown capsule type: A or B?')

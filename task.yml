@@ -1,6 +1,11 @@
 task_type: 'classify'
 #task_type: 'match'
 #task_type: 'ner'
+base:
+  path_root: ""
+  vocab_file_path: "base/chinese_L-12_H-768_A-12/vocab.txt"
+  bert_config_file_path: "base/chinese_L-12_H-768_A-12/bert_config.json"
+  init_checkpoint_path: "base/chinese_L-12_H-768_A-12/bert_model.ckpt"
 
 classify:
   path_root: "data/classify/"
@@ -12,7 +17,10 @@ classify:
   classes_path: "classes"
   checkpoint_path: "checkpoint"
   model_path: "model.pb"
+  use_language_model: False
 
+  maxlen: 40
+  embedding_size: 128
   learning_rate: 0.001
   batch_size: 64
   num_epochs: 350
@@ -24,7 +32,7 @@ classify:
   # encoder: "cnn"  # 84.7
   loss_type: "softmax_loss"
 
-  config_type: 7
+  config_type: 8
   config: 
     0: {encoder: "fasttext", learning_rate: 0.001}
     1: {encoder: "transformer", learning_rate: 0.0001}
@@ -33,7 +41,8 @@ classify:
     4: {encoder: "rnn", rnn_type: "lstm", embedding: 'char_embedding', learning_rate: 0.001}
     5: {encoder: "attention_rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
     6: {encoder: "rcnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
-    7: {encoder: "capsule", embedding: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
+    7: {encoder: "capsule", caps_type: "A", embedding: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
+    8: {encoder: "bert", learning_rate: 0.001, use_language_model: True}
 
   mode: "train"  #train\test\test_one
   # mode: "test"  #train\test\test_one

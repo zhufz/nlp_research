@@ -15,8 +15,8 @@ class RNN(object):
         self.num_output = args['num_output']
         self.placeholder = {}
 
-    def __call__(self, embed, scope_name = 'encoder', ner_flag = False, reuse = tf.AUTO_REUSE):
-        length_name = scope_name + "_length" 
+    def __call__(self, embed, name = 'encoder', ner_flag = False, reuse = tf.AUTO_REUSE):
+        length_name = name + "_length" 
         self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
                                                     shape=[None], 
                                                     name = length_name)
@@ -43,7 +43,7 @@ class RNN(object):
 
             return dense
 
-    def feed_dict(self, scope_name = 'encoder', **kwargs):
+    def feed_dict(self, name = 'encoder', **kwargs):
         feed_dict = {}
         for key in kwargs:
             length_name = key + "_length" 
@@ -51,7 +51,7 @@ class RNN(object):
 
         return feed_dict
 
-    def pb_feed_dict(self, graph, scope_name = 'encoder', **kwargs):
+    def pb_feed_dict(self, graph, name = 'encoder', **kwargs):
         feed_dict = {}
         for key in kwargs:
             length_name = key + "_length" 

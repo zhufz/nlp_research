@@ -32,6 +32,10 @@ encoder["fast_attention_text"] = FastAttentionText
 encoder["han"] = HAN
 encoder["capsule"] = Capsule
 
+#with pretrain language model
+#such as elmo, bert...
+from bert import Bert
+encoder["bert"] = Bert
 
 #pair sentence encoder
 from match_pyramid import MatchPyramid

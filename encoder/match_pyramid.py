@@ -10,7 +10,7 @@ class MatchPyramid():
         self.psize2 = 3
         self.dpool_index = tf.placeholder(tf.int32, name='dpool_index',\
                                           shape=(None, self.maxlen1, self.maxlen2, 3))
-    def __call__(self, x_query, x_sample, scope_name = 'encoder'):
+    def __call__(self, x_query, x_sample, name = 'encoder'):
         # batch_size * X1_maxlen * X2_maxlen
         self.cross = tf.einsum('abd,acd->abc', x_query, x_sample)
         self.cross_img = tf.expand_dims(self.cross, 3)

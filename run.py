@@ -6,19 +6,28 @@ import pdb
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 sys.path.append(ROOT_PATH)
 
-if __name__ == '__main__':
-
-    conf = yaml.load(open('task.yml'))
-    task_type = conf['task_type']
-    conf = conf[task_type]
-    if "config" and "config_type" in conf:
-        config_type = conf['config_type']
-        for k,v in (conf['config'][config_type]).items():
-            conf[k] = v
+def change_path(conf):
     path_root = os.path.join(ROOT_PATH, conf['path_root'])
     for k,v in conf.items():
         if k.endswith('_path'):
             conf[k] = os.path.join(path_root, conf[k])
+
+if __name__ == '__main__':
+
+    conf = yaml.load(open('task.yml'))
+    task_type = conf['task_type']
+    base = conf['base']
+    conf = conf[task_type]
+    change_path(base)
+    change_path(conf)
+
+    #加载base信息
+    for k,v in base.items():
+        conf[k] = v
+    if "config" and "config_type" in conf:
+        config_type = conf['config_type']
+        for k,v in (conf['config'][config_type]).items():
+            conf[k] = v
 
     if len(sys.argv) >1:
         #additional params from cmd

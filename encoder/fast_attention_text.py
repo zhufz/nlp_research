@@ -12,7 +12,7 @@ class FastAttentionText():
         self.keep_prob = args['keep_prob']
         self.num_output = args['num_output']
 
-    def __call__(self, embed, scope_name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
         with tf.variable_scope("fast_text", reuse = reuse):
             att = tf.get_variable(
                 "att", [self.seq_length, self.embedding_dim],

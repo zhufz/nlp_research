@@ -191,7 +191,7 @@ class ABCNN():
         feed_dict[graph.get_operation_by_name("len2").outputs[0]] = len2
         return feed_dict
 
-    def __call__(self, embed1, embed2, scope_name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed1, embed2, name = 'encoder', reuse = tf.AUTO_REUSE):
         """
         @param embed1:[batch_size, sentence_size, embedding_size]
         @param embed2:[batch_size, sentence_size, embedding_size]

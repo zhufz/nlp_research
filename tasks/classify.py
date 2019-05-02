@@ -11,6 +11,7 @@ from utils.data_utils import *
 from utils.tf_utils import load_pb,write_pb
 from tensorflow.python.platform import gfile
 from common.loss import get_loss
+from base.bert.modeling import get_assignment_map_from_checkpoint
 
 import pdb
 
@@ -18,6 +19,7 @@ class Classify(object):
     def __init__(self, conf):
         self.conf = conf
         self.task_type = 'classify'
+        self.use_language_model = self.conf['use_language_model']
 
         self.batch_size = self.conf['batch_size']
         self.num_class = self.conf['num_class']
@@ -26,6 +28,9 @@ class Classify(object):
         self.embedding_type = self.conf['embedding']
         self.encoder_type = self.conf['encoder']
         self.loss_type = self.conf['loss_type']
+        self.maxlen = self.conf['maxlen']
+        self.embedding_size = self.conf['embedding_size']
+
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
@@ -35,37 +40,49 @@ class Classify(object):
         self.text_list, self.label_list = load_classify_data(self.conf['train_path'])
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
 
-        #build vocabulary map using training data
-        self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.conf['dict_path'], 
-                                                              text_list = self.text_list)
+        if not self.use_language_model:
+            #build vocabulary map using training data
+            self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.conf['dict_path'], 
+                                                                  text_list = self.text_list)
 
-        #define embedding object by embedding_type
-        self.embedding = embedding[self.embedding_type](text_list = self.text_list,
-                                                        vocab_dict = self.vocab_dict,
-                                                        dict_path = self.conf['dict_path'],
-                                                        random=self.conf['rand_embedding'],
-                                                        batch_size = self.conf['batch_size'])
-        self.embed = self.embedding('x')
+            #define embedding object by embedding_type
+            self.embedding = embedding[self.embedding_type](text_list = self.text_list,
+                                                            vocab_dict = self.vocab_dict,
+                                                            dict_path = self.conf['dict_path'],
+                                                            random=self.conf['rand_embedding'],
+                                                            batch_size = self.batch_size,
+                                                            maxlen = self.maxlen,
+                                                            embedding_size = self.embedding_size)
+            self.embed = self.embedding('x')
         self.y = tf.placeholder(tf.int32, [None], name="y")
 
         #model params
         params = {
-            "maxlen":self.embedding.maxlen,
-            "embedding_size":self.embedding.size,
+            "maxlen":self.maxlen,
+            "embedding_size":self.embedding_size,
             "keep_prob":self.keep_prob,
-            "is_training": self.is_training,
             "batch_size": self.batch_size,
-            "num_output": self.num_class
+            "num_output": self.num_class,
+            "is_training": self.is_training
         }
         params.update(conf)
         self.encoder = encoder[self.encoder_type](**params)
-        self.out = self.encoder(self.embed)
+
+        if not self.use_language_model:
+            self.out = self.encoder(self.embed)
+        else:
+            self.out = self.encoder()
         self.output_nodes = self.out.name.split(':')[0]
         self.loss(self.out)
 
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver(tf.global_variables())
+        if self.use_language_model:
+            tvars = tf.trainable_variables()
+            init_checkpoint = conf['init_checkpoint_path']
+            (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
+            tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
 
     def load_data(self, mode = 'train'):
         print("Building dataset...")
@@ -98,6 +115,7 @@ class Classify(object):
             self.accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
     def train(self):
+        print("---------start train---------")
         self.train_data, self.valid_data = self.load_data(mode = 'train')
         self.train_data = list(self.train_data)
         self.valid_data = list(self.valid_data)
@@ -106,14 +124,18 @@ class Classify(object):
         max_accuracy = -1
         for batch in train_batches:
             x_batch, y_batch = zip(*batch)
-            _, x_batch, len_batch = self.embedding.text2id(x_batch, self.vocab_dict, need_preprocess = False)
+
             train_feed_dict = {
                 self.y: y_batch,
                 self.is_training: True
             }
-            train_feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
-            train_feed_dict.update(self.encoder.feed_dict(len = len_batch))
-
+            if not self.use_language_model:
+                _, x_batch, len_batch = self.embedding.text2id(
+                    x_batch, self.vocab_dict, need_preprocess = False)
+                train_feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
+                train_feed_dict.update(self.encoder.feed_dict(len = len_batch))
+            else:
+                train_feed_dict.update(self.encoder.feed_dict(x_batch))
             _, step, loss = self.sess.run([self.optimizer, self.global_step, self.loss], feed_dict=train_feed_dict)
             if step % 100 == 0:
                 print("step {0}: loss = {1}".format(step, loss))
@@ -124,13 +146,18 @@ class Classify(object):
                 for valid_batch in valid_batches:
 
                     valid_x_batch, valid_y_batch = zip(*valid_batch)
-                    _, valid_x_batch, len_batch = self.embedding.text2id(valid_x_batch, self.vocab_dict, need_preprocess = False)
+
                     valid_feed_dict = {
                         self.y: valid_y_batch,
                         self.is_training: False
                     }
-                    valid_feed_dict.update(self.embedding.feed_dict(valid_x_batch,'x'))
-                    valid_feed_dict.update(self.encoder.feed_dict(len = len_batch))
+                    if not self.use_language_model:
+                        _, valid_x_batch, len_batch = self.embedding.text2id(
+                            valid_x_batch, self.vocab_dict, need_preprocess = False)
+                        valid_feed_dict.update(self.embedding.feed_dict(valid_x_batch,'x'))
+                        valid_feed_dict.update(self.encoder.feed_dict(len = len_batch))
+                    else:
+                        valid_feed_dict.update(self.encoder.feed_dict(valid_x_batch))
                     accuracy = self.sess.run(self.accuracy, feed_dict=valid_feed_dict)
                     sum_accuracy += accuracy
                     cnt += 1
@@ -177,13 +204,17 @@ class Classify(object):
         all_test_y = []
         for batch in batches:
             batch_x, batch_y = zip(*batch)
-            preprocess_x, batch_x_id, len_batch = self.embedding.text2id(batch_x, vocab_dict, need_preprocess = True)
+
             feed_dict = {
                 self.y: batch_y,
                 self.is_training: False
             }
-            feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x_id, 'x'))
-            feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
+            if not self.use_language_model:
+                preprocess_x, batch_x_id, len_batch = self.embedding.text2id(batch_x, vocab_dict, need_preprocess = True)
+                feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x_id, 'x'))
+                feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
+            else:
+                feed_dict.update(self.encoder.pb_feed_dict(graph, batch_x))
             accuracy_out, predictions_out, scores_out = sess.run([self.accuracy,
                                                                   self.predictions,
                                                                   self.scores],

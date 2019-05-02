@@ -15,8 +15,8 @@ class AttentionRNN(object):
         self.num_output = args['num_output']
         self.placeholder = {}
 
-    def __call__(self, embed, scope_name = 'encoder', reuse = tf.AUTO_REUSE):
-        length_name = scope_name + "_length" 
+    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
+        length_name = name + "_length" 
         self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
                                                     shape=[None], 
                                                     name = length_name)
@@ -36,7 +36,7 @@ class AttentionRNN(object):
                 dense = tf.layers.dense(h_drop, self.num_output, activation=None)
                 return dense
 
-    def feed_dict(self, scope_name = 'encoder', **kwargs):
+    def feed_dict(self, name = 'encoder', **kwargs):
         feed_dict = {}
         for key in kwargs:
             length_name = key + "_length" 
@@ -44,7 +44,7 @@ class AttentionRNN(object):
 
         return feed_dict
 
-    def pb_feed_dict(self, graph, scope_name = 'encoder', **kwargs):
+    def pb_feed_dict(self, graph, name = 'encoder', **kwargs):
         feed_dict = {}
         for key in kwargs:
             length_name = key + "_length" 
