@@ -25,6 +25,7 @@ classify:
   batch_size: 64
   num_epochs: 350
   num_class: 89
+  valid_step: 1000 #valid one time every valid_step 
   # embedding: char_embedding, word_embedding, subword_embedding
   embedding: 'char_embedding'
   rand_embedding: True
@@ -42,7 +43,7 @@ classify:
     5: {encoder: "attention_rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
     6: {encoder: "rcnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
     7: {encoder: "capsule", caps_type: "A", embedding: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
-    8: {encoder: "bert", learning_rate: 0.001, use_language_model: True}
+    8: {encoder: "bert", learning_rate: 0.00001, use_language_model: True, valid_step: 100}
 
   mode: "train"  #train\test\test_one
   # mode: "test"  #train\test\test_one

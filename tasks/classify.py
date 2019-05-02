@@ -30,7 +30,7 @@ class Classify(object):
         self.loss_type = self.conf['loss_type']
         self.maxlen = self.conf['maxlen']
         self.embedding_size = self.conf['embedding_size']
-
+        self.valid_step = self.conf['valid_step']
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
@@ -137,9 +137,9 @@ class Classify(object):
             else:
                 train_feed_dict.update(self.encoder.feed_dict(x_batch))
             _, step, loss = self.sess.run([self.optimizer, self.global_step, self.loss], feed_dict=train_feed_dict)
-            if step % 100 == 0:
+            if step % (self.valid_step/10) == 0:
                 print("step {0}: loss = {1}".format(step, loss))
-            if step % 1000 == 0:
+            if step % self.valid_step == 0:
                 # Test accuracy with validation data for each epoch.
                 valid_batches = batch_iter(self.valid_data, self.batch_size, 1, shuffle=False)
                 sum_accuracy, cnt = 0, 0
@@ -265,9 +265,12 @@ class Classify(object):
                 feed_dict = {
                     self.is_training: False
                 }
-                preprocess_x, batch_x, len_batch = self.embedding.text2id(batch_x, vocab_dict)
-                feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
-                feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
+                if not self.use_language_model:
+                    preprocess_x, batch_x, len_batch = self.embedding.text2id(batch_x, vocab_dict)
+                    feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
+                    feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
+                else:
+                    feed_dict.update(self.encoder.pb_feed_dict(graph, batch_x))
                 predictions_out, scores_out = sess.run([self.predictions,
                                                             self.scores],
                                                             feed_dict=feed_dict)
@@ -302,9 +305,12 @@ class Classify(object):
             feed_dict = {
                 self.is_training: False
             }
-            preprocess_x, batch_x, len_batch = self.embedding.text2id(batch_x, vocab_dict)
-            feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
-            feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
+            if not self.use_language_model:
+                preprocess_x, batch_x, len_batch = self.embedding.text2id(batch_x, vocab_dict)
+                feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
+                feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
+            else:
+                feed_dict.update(self.encoder.pb_feed_dict(graph, batch_x))
             predictions_out, scores_out = sess.run([self.predictions,
                                                         self.scores],
                                                         feed_dict=feed_dict)
