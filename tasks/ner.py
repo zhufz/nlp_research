@@ -66,15 +66,16 @@ class NER(object):
         self.sequence_lengths = tf.placeholder(tf.int32, shape=[None], name="sequence_lengths")
 
         #model params
-        params = {
+        params = conf
+        params.update({
             "maxlen":self.maxlen,
             "embedding_size":self.embedding.size,
             "keep_prob":self.keep_prob,
             "is_training": self.is_training,
             "batch_size": self.batch_size,
             "num_output": self.num_class
-        }
-        params.update(conf)
+        })
+
         self.encoder = encoder[self.encoder_type](**params)
         self.out = self.encoder(self.embed, 'query', ner_flag = True)
         self.output_nodes = self.out.name.split(':')[0]

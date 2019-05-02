@@ -57,15 +57,15 @@ class Classify(object):
         self.y = tf.placeholder(tf.int32, [None], name="y")
 
         #model params
-        params = {
+        params = conf
+        params.update({
             "maxlen":self.maxlen,
             "embedding_size":self.embedding_size,
             "keep_prob":self.keep_prob,
             "batch_size": self.batch_size,
             "num_output": self.num_class,
             "is_training": self.is_training
-        }
-        params.update(conf)
+        })
         self.encoder = encoder[self.encoder_type](**params)
 
         if not self.use_language_model:
@@ -170,15 +170,19 @@ class Classify(object):
                                     "{0}/{1}.ckpt".format(self.conf['checkpoint_path'],
                                                               self.task_type),
                                     global_step=step)
-                    write_pb(self.conf['checkpoint_path'],
-                             self.conf['model_path'],
-                             ['is_training','output/predictions','accuracy/accuracy',self.output_nodes])
                     print("Model is saved.\n")
                 else:
                     print(f"train finished! accuracy: {max_accuracy}")
                     sys.exit(0)
 
+    def save_pb(self):
+        write_pb(self.conf['checkpoint_path'],
+                 self.conf['model_path'],
+                 ['is_training','output/predictions','accuracy/accuracy',self.output_nodes])
+
     def test(self):
+        if not os.path.exists(self.conf['model_path']):
+            self.save_pb()
         graph = load_pb(self.conf['model_path'])
         sess = tf.Session(graph=graph)
 
@@ -244,6 +248,8 @@ class Classify(object):
 
     def predict(self):
         predict_file = self.conf['predict_path']
+        if not os.path.exists(self.conf['model_path']):
+            self.save_pb()
         graph = load_pb(self.conf['model_path'])
         sess = tf.Session(graph=graph)
 
@@ -288,6 +294,8 @@ class Classify(object):
             dt.to_csv(self.conf['predict_path']+'.result.csv',index=False,sep=',')
 
     def test_unit(self, text):
+        if not os.path.exists(self.conf['model_path']):
+            self.save_pb()
         graph = load_pb(self.conf['model_path'])
         sess = tf.Session(graph=graph)
 

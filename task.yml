@@ -1,6 +1,6 @@
 task_type: 'classify'
-#task_type: 'match'
-#task_type: 'ner'
+# task_type: 'match'
+# task_type: 'ner'
 base:
   path_root: ""
   vocab_file_path: "base/chinese_L-12_H-768_A-12/vocab.txt"
@@ -43,7 +43,7 @@ classify:
     5: {encoder: "attention_rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
     6: {encoder: "rcnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
     7: {encoder: "capsule", caps_type: "A", embedding: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
-    8: {encoder: "bert", learning_rate: 0.00001, use_language_model: True, valid_step: 100}
+    8: {encoder: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
 
   mode: "train"  #train\test\test_one
   # mode: "test"  #train\test\test_one
@@ -79,9 +79,9 @@ match:
   # sim_mode=cross: 对于交互的匹配方法
   # sim_mode=represent: 基于表示的匹配方法
   # loss_type: "pointwise"
-  keep_prob: 0.5
+  #keep_prob: 0.5
   loss_type: "pairwise"
-  config_type: 0
+  config_type: 10
   config: 
     0: {encoder: "match_pyramid", sim_mode: "cross", num_output: 1}
     1: {encoder: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
@@ -99,8 +99,9 @@ match:
     22: {encoder: "transformer", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
 
   mode: "train"  #train\test\test_one
-  #mode: "test_one"  #train\test\test_one
   #mode: "test"  #train\test\test_one
+  #mode: "test_one"  #train\test\test_one
+
 
 
 
@@ -120,7 +121,7 @@ ner:
   num_tag: 7
   learning_rate: 0.001
   optimizer_type: "Adam"
-  keep_prob: 0.5
+  #keep_prob: 0.5
   embedding: 'char_embedding'
   rand_embedding: True
   use_crf: True

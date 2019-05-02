@@ -33,7 +33,7 @@ class Bert():
 
             model = modeling.BertModel(
                 config=self.bert_config,
-                is_training=True,
+                is_training=self.is_training,#True,
                 input_ids=self.placeholder[name+"_input_ids"],
                 input_mask=self.placeholder[name+'_input_mask'],
                 token_type_ids=self.placeholder[name+'_segment_ids'],

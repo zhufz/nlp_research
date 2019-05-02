@@ -154,9 +154,12 @@ class BertModel(object):
         is invalid.
     """
     config = copy.deepcopy(config)
-    if not is_training:
-      config.hidden_dropout_prob = 0.0
-      config.attention_probs_dropout_prob = 0.0
+    #if not is_training:
+      #config.hidden_dropout_prob = 0.0
+      #config.attention_probs_dropout_prob = 0.0
+    config.hidden_dropout_prob = tf.where(is_training, config.hidden_dropout_prob, 0)
+    config.attention_probs_dropout_prob  = tf.where(is_training, config.attention_probs_dropout_prob , 0)
+
 
     input_shape = get_shape_list(input_ids, expected_rank=2)
     batch_size = input_shape[0]

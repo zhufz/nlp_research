@@ -27,7 +27,7 @@ class Match(object):
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
-        self.keep_prob = tf.where(self.is_training, float(conf['keep_prob']), 1.0)
+        self.keep_prob = tf.where(self.is_training, 0.5, 1.0)
 
         self.pre = Preprocess()
         self.generator = PairGenerator(self.conf['relation_path'],\
@@ -52,7 +52,8 @@ class Match(object):
         self.embed_sample = self.embedding('x_sample')
 
         #model params
-        params = {
+        params = self.conf
+        params.update({
             "maxlen":self.embedding.maxlen,
             "maxlen1":self.embedding.maxlen,
             "maxlen2":self.embedding.maxlen,
@@ -62,8 +63,7 @@ class Match(object):
             "is_training": self.is_training,
             "batch_size": self.batch_size,
             "num_output": self.num_output
-        }
-        params.update(self.conf)
+        })
 
         self.pred = self.sim(self.conf['sim_mode'], params) #encoder
         self.output_nodes = self.pred.name.split(':')[0]
@@ -178,18 +178,56 @@ class Match(object):
             if step % 100 == 0:
                 print("step {0}: loss = {1}".format(step, loss))
             if step % 1000 == 0:
-                # Save model
-                self.saver.save(self.sess,
-                                "{0}/{1}.ckpt".format(self.conf['checkpoint_path'],
-                                                          self.task_type),
-                                global_step=step)
-                write_pb(self.conf['checkpoint_path'],self.conf['model_path'],["is_training", self.output_nodes])
-                acc = self.test()
+                #validation
+                test_batches = self.generator.get_test_batch(self.text_list,
+                                                             self.embedding.maxlen,
+                                                             self.embedding.maxlen)
+                sum, rig, thre_rig = 0, 0, 0
+                for x1_batch,x2_batch,labels_batch in test_batches:
+                    _, x1_batch, x1_len_batch = self.embedding.text2id(x1_batch,
+                                                         self.vocab_dict,
+                                                         need_preprocess = False)
+                    _, x2_batch, x2_len_batch = self.embedding.text2id(x2_batch,
+                                                         self.vocab_dict,
+                                                         need_preprocess = False)
+                    test_feed_dict = {
+                        self.is_training: False
+                    }
+                    test_feed_dict.update(self.embedding.feed_dict(x1_batch,'x_query'))
+                    test_feed_dict.update(self.embedding.feed_dict(x2_batch,'x_sample'))
+                    test_feed_dict.update(\
+                                self.encoder.feed_dict(x_query = x1_len_batch, 
+                                                       x_sample = x2_len_batch))
+                    pred = self.sess.run(self.pred, feed_dict=test_feed_dict)
+
+
+                    assert len(pred) == len(labels_batch), "len(pred)!=len(labels_batch)!"
+                    max_id = self.knn(pred)
+                    max_score = pred[max_id]
+                    sum += 1
+                    if labels_batch[max_id] == 1:
+                        rig += 1
+                        if max_score >= self.score_thre:
+                            thre_rig +=1
+
+                acc = float(rig) / sum
+                print("\nValid Accuracy = {}\n".format(acc))
+
+                #acc = self.test()
                 if acc > max_accuracy:
                     max_accuracy = acc
+                    # Save model
+                    self.saver.save(self.sess,
+                                    "{0}/{1}.ckpt".format(
+                                        self.conf['checkpoint_path'],
+                                        self.task_type),
+                                    global_step=step)
                 else:
                     print(f'train finished! accuracy: {acc}')
                     sys.exit(0)
+
+    def save_pb(self):
+        write_pb(self.conf['checkpoint_path'],self.conf['model_path'],["is_training", self.output_nodes])
 
     def knn(self, pred, k = 5):
         sorted_id = np.argsort(-pred,axis=0)
@@ -226,6 +264,8 @@ class Match(object):
         test_batches = self.generator.get_test_batch(self.text_list,
                                                      self.embedding.maxlen,
                                                      self.embedding.maxlen)
+        if not os.path.exists(self.conf['model_path']):
+            self.save_pb()
         graph = load_pb(self.conf['model_path'])
         sess = tf.Session(graph=graph)
         #self.scores = graph.get_operation_by_name(self.output_nodes)
@@ -256,6 +296,8 @@ class Match(object):
                                                      self.embedding.maxlen,
                                                      self.embedding.maxlen,
                                                      query = text)
+        if not os.path.exists(self.conf['model_path']):
+            self.save_pb()
         graph = load_pb(self.conf['model_path'])
         sess = tf.Session(graph=graph)
 
@@ -267,7 +309,7 @@ class Match(object):
             pred, labels = self.test_step(batch, self.embedding, self.encoder, self.vocab_dict,
                            graph, sess, self.scores)
             preds += list(pred)
-        preds = np.exp(preds)/sum(np.exp(preds))
+        #preds = np.exp(preds)/sum(np.exp(preds))
         max_id = self.knn(pred)
         #max_id = np.argmax(preds)
         max_score = preds[max_id]

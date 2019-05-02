@@ -15,11 +15,11 @@ import pdb
 
 class CharEmbedding():
     def __init__(self, text_list, dict_path, vocab_dict = None, random = False,
-                 maxlen = 40, **kwargs):
+                 maxlen = 40, embedding_size = 128, **kwargs):
         self.embedding_path = None
         self.dict_path = dict_path
         self.maxlen = maxlen
-        self.size = 128
+        self.size = embedding_size
         self.vocab_dict = vocab_dict
         self.embedding = tf.get_variable("embeddings",
                                          shape = [len(self.vocab_dict),self.size],
