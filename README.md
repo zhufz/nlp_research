@@ -81,9 +81,9 @@ nlp一些任务集成：classify，match，sequence tagging，translation...
 
 2.集成序列标注模型（已完成）
 
-3.小样本学习支持
+3.集成bert（已完成）
 
-4.集成bert（已完成）
+4.文本生成算法
 
 5.强化学习（基于任务型对话）
 
