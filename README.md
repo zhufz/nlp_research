@@ -2,19 +2,19 @@
 
 
 ## 介绍
-nlp一些任务集成：classify，match，sequence tagging, translation...
+nlp一些任务集成：classify，match，sequence tagging，translation...
 
 ## 数据
   数据统一放在data下，
 
-  对于分类和匹配任务，训练文件每行格式为"文本\t类别",然后调用generate_ml_data.sh进行数据生成！
+  对于分类和匹配任务，训练文件每行格式为"文本\t类别"，然后调用generate_ml_data.sh进行数据生成！
 
   对于ner任务，参考示例数据
 
 ## 任务
 环境：python3+tensorflow 1.10
 
-任务参数定义在task.yml中,具体执行代码在tasks文件夹中。
+任务参数定义在task.yml中，具体执行代码在tasks文件夹中。
 目前已支持三种常见任务：
 
 1. classify
@@ -83,7 +83,7 @@ nlp一些任务集成：classify，match，sequence tagging, translation...
 
 3.小样本学习支持
 
-4.集成bert
+4.集成bert（已完成）
 
 5.强化学习（基于任务型对话）
 
