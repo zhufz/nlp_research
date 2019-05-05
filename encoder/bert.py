@@ -22,13 +22,13 @@ class Bert():
     def __call__(self, name = 'encoder', reuse = tf.AUTO_REUSE):
         self.placeholder[name+'_input_ids'] = tf.placeholder(tf.int32, 
                                         shape=[None, self.maxlen], 
-                                        name = name+"input_ids")
+                                        name = name+"_input_ids")
         self.placeholder[name+'_input_mask'] = tf.placeholder(tf.int32, 
                                         shape=[None, self.maxlen], 
-                                        name = name+"input_mask")
+                                        name = name+"_input_mask")
         self.placeholder[name+'_segment_ids'] = tf.placeholder(tf.int32, 
                                         shape=[None, self.maxlen], 
-                                        name = name+"segment_ids")
+                                        name = name+"_segment_ids")
         with tf.variable_scope("bert", reuse = reuse):
 
             model = modeling.BertModel(
