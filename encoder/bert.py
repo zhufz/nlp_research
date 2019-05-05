@@ -22,13 +22,13 @@ class Bert():
     def __call__(self, name = 'encoder', reuse = tf.AUTO_REUSE):
         self.placeholder[name+'_input_ids'] = tf.placeholder(tf.int32, 
                                         shape=[None, self.maxlen], 
-                                        name = "input_ids")
+                                        name = name+"input_ids")
         self.placeholder[name+'_input_mask'] = tf.placeholder(tf.int32, 
                                         shape=[None, self.maxlen], 
-                                        name = "input_mask")
+                                        name = name+"input_mask")
         self.placeholder[name+'_segment_ids'] = tf.placeholder(tf.int32, 
                                         shape=[None, self.maxlen], 
-                                        name = "segment_ids")
+                                        name = name+"segment_ids")
         with tf.variable_scope("bert", reuse = reuse):
 
             model = modeling.BertModel(
@@ -125,11 +125,12 @@ class Bert():
         return input_ids, input_mask, segment_ids
 
 
-    def feed_dict(self,text_list, name = 'encoder', **kwargs):
+    def feed_dict(self,text_a_list, text_b_list = None, name = 'encoder', **kwargs):
         feed_dict = {}
         input_ids_list, input_mask_list, segment_ids_list = [],[],[]
-        for text in text_list:
-            input_ids, input_mask, segment_ids = self.build_ids(text)
+        for idx,text in enumerate(text_a_list):
+            input_ids, input_mask, segment_ids = \
+                self.build_ids(text, text_b_list[idx] if text_b_list != None else None)
             input_ids_list.append(input_ids)
             input_mask_list.append(input_mask)
             segment_ids_list.append(segment_ids)
@@ -138,15 +139,16 @@ class Bert():
         feed_dict[self.placeholder[name+'_segment_ids']] = segment_ids_list
         return feed_dict
 
-    def pb_feed_dict(self, graph, text_list, name = 'encoder', **kwargs):
+    def pb_feed_dict(self, graph, text_a_list, text_b_list = None, name = 'encoder', **kwargs):
         feed_dict = {}
         input_ids_node = graph.get_operation_by_name(name+'_input_ids').outputs[0]
         input_mask_node = graph.get_operation_by_name(name+'_input_mask').outputs[0]
         segment_ids_node = graph.get_operation_by_name(name+'_segment_ids').outputs[0]
 
         input_ids_list, input_mask_list, segment_ids_list = [],[],[]
-        for text in text_list:
-            input_ids, input_mask, segment_ids = self.build_ids(text)
+        for idx,text in enumerate(text_a_list):
+            input_ids, input_mask, segment_ids = \
+                self.build_ids(text, text_b_list[idx] if text_b_list != None else None)
             input_ids_list.append(input_ids)
             input_mask_list.append(input_mask)
             segment_ids_list.append(segment_ids)

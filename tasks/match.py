@@ -9,6 +9,7 @@ sys.path.append(ROOT_PATH)
 from utils.data_utils import *
 from utils.preprocess import Preprocess
 from utils.tf_utils import load_pb,write_pb
+from base.bert.modeling import get_assignment_map_from_checkpoint
 
 
 class Match(object):
@@ -24,6 +25,10 @@ class Match(object):
         self.score_thre = conf['score_thre']
         self.loss_type = conf['loss_type']
         self.num_output = conf['num_output']
+        self.use_language_model = self.conf['use_language_model']
+        self.valid_step = self.conf['valid_step']
+        self.maxlen = self.conf['maxlen']
+        self.embedding_size = self.conf['embedding_size']
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
@@ -36,29 +41,34 @@ class Match(object):
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
                           self.generator.index_data]
         self.label_list = self.generator.label_data
-        self.vocab_dict = embedding[self.embedding_type].build_dict(\
-                                            dict_path = self.conf['dict_path'],
-                                            text_list = self.text_list,
-                                            mode = self.conf['mode'])
+        if not self.use_language_model:
+            self.vocab_dict = embedding[self.embedding_type].build_dict(\
+                                                dict_path = self.conf['dict_path'],
+                                                text_list = self.text_list,
+                                                mode = self.conf['mode'])
 
-        #define embedding object by embedding_type
-        self.embedding = embedding[self.embedding_type](text_list = self.text_list,
-                                                        vocab_dict = self.vocab_dict,
-                                                        dict_path = self.conf['dict_path'],
-                                                        random=self.conf['rand_embedding'],
-                                                        batch_size = self.conf['batch_size'])
+            #define embedding object by embedding_type
+            self.embedding = embedding[self.embedding_type](text_list = self.text_list,
+                                                            vocab_dict = self.vocab_dict,
+                                                            dict_path = self.conf['dict_path'],
+                                                            random=self.conf['rand_embedding'],
+                                                            maxlen = self.maxlen,
+                                                            batch_size = self.conf['batch_size'],
+                                                            embedding_size = self.embedding_size)
 
-        self.embed_query = self.embedding('x_query')
-        self.embed_sample = self.embedding('x_sample')
+            self.embed_query = self.embedding('x_query')
+            self.embed_sample = self.embedding('x_sample')
+        else:
+            self.embedding = None
 
         #model params
         params = self.conf
         params.update({
-            "maxlen":self.embedding.maxlen,
-            "maxlen1":self.embedding.maxlen,
-            "maxlen2":self.embedding.maxlen,
+            "maxlen":self.maxlen,
+            "maxlen1":self.maxlen,
+            "maxlen2":self.maxlen,
             "num_class":self.num_class,
-            "embedding_size":self.embedding.size,
+            "embedding_size":self.embedding_size,
             "keep_prob":self.keep_prob,
             "is_training": self.is_training,
             "batch_size": self.batch_size,
@@ -75,6 +85,12 @@ class Match(object):
         self.writer = tf.summary.FileWriter("logs/match_log", self.sess.graph)
         self.sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver(tf.global_variables())
+
+        if self.use_language_model:
+            tvars = tf.trainable_variables()
+            init_checkpoint = conf['init_checkpoint_path']
+            (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
+            tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
 
     def loss(self, loss_type, pred):
         if loss_type == 'pairwise':
@@ -113,7 +129,11 @@ class Match(object):
     def cross_sim(self, params):
         #cross based match model
         self.encoder = encoder[self.conf['encoder']](**params)
-        pred = self.encoder(x_query = self.embed_query, x_sample = self.embed_sample)
+
+        if not self.use_language_model:
+            pred = self.encoder(x_query = self.embed_query, x_sample = self.embed_sample)
+        else:
+            pred = self.encoder()
         return pred
 
     def represent_sim(self, params):
@@ -151,53 +171,61 @@ class Match(object):
         train_batches = self.generator.get_batch(self.text_list,
                                                  self.batch_size,
                                                  self.conf['num_epochs'],
-                                                 self.embedding.maxlen,
-                                                 self.embedding.maxlen,
+                                                 self.maxlen,
+                                                 self.maxlen,
                                                  task = self,
                                                  mode =self.conf['batch_mode'])
 
         max_accuracy = -1
         for batch in train_batches:
             x1_batch, x2_batch = batch
-            _, x1_batch, x1_len_batch = self.embedding.text2id(x1_batch, self.vocab_dict,
-                                                 need_preprocess = False)
-            _, x2_batch, x2_len_batch = self.embedding.text2id(x2_batch, self.vocab_dict,
-                                                 need_preprocess = False)
-
             train_feed_dict = {
                 self.is_training: True
             }
-            train_feed_dict.update(self.embedding.feed_dict(x1_batch,'x_query'))
-            train_feed_dict.update(self.embedding.feed_dict(x2_batch,'x_sample'))
-            train_feed_dict.update(\
-                        self.encoder.feed_dict(x_query = x1_len_batch, 
-                                               x_sample = x2_len_batch))
+
+            if not self.use_language_model:
+                _, x1_batch, x1_len_batch = self.embedding.text2id(x1_batch, self.vocab_dict,
+                                                     need_preprocess = False)
+                _, x2_batch, x2_len_batch = self.embedding.text2id(x2_batch, self.vocab_dict,
+                                                     need_preprocess = False)
+                train_feed_dict.update(self.embedding.feed_dict(x1_batch,'x_query'))
+                train_feed_dict.update(self.embedding.feed_dict(x2_batch,'x_sample'))
+                train_feed_dict.update(\
+                            self.encoder.feed_dict(x_query = x1_len_batch, 
+                                                   x_sample = x2_len_batch))
+            else:
+                train_feed_dict.update(self.encoder.feed_dict(x1_batch, x2_batch))
+
             _, step, loss = self.sess.run([self.optimizer, self.global_step, self.loss], feed_dict=train_feed_dict)
             #print(loss)
 
-            if step % 100 == 0:
+            if step % (self.valid_step/10) == 0:
                 print("step {0}: loss = {1}".format(step, loss))
-            if step % 1000 == 0:
+            if step % (self.valid_step) == 0:
                 #validation
                 test_batches = self.generator.get_test_batch(self.text_list,
-                                                             self.embedding.maxlen,
-                                                             self.embedding.maxlen)
+                                                             self.maxlen,
+                                                             self.maxlen)
                 sum, rig, thre_rig = 0, 0, 0
                 for x1_batch,x2_batch,labels_batch in test_batches:
-                    _, x1_batch, x1_len_batch = self.embedding.text2id(x1_batch,
-                                                         self.vocab_dict,
-                                                         need_preprocess = False)
-                    _, x2_batch, x2_len_batch = self.embedding.text2id(x2_batch,
-                                                         self.vocab_dict,
-                                                         need_preprocess = False)
                     test_feed_dict = {
                         self.is_training: False
                     }
-                    test_feed_dict.update(self.embedding.feed_dict(x1_batch,'x_query'))
-                    test_feed_dict.update(self.embedding.feed_dict(x2_batch,'x_sample'))
-                    test_feed_dict.update(\
-                                self.encoder.feed_dict(x_query = x1_len_batch, 
-                                                       x_sample = x2_len_batch))
+                    if not self.use_language_model:
+                        _, x1_batch, x1_len_batch = self.embedding.text2id(x1_batch,
+                                                             self.vocab_dict,
+                                                             need_preprocess = False)
+                        _, x2_batch, x2_len_batch = self.embedding.text2id(x2_batch,
+                                                             self.vocab_dict,
+                                                             need_preprocess = False)
+
+                        test_feed_dict.update(self.embedding.feed_dict(x1_batch,'x_query'))
+                        test_feed_dict.update(self.embedding.feed_dict(x2_batch,'x_sample'))
+                        test_feed_dict.update(\
+                                    self.encoder.feed_dict(x_query = x1_len_batch, 
+                                                           x_sample = x2_len_batch))
+                    else:
+                        test_feed_dict.update(self.encoder.feed_dict(x1_batch, x2_batch))
                     pred = self.sess.run(self.pred, feed_dict=test_feed_dict)
 
 
@@ -240,30 +268,34 @@ class Match(object):
 
     def test_step(self, batch, embedding, encoder, vocab_dict,  graph, sess, run_param):
         x1_batch,x2_batch,labels_batch = batch
-        _, x1_batch, x1_len_batch = embedding.text2id(x1_batch,
-                                             vocab_dict,
-                                             need_preprocess = False)
-        _, x2_batch, x2_len_batch = embedding.text2id(x2_batch,
-                                             vocab_dict,
-                                             need_preprocess = False)
-        is_training = graph.get_operation_by_name("is_training").outputs[0]
         test_feed_dict = {
             is_training: False
         }
-        test_feed_dict.update(embedding.pb_feed_dict(graph,x1_batch,'x_query'))
-        test_feed_dict.update(embedding.pb_feed_dict(graph,x2_batch,'x_sample'))
-        #test_feed_dict.update(encoder.pb_feed_dict(graph, len = [x1_len_batch,x2_len_batch]))
-        test_feed_dict.update(encoder.pb_feed_dict(graph, 
-                                                   x_query = x1_len_batch, 
-                                                   x_sample = x2_len_batch))
+        if not self.use_language_model:
+            _, x1_batch, x1_len_batch = embedding.text2id(x1_batch,
+                                                 vocab_dict,
+                                                 need_preprocess = False)
+            _, x2_batch, x2_len_batch = embedding.text2id(x2_batch,
+                                                 vocab_dict,
+                                                 need_preprocess = False)
+            is_training = graph.get_operation_by_name("is_training").outputs[0]
+
+            test_feed_dict.update(embedding.pb_feed_dict(graph,x1_batch,'x_query'))
+            test_feed_dict.update(embedding.pb_feed_dict(graph,x2_batch,'x_sample'))
+            #test_feed_dict.update(encoder.pb_feed_dict(graph, len = [x1_len_batch,x2_len_batch]))
+            test_feed_dict.update(encoder.pb_feed_dict(graph, 
+                                                       x_query = x1_len_batch, 
+                                                       x_sample = x2_len_batch))
+        else:
+            test_feed_dict.update(encoder.feed_dict(x1_batch, x2_batch))
         pred = sess.run(run_param, feed_dict=test_feed_dict)
         return pred, labels_batch
 
     def test(self):
         # Test accuracy with validation data for each epoch.
         test_batches = self.generator.get_test_batch(self.text_list,
-                                                     self.embedding.maxlen,
-                                                     self.embedding.maxlen)
+                                                     self.maxlen,
+                                                     self.maxlen)
         if not os.path.exists(self.conf['model_path']):
             self.save_pb()
         graph = load_pb(self.conf['model_path'])
@@ -293,8 +325,8 @@ class Match(object):
     def test_unit(self, text):
         text = self.pre.get_dl_input_by_text(text)
         test_batches = self.generator.get_test_batch(self.text_list,
-                                                     self.embedding.maxlen,
-                                                     self.embedding.maxlen,
+                                                     self.maxlen,
+                                                     self.maxlen,
                                                      query = text)
         if not os.path.exists(self.conf['model_path']):
             self.save_pb()
