@@ -9,7 +9,7 @@ sys.path.append(ROOT_PATH)
 from utils.data_utils import *
 from utils.preprocess import Preprocess
 from utils.tf_utils import load_pb,write_pb
-from base.bert.modeling import get_assignment_map_from_checkpoint
+from language_model.bert.modeling import get_assignment_map_from_checkpoint
 
 
 class Match(object):

@@ -1,7 +1,7 @@
 import tensorflow as tf
-from base.bert import modeling
-from base.bert import optimization
-from base.bert import tokenization
+from language_model.bert import modeling
+from language_model.bert import optimization
+from language_model.bert import tokenization
 import pdb
 
 class Bert():

@@ -1,11 +1,11 @@
 task_type: 'classify'
 task_type: 'match'
-# task_type: 'ner'
+#task_type: 'ner'
 base:
   path_root: ""
-  vocab_file_path: "base/chinese_L-12_H-768_A-12/vocab.txt"
-  bert_config_file_path: "base/chinese_L-12_H-768_A-12/bert_config.json"
-  init_checkpoint_path: "base/chinese_L-12_H-768_A-12/bert_model.ckpt"
+  vocab_file_path: "language_model/chinese_L-12_H-768_A-12/vocab.txt"
+  bert_config_file_path: "language_model/chinese_L-12_H-768_A-12/bert_config.json"
+  init_checkpoint_path: "language_model/chinese_L-12_H-768_A-12/bert_model.ckpt"
 
 classify:
   path_root: "data/classify/"
@@ -34,7 +34,7 @@ classify:
   # encoder: "cnn"  # 84.7
   loss_type: "softmax_loss"
 
-  config_type: 8
+  config_type: 0
   config: 
     0: {encoder: "fasttext", learning_rate: 0.001}
     1: {encoder: "transformer", learning_rate: 0.0001}
@@ -47,7 +47,7 @@ classify:
     8: {encoder: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
 
   mode: "train"  #train\test\test_one
-  # mode: "test"  #train\test\test_one
+  #mode: "test"  #train\test\test_one
   # mode: "test_one"
   # mode: "predict"
 match:
@@ -102,7 +102,7 @@ match:
     15: {encoder: "attention_rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
     21: {encoder: "text_cnn", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
     22: {encoder: "transformer", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
-    23: {encoder: "bert", sim_mode: "cross", learning_rate: 0.00002, use_language_model: True, valid_step: 400, num_output: 256}
+    23: {encoder: "bert", sim_mode: "cross", learning_rate: 0.00002, use_language_model: True, valid_step: 400, num_output: 1}
 
   mode: "train"  #train\test\test_one
   #mode: "test"  #train\test\test_one
@@ -124,10 +124,13 @@ ner:
   batch_size: 64
   num_epochs: 30
   maxlen: -1
+  embedding_size: 128
+  valid_step: 1000 #valid one time every valid_step 
   num_tag: 7
   learning_rate: 0.001
   optimizer_type: "Adam"
   #keep_prob: 0.5
+  use_language_model: False
   embedding: 'char_embedding'
   rand_embedding: True
   use_crf: True
@@ -135,9 +138,10 @@ ner:
   num_layers: 1
   tag2label: {"O": 0, "B-PER": 1, "I-PER": 2, 
               "B-LOC": 3, "I-LOC": 4, "B-ORG": 5, "I-ORG": 6}
-  config_type: 0
+  config_type: 1
   config: 
     0: {encoder: "rnn", rnn_type: "bi_lstm"}
+    1: {encoder: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
 
   mode: "train"  #train\test\test_one
   #mode: "test_one"  #train\test\test_one

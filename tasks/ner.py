@@ -17,7 +17,7 @@ from encoder import encoder
 from utils.data_utils import *
 from utils.tf_utils import load_pb,write_pb
 from common.layers import get_trainp_op
-from base.bert.modeling import get_assignment_map_from_checkpoint
+from language_model.bert.modeling import get_assignment_map_from_checkpoint
 import pdb
 
 class NER(object):

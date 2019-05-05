@@ -11,7 +11,7 @@ from utils.data_utils import *
 from utils.tf_utils import load_pb,write_pb
 from tensorflow.python.platform import gfile
 from common.loss import get_loss
-from base.bert.modeling import get_assignment_map_from_checkpoint
+from language_model.bert.modeling import get_assignment_map_from_checkpoint
 
 import pdb
 
