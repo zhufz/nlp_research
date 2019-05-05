@@ -17,6 +17,7 @@ from encoder import encoder
 from utils.data_utils import *
 from utils.tf_utils import load_pb,write_pb
 from common.layers import get_trainp_op
+from base.bert.modeling import get_assignment_map_from_checkpoint
 import pdb
 
 class NER(object):
@@ -31,6 +32,9 @@ class NER(object):
         self.epoch_num = self.conf['num_epochs']
         self.result_path = self.conf['result_path']
         self.maxlen = self.conf['maxlen']
+        self.embedding_size = self.conf['embedding_size']
+        self.use_language_model = self.conf['use_language_model']
+        self.valid_step = self.conf['valid_step']
         self.tag2label = self.conf['tag2label']
         self.clip_grad = 5.0
         self.optimizer_type = self.conf['optimizer_type']
@@ -50,18 +54,22 @@ class NER(object):
 
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
 
-        #build vocabulary map using training data
-        self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.conf['dict_path'], 
-                                                              text_list = self.text_list)
+        if not self.use_language_model:
+            #build vocabulary map using training data
+            self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.conf['dict_path'], 
+                                                                  text_list = self.text_list)
 
-        #define embedding object by embedding_type
-        self.embedding = embedding[self.embedding_type](text_list = self.text_list,
-                                                        vocab_dict = self.vocab_dict,
-                                                        dict_path = self.conf['dict_path'],
-                                                        random=self.conf['rand_embedding'],
-                                                        batch_size = self.conf['batch_size'],
-                                                        maxlen = self.maxlen)
-        self.embed = self.embedding('x')
+            #define embedding object by embedding_type
+            self.embedding = embedding[self.embedding_type](text_list = self.text_list,
+                                                            vocab_dict = self.vocab_dict,
+                                                            dict_path = self.conf['dict_path'],
+                                                            random=self.conf['rand_embedding'],
+                                                            batch_size = self.conf['batch_size'],
+                                                            maxlen = self.maxlen,
+                                                            embedding_size = self.embedding_size)
+            self.embed = self.embedding('x')
+        else:
+            self.embedding = None
         self.labels = tf.placeholder(tf.int32, shape=[None, None], name="labels")
         self.sequence_lengths = tf.placeholder(tf.int32, shape=[None], name="sequence_lengths")
 
@@ -69,7 +77,7 @@ class NER(object):
         params = conf
         params.update({
             "maxlen":self.maxlen,
-            "embedding_size":self.embedding.size,
+            "embedding_size":self.embedding_size,
             "keep_prob":self.keep_prob,
             "is_training": self.is_training,
             "batch_size": self.batch_size,
@@ -77,7 +85,10 @@ class NER(object):
         })
 
         self.encoder = encoder[self.encoder_type](**params)
-        self.out = self.encoder(self.embed, 'query', ner_flag = True)
+        if not self.use_language_model:
+            self.out = self.encoder(self.embed, 'query', ner_flag = True)
+        else:
+            self.out = self.encoder()
         self.output_nodes = self.out.name.split(':')[0]
         self.loss(self.out)
         self.optimizer = get_trainp_op(self.global_step, 
@@ -89,6 +100,11 @@ class NER(object):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver(tf.global_variables())
+        if self.use_language_model:
+            tvars = tf.trainable_variables()
+            init_checkpoint = conf['init_checkpoint_path']
+            (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
+            tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
 
     def loss(self, out):
         out_shape = tf.shape(out)
@@ -140,21 +156,25 @@ class NER(object):
             sys.stdout.write(' processing: {}.'.format(step + 1) + '\r')
             step_num = step + 1
 
-            _, x_batch, len_batch = self.embedding.text2id(x_batch, self.vocab_dict, need_preprocess = False)
-            feed_dict = {self.sequence_lengths: len_batch}
-            feed_dict[self.labels],_ = self.embedding.pad_sequences(labels)
-            feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
-            feed_dict.update(self.encoder.feed_dict(query = len_batch))
+            if not self.use_language_model:
+                _, x_batch, len_batch = self.embedding.text2id(x_batch, self.vocab_dict, need_preprocess = False)
+                feed_dict = {self.sequence_lengths: len_batch}
+                feed_dict[self.labels],_ = self.embedding.pad_sequences(labels)
+                feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
+                feed_dict.update(self.encoder.feed_dict(query = len_batch))
+            else:
+                feed_dict = {}
+                feed_dict.update(self.encoder.feed_dict(x_batch))
 
             _, loss_train, step_num_ = self.sess.run([self.optimizer,
                                                       self.loss, 
                                                       self.global_step],
                                                       feed_dict=feed_dict)
-            if step_num % 100 == 0:
+            if step_num % (self.valid_step/10) == 0:
                 print('step {}, loss: {:.4}'.format(\
                     step_num,
                     loss_train))
-            if step_num % 1000 == 0:
+            if step_num % (self.valid_step) == 0:
                 print('===========validation / test===========')
                 result = self.test()
                 print("result:", result)
@@ -217,10 +237,13 @@ class NER(object):
         :return: label_list
                  seq_len_list
         """
-        _, x_batch, len_batch = self.embedding.text2id(seqs, self.vocab_dict, need_preprocess = False)
-        feed_dict = {self.sequence_lengths: len_batch}
-        feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
-        feed_dict.update(self.encoder.feed_dict(query = len_batch))
+        if self.use_language_model:
+            _, x_batch, len_batch = self.embedding.text2id(seqs, self.vocab_dict, need_preprocess = False)
+            feed_dict = {self.sequence_lengths: len_batch}
+            feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
+            feed_dict.update(self.encoder.feed_dict(query = len_batch))
+        else:
+            feed_dict.update(self.encoder.feed_dict(x_batch))
 
         if self.use_crf:
             logits, transition_params = sess.run([self.logits, self.transition_params],
