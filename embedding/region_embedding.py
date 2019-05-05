@@ -304,11 +304,19 @@ class RegionEmbedding():
                   "emb_size" : self.embedding_size,
                   "region_size" : self.region_size}
 
+        fn_dict = {
+                    'reduce_max': tf.reduce_max, \
+                    'reduce_sum': tf.reduce_sum, \
+                    'concat': tf.reshape}
+
+        fn_name = kwargs.get("fn_dict", "reduce_max")
+        params['region_merge_fn'] = fn_dict.get(fn_name, tf.reduce_max)
 
         if "region_type" in kwargs:
             region_type = kwargs['region_type']
         else:
-            region_type = "context_word_region"
+            region_type = "context_word_region"  #default value
+
         if region_type == "context_word_region":
             self.embedding = ContextWordRegionEmbeddingLayer(**params)
         elif region_type == "word_context_region":
@@ -346,6 +354,20 @@ class RegionEmbedding():
                 vocab_dict = pickle.load(f)
 
         return vocab_dict
+
+    def text2id(self, text_list, vocab_dict, need_preprocess = True):
+        """
+        文本id化
+        """
+        if need_preprocess:
+            pre = Preprocess()
+            text_list = [pre.get_dl_input_by_text(text) for text in text_list]
+        x = list(map(lambda d: char_tokenize(clean_str(d)), text_list))
+        x_len = [min(len(text), self.maxlen) for text in x]
+        x = list(map(lambda d: list(map(lambda w: vocab_dict.get(w,vocab_dict["<unk>"]), d)), x))
+        x = list(map(lambda d: d[:self.maxlen], x))
+        x = list(map(lambda d: d + (self.maxlen - len(d)) * [vocab_dict["<pad>"]], x))
+        return text_list, x, x_len
 
     def __call__(self, name = "region_embedding"):
         """define placeholder"""
