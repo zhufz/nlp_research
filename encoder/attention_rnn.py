@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.contrib import rnn
 import numpy as np
 import pdb
-from common.layers import rnn_layer
+from common.layers import RNNLayer
 
 class AttentionRNN(object):
     def __init__(self, **args):
@@ -13,6 +13,9 @@ class AttentionRNN(object):
         self.batch_size = args['batch_size']
         self.rnn_type = args['rnn_type']
         self.num_output = args['num_output']
+        self.rnn_layer = RNNLayer(self.rnn_type, 
+                                  self.num_hidden,
+                                  self.num_layers)
         self.placeholder = {}
 
     def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
@@ -21,12 +24,8 @@ class AttentionRNN(object):
                                                     shape=[None], 
                                                     name = length_name)
         with tf.variable_scope("attention_rnn", reuse = reuse):
-            outputs, state = rnn_layer(inputs = embed,
-                              seq_len = self.placeholder[length_name], 
-                              num_hidden = self.num_hidden,
-                              num_layers = self.num_layers,
-                              rnn_type = self.rnn_type,
-                              keep_prob = self.keep_prob)
+            outputs, state = self.rnn_layer(inputs = embed,
+                              seq_len = self.placeholder[length_name])
             with tf.variable_scope("attention", reuse = reuse):
                 attention_score = tf.nn.softmax(tf.layers.dense(outputs, 1, activation=tf.nn.tanh), axis=1)
                 attention_out = tf.squeeze(

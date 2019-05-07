@@ -1,6 +1,7 @@
 task_type: 'classify'
 task_type: 'match'
 #task_type: 'ner'
+task_type: 'seq2seq'
 base:
   path_root: ""
   vocab_file_path: "language_model/chinese_L-12_H-768_A-12/vocab.txt"
@@ -102,7 +103,7 @@ match:
     15: {encoder: "attention_rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
     21: {encoder: "text_cnn", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
     22: {encoder: "transformer", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
-    23: {encoder: "bert", sim_mode: "cross", learning_rate: 0.00002, use_language_model: True, valid_step: 400, num_output: 1}
+    23: {encoder: "bert", sim_mode: "cross", learning_rate: 0.00002, use_language_model: True, valid_step: 20000, num_output: 1}
 
   mode: "train"  #train\test\test_one
   #mode: "test"  #train\test\test_one
@@ -146,4 +147,39 @@ ner:
   mode: "train"  #train\test\test_one
   #mode: "test_one"  #train\test\test_one
   #mode: "test"  #train\test\test_one
+
+seq2seq:
+  path_root: "data/seq2seq/"
+  train_path: "tang"
+  dict_path: "vocab.pkl"
+
+  checkpoint_path: "checkpoint"
+  model_path: "model.pb"
+  use_language_model: False
+
+  maxlen: 40
+  embedding_size: 128
+  learning_rate: 0.001
+  batch_size: 64
+  num_epochs: 350
+  valid_step: 1000 #valid one time every valid_step 
+  # embedding: char_embedding, word_embedding, subword_embedding
+  embedding: 'char_embedding'
+  embedding: 'region_embedding'
+  rand_embedding: True
+  loss_type: "softmax_loss"
+
+  num_hidden: 128
+  num_layers: 2
+  #for seq2seq, encoder only support "rnn" up to now
+  config_type: 2
+  config: 
+    0: {encoder: "rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
+    1: {encoder: "rnn", rnn_type: "bi_lstm", embedding: 'char_embedding', learning_rate: 0.001}
+    2: {encoder: "rnn", rnn_type: "bi_gru", embedding: 'char_embedding', learning_rate: 0.001}
+
+  mode: "train"  #train\test\test_one
+  #mode: "test_one"  #train\test\test_one
+
+
 

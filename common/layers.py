@@ -1,51 +1,163 @@
 import tensorflow as tf
 from tensorflow.contrib import rnn
 
-def rnn_layer(inputs, seq_len, num_hidden, num_layers, rnn_type, keep_prob):
-    assert num_layers >0, "num_layers need larger than 0"
-    assert num_hidden >0, "num_hidden need larger than 0"
-    if rnn_type == 'lstm':
-        cells = [rnn.LSTMCell(num_hidden, state_is_tuple=True) for n in range(num_layers)]
-        stack = rnn.MultiRNNCell(cells)
-        outputs, state = tf.nn.dynamic_rnn(stack, inputs, seq_len, dtype=tf.float32)
-        #state = state[-1][1]
-    elif rnn_type == 'gru':
-        cells = [rnn.GRUCell(num_hidden) for n in range(num_layers)]
-        stack = rnn.MultiRNNCell(cells)
-        outputs, state = tf.nn.dynamic_rnn(stack, inputs, seq_len, dtype=tf.float32)
-    elif rnn_type == 'bi_lstm' and num_layers == 1:
-        #sigle layer lstm
-        cell_fw = rnn.LSTMCell(num_hidden)
-        cell_bw = rnn.LSTMCell(num_hidden)
-        (fw_outputs,bw_outputs), (fw_state,bw_state) = tf.nn.bidirectional_dynamic_rnn(
-            cell_fw=cell_fw,
-            cell_bw=cell_bw,
-            inputs=inputs,
-            sequence_length=seq_len,
-            dtype=tf.float32)
-        outputs = tf.concat((fw_outputs, bw_outputs), 2)
-        state = tf.concat((fw_state, bw_state), 2)
-    elif rnn_type == 'bi_lstm':
-        #multi layer lstm
-        fw_cells = cells = [rnn.LSTMCell(num_hidden, state_is_tuple=True) for n in range(num_layers)]
-        bw_cells = cells = [rnn.LSTMCell(num_hidden, state_is_tuple=True) for n in range(num_layers)]
-        stack_fw = rnn.MultiRNNCell(fw_cells)
-        stack_bw = rnn.MultiRNNCell(bw_cells)
-        (fw_outputs,bw_outputs), (fw_state,bw_state) = tf.nn.bidirectional_dynamic_rnn(stack_fw,stack_bw,inputs, seq_len, dtype=tf.float32)
-        outputs = tf.concat((fw_outputs, bw_outputs), 2)
-        state = tf.concat((fw_state, bw_state), 2)
-        #state = state[-1][1]
-    elif rnn_type == 'bi_gru':
-        fw_cells = [rnn.GRUCell(num_hidden) for n in range(num_layers)]
-        bw_cells = [rnn.GRUCell(num_hidden) for n in range(num_layers)]
-        stack_fw = rnn.MultiRNNCell(fw_cells)
-        stack_bw = rnn.MultiRNNCell(bw_cells)
-        (fw_outputs,bw_outputs), (fw_state,bw_state) = tf.nn.bidirectional_dynamic_rnn(stack_fw,stack_bw,inputs, seq_len, dtype=tf.float32)
-        outputs = tf.concat((fw_outputs, bw_outputs), 2)
-        state = tf.concat((fw_state, bw_state), 2)
-    else:
-        raise ValueError("unknown rnn type")
-    return outputs,state
+from utils.tf_utils import  get_placeholder_batch_size
+import numpy as np
+import collections
+import pdb
+class RNNLayer:
+    def __init__(self, rnn_type, num_hidden, num_layers):
+        self.rnn_type = rnn_type
+        self.num_hidden = num_hidden
+        self.num_layers = num_layers
+        self.key_node = None
+
+    def feed_dict(self, initial_state, graph = None):
+        #used to feed initial state
+        feed_dict = {}
+
+        if self.rnn_type == 'lstm':
+            if graph != None:
+                self.initial_state = graph.get_tensor_by_name(self.pb_nodes[0]+":0")
+            feed_dict[self.initial_state] = initial_state
+        elif self.rnn_type == 'gru':
+            if graph != None:
+                self.initial_state = graph.get_tensor_by_name(self.pb_nodes[0]+":0")
+            feed_dict[self.initial_state] = initial_state
+        elif self.rnn_type == 'bi_lstm' and self.num_layers == 1:
+            if graph != None:
+                self.initial_state_fw = graph.get_tensor_by_name(self.pb_nodes[0]+":0")
+                self.initial_state_bw = graph.get_tensor_by_name(self.pb_nodes[1]+":0")
+            feed_dict[self.initial_state_fw] = initial_state[0]
+            feed_dict[self.initial_state_bw] = initial_state[1]
+        elif self.rnn_type == 'bi_lstm':
+            if graph != None:
+                self.initial_state_fw = graph.get_tensor_by_name(self.pb_nodes[0]+":0")
+                self.initial_state_bw = graph.get_tensor_by_name(self.pb_nodes[1]+":0")
+            feed_dict[self.initial_state_fw] = initial_state[0]
+            feed_dict[self.initial_state_bw] = initial_state[1]
+        elif self.rnn_type == 'bi_gru':
+            if graph != None:
+                self.initial_state_fw = graph.get_tensor_by_name(self.pb_nodes[0]+":0")
+                self.initial_state_bw = graph.get_tensor_by_name(self.pb_nodes[1]+":0")
+            feed_dict[self.initial_state_fw] = initial_state[0]
+            feed_dict[self.initial_state_bw] = initial_state[1]
+        return feed_dict
+
+    def __call__(self, inputs, seq_len):
+        assert self.num_layers >0, "num_layers need larger than 0"
+        assert self.num_hidden >0, "num_hidden need larger than 0"
+        batch_size = get_placeholder_batch_size(inputs)
+        if self.rnn_type == 'lstm':
+            cells = [rnn.LSTMCell(self.num_hidden, state_is_tuple=True) for n in
+                     range(self.num_layers)]
+            stack = rnn.MultiRNNCell(cells)
+            self.initial_state = stack.zero_state(batch_size, dtype=tf.float32)
+            self.initial_state = tf.identity(self.initial_state, name='initial_state')
+            outputs, state = tf.nn.dynamic_rnn(stack, 
+                                               inputs, 
+                                               seq_len, 
+                                               initial_state = self.initial_state,
+                                               dtype=tf.float32)
+            state = tf.identity(state, name="state")
+            self.pb_nodes = [self.initial_state.name.split(':')[0],
+                             state.name.split(':')[0]]
+
+        elif self.rnn_type == 'gru':
+            cells = [rnn.GRUCell(self.num_hidden) for n in range(self.num_layers)]
+            stack = rnn.MultiRNNCell(cells)
+            self.initial_state = stack.zero_state(batch_size, dtype=tf.float32)
+            outputs, state = tf.nn.dynamic_rnn(stack, 
+                                               inputs, 
+                                               seq_len, 
+                                               initial_state = self.initial_state,
+                                               dtype=tf.float32)
+            self.initial_state = tf.identity(self.initial_state, name='initial_state')
+            state = tf.identity(state, name="state")
+            self.pb_nodes = [self.initial_state.name.split(':')[0],
+                             state.name.split(':')[0]]
+
+        elif self.rnn_type == 'bi_lstm' and self.num_layers == 1:
+            #sigle layer lstm
+            cell_fw = rnn.LSTMCell(self.num_hidden)
+            cell_bw = rnn.LSTMCell(self.num_hidden)
+            self.initial_state_fw = cell_fw.zero_state(batch_size, dtype=tf.float32)
+            self.initial_state_bw = cell_fw.zero_state(batch_size, dtype=tf.float32)
+            (fw_outputs,bw_outputs), state = \
+                tf.nn.bidirectional_dynamic_rnn(cell_fw=cell_fw, 
+                                                cell_bw=cell_bw, 
+                                                inputs=inputs, 
+                                                sequence_length=seq_len, 
+                                                initial_state_fw = self.initial_state_fw, 
+                                                initial_state_bw = self.initial_state_bw, 
+                                                dtype=tf.float32)
+
+            self.initial_state_fw = tf.identity(self.initial_state_fw, name='initial_state_fw')
+            self.initial_state_bw = tf.identity(self.initial_state_bw, name='initial_state_bw')
+            state = tf.identity(state, name="state")
+            outputs = tf.concat((fw_outputs, bw_outputs), 2)
+            self.pb_nodes = [self.initial_state_fw.name.split(':')[0],
+                             self.initial_state_bw.name.split(':')[0],
+                             state.name.split(':')[0]]
+
+        elif self.rnn_type == 'bi_lstm':
+            #multi layer lstm
+            fw_cells = cells = [rnn.LSTMCell(self.num_hidden,
+                                             state_is_tuple=True) for n in
+                                range(self.num_layers)]
+            bw_cells = cells = [rnn.LSTMCell(self.num_hidden,
+                                             state_is_tuple=True) for n in
+                                range(self.num_layers)]
+            stack_fw = rnn.MultiRNNCell(fw_cells)
+            stack_bw = rnn.MultiRNNCell(bw_cells)
+            self.initial_state_fw = stack_fw.zero_state(batch_size, dtype=tf.float32)
+            self.initial_state_bw = stack_bw.zero_state(batch_size, dtype=tf.float32)
+            (fw_outputs,bw_outputs), state = \
+                tf.nn.bidirectional_dynamic_rnn(stack_fw,
+                                                stack_bw,
+                                                inputs, 
+                                                seq_len, 
+                                                initial_state_fw = self.initial_state_fw, 
+                                                initial_state_bw = self.initial_state_bw, 
+                                                dtype=tf.float32)
+            #fw_state: #[batch_size, num_layers, num_hidden]
+            #bw_state: #[batch_size, num_layers, num_hidden]
+            self.initial_state_fw = tf.identity(self.initial_state_fw, name='initial_state_fw')
+            self.initial_state_bw = tf.identity(self.initial_state_bw, name='initial_state_bw')
+            outputs = tf.concat((fw_outputs, bw_outputs), 2)
+            #state = tf.concat((fw_state, bw_state), 1)
+            state = tf.identity(state, name="state")
+            self.pb_nodes = [self.initial_state_fw.name.split(':')[0],
+                             self.initial_state_bw.name.split(':')[0],
+                             state.name.split(':')[0]]
+
+        elif self.rnn_type == 'bi_gru':
+            fw_cells = [rnn.GRUCell(self.num_hidden) for n in range(self.num_layers)]
+            bw_cells = [rnn.GRUCell(self.num_hidden) for n in range(self.num_layers)]
+            stack_fw = rnn.MultiRNNCell(fw_cells)
+            stack_bw = rnn.MultiRNNCell(bw_cells)
+            self.initial_state_fw = stack_fw.zero_state(batch_size, dtype=tf.float32)
+            self.initial_state_bw = stack_bw.zero_state(batch_size, dtype=tf.float32)
+            #(fw_outputs,bw_outputs), (fw_state,bw_state) = \
+            (fw_outputs,bw_outputs), state = \
+                tf.nn.bidirectional_dynamic_rnn(stack_fw,
+                                                stack_bw,
+                                                inputs, 
+                                                seq_len, 
+                                                initial_state_fw = self.initial_state_fw, 
+                                                initial_state_bw = self.initial_state_bw, 
+                                                dtype=tf.float32)
+            self.initial_state_fw = tf.identity(self.initial_state_fw, name='initial_state_fw')
+            self.initial_state_bw = tf.identity(self.initial_state_bw, name='initial_state_bw')
+            outputs = tf.concat((fw_outputs, bw_outputs), 2)
+            #state = tf.concat((fw_state, bw_state), 1)
+            state = tf.identity(state, name="state")
+            self.pb_nodes = [self.initial_state_fw.name.split(':')[0],
+                             self.initial_state_bw.name.split(':')[0],
+                             state.name.split(':')[0]]
+        else:
+            raise ValueError("unknown rnn type")
+        return outputs,state
 
 def get_initializer(type = 'random_uniform', **kwargs):
     '''

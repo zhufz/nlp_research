@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import numpy as np
 import os
+import pickle
 import random
 import pdb
 from collections import defaultdict
@@ -141,6 +142,15 @@ def get_chunks(seq, tags):
 
     return chunks
 
+def load_seq2seq_data(path):
+    x_texts = [line.strip() for line in open(path)]
+    y_texts = []
+    # 将标签整体往前移动一位， 代表当前对下一个的预测值
+    for idx, text in enumerate(x_texts):
+        if len(text) <1: continue
+        y_texts.append(x_texts[idx][1:]+x_texts[idx][0])
+
+    return x_texts, y_texts
 
 class Recall():
     def __init__(self, data_list):
@@ -418,4 +428,6 @@ class PairGenerator():
                 X2_len.append(min(maxlen2, len(item)))
             #yield X1,X2,X1_len,X2_len,labels
             yield X1,X2,labels
+
+
 

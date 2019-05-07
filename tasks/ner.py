@@ -86,7 +86,7 @@ class NER(object):
 
         self.encoder = encoder[self.encoder_type](**params)
         if not self.use_language_model:
-            self.out = self.encoder(self.embed, 'query', ner_flag = True)
+            self.out = self.encoder(self.embed, 'query', middle_flag = True)
         else:
             self.out = self.encoder()
         self.output_nodes = self.out.name.split(':')[0]
