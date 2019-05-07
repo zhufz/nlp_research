@@ -29,6 +29,10 @@ nlp一些任务集成：classify，match，sequence tagging，translation...
 
     标注任务
 
+4. seq2seq
+
+    文本生成
+
 ## 模块说明
 
 1. encoder
@@ -55,7 +59,7 @@ nlp一些任务集成：classify，match，sequence tagging，translation...
     
     han
     
-    matchramid
+    matchpyramid
     
     rcnn
     
