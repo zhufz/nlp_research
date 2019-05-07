@@ -43,7 +43,8 @@ class Seq2seq(object):
         self.pre = Preprocess()
         self.text_list, self.label_list = load_seq2seq_data(conf['train_path'])
 
-        self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
+        #self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
+        #self.label_list = [self.pre.get_dl_input_by_text(text) for text in self.label_list]
 
         if not self.use_language_model:
             #build vocabulary map using training data
@@ -109,9 +110,9 @@ class Seq2seq(object):
                 self.loss, global_step=self.global_step)
 
         with tf.name_scope("output"):
-            out_max = tf.argmax(tf.nn.softmax(out, axis=-1, name="scores"), 1,
-                                output_type = tf.int32)
-
+            out = tf.nn.softmax(out)
+            self.prob = tf.reshape(out,[-1, self.maxlen, self.num_class], name = 'prob')
+            out_max = tf.argmax(self.prob,-1, output_type = tf.int32)
             self.predictions = tf.reshape(out_max, [-1, self.maxlen], name = 'predictions')
 
         with tf.name_scope("accuracy"):
@@ -140,7 +141,11 @@ class Seq2seq(object):
                 train_feed_dict.update(self.encoder.feed_dict(len = len_batch))
             else:
                 train_feed_dict.update(self.encoder.feed_dict(x_batch))
-            _, step, loss = self.sess.run([self.optimizer, self.global_step, self.loss], feed_dict=train_feed_dict)
+            _, step, loss, predictions = self.sess.run([self.optimizer, self.global_step,
+                                           self.loss, self.predictions], feed_dict=train_feed_dict)
+            #vocab_dict_rev = {self.vocab_dict[key]:key for key in self.vocab_dict}
+            #predict_word = [vocab_dict_rev[idx] for idx in predictions[0]]
+
             if step % (self.valid_step/10) == 0:
                 print("step {0}: loss = {1}".format(step, loss))
             if step % self.valid_step == 0:
@@ -168,7 +173,7 @@ class Seq2seq(object):
         self.is_training = graph.get_operation_by_name("is_training").outputs[0]
 
         self.state = graph.get_tensor_by_name(self.output_nodes[-2]+":0")
-        self.scores = graph.get_tensor_by_name(self.output_nodes[-1]+":0")
+        self.prob = graph.get_tensor_by_name("output/prob:0")
         self.predictions = graph.get_tensor_by_name("output/predictions:0")
 
         vocab_dict = embedding[self.embedding_type].build_dict(self.conf['dict_path'],mode = 'test')
@@ -198,8 +203,12 @@ class Seq2seq(object):
         feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
         feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch,
                                                    initial_state = state))
-        predictions_out, state = sess.run([self.predictions, self.state], 
-                                          feed_dict=feed_dict)
-        word = self.choose_word(predictions_out[0], vocab_dict_rev)
+
+        #prob, state = sess.run([self.prob, self.state], feed_dict=feed_dict)
+        #word = self.choose_word(prob[0][-1], vocab_dict_rev)
+        final_id = len_batch[0] - 1
+        predictions, state = sess.run([self.predictions, self.state], feed_dict=feed_dict)
+        word = vocab_dict_rev[predictions[0][final_id]]
+
         return word, state.tolist()
 

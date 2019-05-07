@@ -9,5 +9,7 @@ rm -rf ./logs
 #rm -rf ./data/ner/model.pb
 #rm -rf ./data/match/checkpoint
 #rm -rf ./data/match/model.pb
+#rm -rf ./data/seq2seq/checkpoint
+#rm -rf ./data/seq2seq/model.pb
 
 

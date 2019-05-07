@@ -170,11 +170,11 @@ seq2seq:
   loss_type: "softmax_loss"
 
   num_hidden: 128
-  num_layers: 2
+  num_layers: 1
   #for seq2seq, encoder only support "rnn" up to now
-  config_type: 2
+  config_type: 0
   config: 
-    0: {encoder: "rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
+    0: {encoder: "rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.005}
     1: {encoder: "rnn", rnn_type: "bi_lstm", embedding: 'char_embedding', learning_rate: 0.001}
     2: {encoder: "rnn", rnn_type: "bi_gru", embedding: 'char_embedding', learning_rate: 0.001}
 

@@ -147,7 +147,9 @@ def load_seq2seq_data(path):
     y_texts = []
     # 将标签整体往前移动一位， 代表当前对下一个的预测值
     for idx, text in enumerate(x_texts):
-        if len(text) <1: continue
+        if len(text) <1: 
+            y_texts.append(x_texts[idx])
+            continue
         y_texts.append(x_texts[idx][1:]+x_texts[idx][0])
 
     return x_texts, y_texts
