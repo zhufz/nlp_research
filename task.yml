@@ -1,7 +1,10 @@
 task_type: 'classify'
 task_type: 'match'
 #task_type: 'ner'
-task_type: 'seq2seq'
+#task_type: 'seq_generate'
+task_type: 'translation'
+
+
 base:
   path_root: ""
   vocab_file_path: "language_model/chinese_L-12_H-768_A-12/vocab.txt"
@@ -148,9 +151,10 @@ ner:
   #mode: "test_one"  #train\test\test_one
   #mode: "test"  #train\test\test_one
 
-seq2seq:
-  path_root: "data/seq2seq/"
+seq_generate:
+  path_root: "data/seq_generate/"
   train_path: "tang"
+  # train_path: "turing"
   dict_path: "vocab.pkl"
 
   checkpoint_path: "checkpoint"
@@ -167,12 +171,11 @@ seq2seq:
   embedding: 'char_embedding'
   embedding: 'region_embedding'
   rand_embedding: True
-  loss_type: "softmax_loss"
 
   num_hidden: 128
   num_layers: 1
-  #for seq2seq, encoder only support "rnn" up to now
-  config_type: 0
+  #for sequence generation, encoder only support "rnn" up to now
+  config_type: 2
   config: 
     0: {encoder: "rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.005}
     1: {encoder: "rnn", rnn_type: "bi_lstm", embedding: 'char_embedding', learning_rate: 0.001}
@@ -181,5 +184,37 @@ seq2seq:
   mode: "train"  #train\test\test_one
   #mode: "test_one"  #train\test\test_one
 
+
+
+translation:
+  path_root: "data/translation/"
+  train_path: "turing"
+  dict_path: "vocab.pkl"
+
+  checkpoint_path: "checkpoint"
+  model_path: "model.pb"
+  use_language_model: False
+
+  maxlen: 40
+  embedding_size: 128
+  learning_rate: 0.001
+  batch_size: 64
+  num_epochs: 350
+  valid_step: 1000 #valid one time every valid_step 
+  # embedding: char_embedding, word_embedding, subword_embedding
+  embedding: 'char_embedding'
+  embedding: 'region_embedding'
+  rand_embedding: True
+
+  num_hidden: 128
+  num_layers: 1
+  #for translation, encoder only support "seq2seq" up to now
+  config_type: 1
+  config: 
+    0: {encoder: "seq2seq", rnn_type: 'gru', embedding: 'char_embedding', learning_rate: 0.005}
+    1: {encoder: "seq2seq", rnn_type: 'bi_lstm', embedding: 'char_embedding', learning_rate: 0.005}
+
+  mode: "train"  #train\test\test_one
+  #mode: "test_one"  #train\test\test_one
 
 

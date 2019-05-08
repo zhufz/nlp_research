@@ -17,6 +17,7 @@ from fasttext import FastText
 from fast_attention_text import FastAttentionText
 from han import HAN
 from capsule import Capsule
+from seq2seq import Seq2seq
 
 encoder["cnn"] = CNN
 encoder["dcnn"] = DCNN
@@ -31,6 +32,8 @@ encoder["fasttext"] = FastText
 encoder["fast_attention_text"] = FastAttentionText
 encoder["han"] = HAN
 encoder["capsule"] = Capsule
+#translation:
+encoder["seq2seq"] = Seq2seq
 
 #with pretrain language model
 #such as elmo, bert...

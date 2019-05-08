@@ -31,7 +31,7 @@ class RNN(object):
             #for gru,lstm outputs:[batch_size, max_time, num_hidden]
             #for bi_gru,bi_lstm outputs:[batch_size, max_time, num_hidden*2]
 
-            outputs, state = self.rnn_layer(inputs = embed,
+            outputs, _, state = self.rnn_layer(inputs = embed,
                               seq_len = self.placeholder[length_name])
             #flatten:
             outputs_shape = outputs.shape.as_list()

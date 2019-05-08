@@ -143,6 +143,7 @@ def get_chunks(seq, tags):
     return chunks
 
 def load_seq2seq_data(path):
+    #古诗
     x_texts = [line.strip() for line in open(path)]
     y_texts = []
     # 将标签整体往前移动一位， 代表当前对下一个的预测值
@@ -153,6 +154,18 @@ def load_seq2seq_data(path):
         y_texts.append(x_texts[idx][1:]+x_texts[idx][0])
 
     return x_texts, y_texts
+
+def load_chat_data(path):
+    texts = [line.strip().split('\t') for line in open(path)]
+    encode_texts = []
+    decode_texts = []
+    target_texts = []
+    for item in texts:
+        if len(item) < 2: continue
+        encode_texts.append(item[0])
+        decode_texts.append("<s> "+item[1][1:])
+        target_texts.append(item[1]+" </s>")
+    return encode_texts, decode_texts, target_texts
 
 class Recall():
     def __init__(self, data_list):
