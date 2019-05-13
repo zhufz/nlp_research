@@ -19,6 +19,8 @@ class Classify(object):
     def __init__(self, conf):
         self.conf = conf
         self.task_type = 'classify'
+        for attr in conf:
+            setattr(self, attr, conf[attr])
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
