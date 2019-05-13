@@ -19,17 +19,6 @@ class Classify(object):
     def __init__(self, conf):
         self.conf = conf
         self.task_type = 'classify'
-        #self.use_language_model = self.conf['use_language_model'] 
-        #self.batch_size = self.conf['batch_size']
-        #self.num_class = self.conf['num_class']
-        #self.learning_rate = self.conf['learning_rate']
-
-        #self.embedding_type = self.conf['embedding']
-        #self.encoder_type = self.conf['encoder']
-        #self.loss_type = self.conf['loss_type']
-        #self.maxlen = self.conf['maxlen']
-        #self.embedding_size = self.conf['embedding_size']
-        #self.valid_step = self.conf['valid_step']
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
