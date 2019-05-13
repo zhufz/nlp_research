@@ -16,44 +16,32 @@ class Match(object):
     def __init__(self, conf):
         self.task_type = 'match_cross'
         self.conf = conf
-        self.learning_rate =conf['learning_rate']
-        self.embedding_type = conf['embedding']
-        self.encoder_type = conf['encoder']
-        self.batch_size = conf['batch_size']
-        self.margin = conf['margin']
-        self.num_class = conf['num_class']
-        self.score_thre = conf['score_thre']
-        self.loss_type = conf['loss_type']
-        self.num_output = conf['num_output']
-        self.use_language_model = self.conf['use_language_model']
-        self.valid_step = self.conf['valid_step']
-        self.maxlen = self.conf['maxlen']
-        self.embedding_size = self.conf['embedding_size']
-
+        for attr in conf:
+            setattr(self, attr, conf[attr])
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
         self.keep_prob = tf.where(self.is_training, 0.5, 1.0)
 
         self.pre = Preprocess()
-        self.generator = PairGenerator(self.conf['relation_path'],\
-                                       self.conf['index_path'],
-                                       self.conf['test_path'])
+        self.generator = PairGenerator(self.relation_path,\
+                                       self.index_path,
+                                       self.test_path)
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
                           self.generator.index_data]
         self.label_list = self.generator.label_data
         if not self.use_language_model:
             self.vocab_dict = embedding[self.embedding_type].build_dict(\
-                                                dict_path = self.conf['dict_path'],
+                                                dict_path = self.dict_path,
                                                 text_list = self.text_list,
-                                                mode = self.conf['mode'])
+                                                mode = self.mode)
 
             #define embedding object by embedding_type
             self.embedding = embedding[self.embedding_type](text_list = self.text_list,
                                                             vocab_dict = self.vocab_dict,
-                                                            dict_path = self.conf['dict_path'],
-                                                            random=self.conf['rand_embedding'],
+                                                            dict_path = self.dict_path,
+                                                            random=self.rand_embedding,
                                                             maxlen = self.maxlen,
-                                                            batch_size = self.conf['batch_size'],
+                                                            batch_size = self.batch_size,
                                                             embedding_size = self.embedding_size)
 
             self.embed_query = self.embedding('x_query')
@@ -75,7 +63,7 @@ class Match(object):
             "num_output": self.num_output
         })
 
-        self.pred = self.sim(self.conf['sim_mode'], params) #encoder
+        self.pred = self.sim(self.sim_mode, params) #encoder
         self.output_nodes = self.pred.name.split(':')[0]
         self.pos_target = tf.ones(shape = [int(self.batch_size/2)], dtype = tf.float32)
         self.neg_target = tf.zeros(shape = [int(self.batch_size/2)], dtype = tf.float32)
@@ -88,7 +76,7 @@ class Match(object):
 
         if self.use_language_model:
             tvars = tf.trainable_variables()
-            init_checkpoint = conf['init_checkpoint_path']
+            init_checkpoint = self.init_checkpoint_path
             (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
             tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
 
@@ -128,7 +116,7 @@ class Match(object):
 
     def cross_sim(self, params):
         #cross based match model
-        self.encoder = encoder[self.conf['encoder']](**params)
+        self.encoder = encoder[self.encoder_type](**params)
 
         if not self.use_language_model:
             pred = self.encoder(x_query = self.embed_query, x_sample = self.embed_sample)
@@ -138,7 +126,7 @@ class Match(object):
 
     def represent_sim(self, params):
         #representation based match model
-        self.encoder = encoder[self.conf['encoder']](**params)
+        self.encoder = encoder[self.encoder_type](**params)
         self.encode_query = self.encoder(self.embed_query, 'x_query')
         self.encode_sample = self.encoder(self.embed_sample, 'x_sample')
         pred = self.cosine_similarity(self.encode_query, self.encode_sample)
@@ -170,11 +158,11 @@ class Match(object):
     def train(self):
         train_batches = self.generator.get_batch(self.text_list,
                                                  self.batch_size,
-                                                 self.conf['num_epochs'],
+                                                 self.num_epochs,
                                                  self.maxlen,
                                                  self.maxlen,
                                                  task = self,
-                                                 mode =self.conf['batch_mode'])
+                                                 mode =self.batch_mode)
 
         max_accuracy = -1
         for batch in train_batches:
@@ -247,7 +235,7 @@ class Match(object):
                     # Save model
                     self.saver.save(self.sess,
                                     "{0}/{1}.ckpt".format(
-                                        self.conf['checkpoint_path'],
+                                        self.checkpoint_path,
                                         self.task_type),
                                     global_step=step)
                 else:
@@ -255,7 +243,7 @@ class Match(object):
                     sys.exit(0)
 
     def save_pb(self):
-        write_pb(self.conf['checkpoint_path'],self.conf['model_path'],["is_training", self.output_nodes])
+        write_pb(self.checkpoint_path,self.model_path,["is_training", self.output_nodes])
 
     def knn(self, pred, k = 5):
         sorted_id = np.argsort(-pred,axis=0)
@@ -296,9 +284,9 @@ class Match(object):
         test_batches = self.generator.get_test_batch(self.text_list,
                                                      self.maxlen,
                                                      self.maxlen)
-        if not os.path.exists(self.conf['model_path']):
+        if not os.path.exists(self.model_path):
             self.save_pb()
-        graph = load_pb(self.conf['model_path'])
+        graph = load_pb(self.model_path)
         sess = tf.Session(graph=graph)
         #self.scores = graph.get_operation_by_name(self.output_nodes)
         self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
@@ -328,9 +316,9 @@ class Match(object):
                                                      self.maxlen,
                                                      self.maxlen,
                                                      query = text)
-        if not os.path.exists(self.conf['model_path']):
+        if not os.path.exists(self.model_path):
             self.save_pb()
-        graph = load_pb(self.conf['model_path'])
+        graph = load_pb(self.model_path)
         sess = tf.Session(graph=graph)
 
         #self.scores = graph.get_operation_by_name(self.output_nodes)

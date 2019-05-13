@@ -23,31 +23,20 @@ import pdb
 class NER(object):
     def __init__(self, conf):
         self.conf = conf
+        for attr in conf:
+            setattr(self, attr, conf[attr])
         self.task_type = 'ner'
-        self.batch_size = self.conf['batch_size']
-        self.num_class = self.conf['num_tag']
-        self.learning_rate = self.conf['learning_rate']
-        self.embedding_type = self.conf['embedding']
-        self.encoder_type = self.conf['encoder']
-        self.epoch_num = self.conf['num_epochs']
-        self.result_path = self.conf['result_path']
-        self.maxlen = self.conf['maxlen']
-        self.embedding_size = self.conf['embedding_size']
-        self.use_language_model = self.conf['use_language_model']
-        self.valid_step = self.conf['valid_step']
-        self.tag2label = self.conf['tag2label']
         self.clip_grad = 5.0
-        self.optimizer_type = self.conf['optimizer_type']
+        self.optimizer_type = self.optimizer_type
         self.label2tag = {self.tag2label[item]:item for item in self.tag2label}
         self.shuffle = True
-        self.use_crf = self.conf['use_crf']
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
         self.keep_prob = tf.where(self.is_training, 0.5, 1.0)
 
         self.pre = Preprocess()
-        self.text_list, self.label_list = load_ner_data(self.conf['train_path'])
+        self.text_list, self.label_list = load_ner_data(self.train_path)
         if self.maxlen == -1:
             self.maxlen = max([len(text.split()) for text in self.text_list])
         self.trans_label_list(self.label_list, self.tag2label)
@@ -56,15 +45,15 @@ class NER(object):
 
         if not self.use_language_model:
             #build vocabulary map using training data
-            self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.conf['dict_path'], 
+            self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.dict_path, 
                                                                   text_list = self.text_list)
 
             #define embedding object by embedding_type
             self.embedding = embedding[self.embedding_type](text_list = self.text_list,
                                                             vocab_dict = self.vocab_dict,
-                                                            dict_path = self.conf['dict_path'],
-                                                            random=self.conf['rand_embedding'],
-                                                            batch_size = self.conf['batch_size'],
+                                                            dict_path = self.dict_path,
+                                                            random=self.rand_embedding,
+                                                            batch_size = self.batch_size,
                                                             maxlen = self.maxlen,
                                                             embedding_size = self.embedding_size)
             self.embed = self.embedding('x')
@@ -181,11 +170,11 @@ class NER(object):
                 if result['acc'] > max_acc:
                     max_acc = result['acc']
                     self.saver.save(self.sess,
-                                    "{0}/{1}.ckpt".format(self.conf['checkpoint_path'],
+                                    "{0}/{1}.ckpt".format(self.checkpoint_path,
                                                               self.task_type),
                                     global_step=step)
-                    write_pb(self.conf['checkpoint_path'],
-                             self.conf['model_path'],
+                    write_pb(self.checkpoint_path,
+                             self.model_path,
                              ["is_training", self.output_nodes])
                 else:
                     print(f'train finished! accuracy: {max_acc}')
@@ -199,7 +188,7 @@ class NER(object):
         #    label_list, seq_len_list = self.dev_one_epoch(sess, test)
         #    self.evaluate(label_list, seq_len_list, test)
 
-        self.raw_dev_text_list, self.dev_label_list = load_ner_data(self.conf['test_path'])
+        self.raw_dev_text_list, self.dev_label_list = load_ner_data(self.test_path)
         #self.raw_dev_text_list, self.dev_label_list = \
         #    self.raw_dev_text_list[:50], self.dev_label_list[:50]
         self.dev_text_list = [self.pre.get_dl_input_by_text(text) for \

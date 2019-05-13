@@ -19,37 +19,36 @@ class Classify(object):
     def __init__(self, conf):
         self.conf = conf
         self.task_type = 'classify'
-        self.use_language_model = self.conf['use_language_model']
+        #self.use_language_model = self.conf['use_language_model'] 
+        #self.batch_size = self.conf['batch_size']
+        #self.num_class = self.conf['num_class']
+        #self.learning_rate = self.conf['learning_rate']
 
-        self.batch_size = self.conf['batch_size']
-        self.num_class = self.conf['num_class']
-        self.learning_rate = self.conf['learning_rate']
-
-        self.embedding_type = self.conf['embedding']
-        self.encoder_type = self.conf['encoder']
-        self.loss_type = self.conf['loss_type']
-        self.maxlen = self.conf['maxlen']
-        self.embedding_size = self.conf['embedding_size']
-        self.valid_step = self.conf['valid_step']
+        #self.embedding_type = self.conf['embedding']
+        #self.encoder_type = self.conf['encoder']
+        #self.loss_type = self.conf['loss_type']
+        #self.maxlen = self.conf['maxlen']
+        #self.embedding_size = self.conf['embedding_size']
+        #self.valid_step = self.conf['valid_step']
 
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
         self.keep_prob = tf.where(self.is_training, 0.5, 1.0)
 
         self.pre = Preprocess()
-        self.text_list, self.label_list = load_classify_data(self.conf['train_path'])
+        self.text_list, self.label_list = load_classify_data(self.train_path)
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
 
         if not self.use_language_model:
             #build vocabulary map using training data
-            self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.conf['dict_path'], 
+            self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.dict_path, 
                                                                   text_list = self.text_list)
 
             #define embedding object by embedding_type
             self.embedding = embedding[self.embedding_type](text_list = self.text_list,
                                                             vocab_dict = self.vocab_dict,
-                                                            dict_path = self.conf['dict_path'],
-                                                            random=self.conf['rand_embedding'],
+                                                            dict_path = self.dict_path,
+                                                            random=self.rand_embedding,
                                                             batch_size = self.batch_size,
                                                             maxlen = self.maxlen,
                                                             embedding_size = self.embedding_size)
@@ -87,15 +86,15 @@ class Classify(object):
     def load_data(self, mode = 'train'):
         print("Building dataset...")
         if mode == 'train':
-            class_mp, class_mp_rev = generate_class_mp(self.label_list, self.conf['classes_path'])
+            class_mp, class_mp_rev = generate_class_mp(self.label_list, self.classes_path)
             y = [class_mp[item] for item in self.label_list]
             train_x, valid_x, train_y, valid_y = \
                 train_test_split(self.text_list, y, test_size=0.05)
             return zip(train_x, train_y), zip(valid_x, valid_y)
         else:
 
-            class_mp, class_mp_rev = load_class_mp(self.conf['classes_path'])
-            text_list, label_list = load_classify_data(self.conf['test_path'])
+            class_mp, class_mp_rev = load_class_mp(self.classes_path)
+            text_list, label_list = load_classify_data(self.test_path)
             y = [class_mp[item] for item in label_list]
             return text_list, y
 
@@ -119,7 +118,7 @@ class Classify(object):
         self.train_data, self.valid_data = self.load_data(mode = 'train')
         self.train_data = list(self.train_data)
         self.valid_data = list(self.valid_data)
-        train_batches = batch_iter(self.train_data, self.batch_size, self.conf['num_epochs'])
+        train_batches = batch_iter(self.train_data, self.batch_size, self.num_epochs)
         num_batches_per_epoch = (len(self.train_data) - 1) // self.batch_size + 1
         max_accuracy = -1
         for batch in train_batches:
@@ -167,7 +166,7 @@ class Classify(object):
                 if valid_accuracy > max_accuracy:
                     max_accuracy = valid_accuracy
                     self.saver.save(self.sess,
-                                    "{0}/{1}.ckpt".format(self.conf['checkpoint_path'],
+                                    "{0}/{1}.ckpt".format(self.checkpoint_path,
                                                               self.task_type),
                                     global_step=step)
                     print("Model is saved.\n")
@@ -176,14 +175,14 @@ class Classify(object):
                     sys.exit(0)
 
     def save_pb(self):
-        write_pb(self.conf['checkpoint_path'],
-                 self.conf['model_path'],
+        write_pb(self.checkpoint_path,
+                 self.model_path,
                  ['is_training','output/predictions','accuracy/accuracy',self.output_nodes])
 
     def test(self):
-        if not os.path.exists(self.conf['model_path']):
+        if not os.path.exists(self.model_path):
             self.save_pb()
-        graph = load_pb(self.conf['model_path'])
+        graph = load_pb(self.model_path)
         sess = tf.Session(graph=graph)
 
         self.y = graph.get_operation_by_name("y").outputs[0]
@@ -194,15 +193,15 @@ class Classify(object):
         self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
         self.predictions = graph.get_tensor_by_name("output/predictions:0")
 
-        mp, mp_rev = load_class_mp(self.conf['classes_path'])
+        mp, mp_rev = load_class_mp(self.classes_path)
 
         test_x, test_y = self.load_data("test")
         pred_y = []
         scores = []
-        batches = batch_iter(zip(test_x, test_y), self.conf['batch_size'], 1, shuffle=False)
+        batches = batch_iter(zip(test_x, test_y), self.batch_size, 1, shuffle=False)
         sum_accuracy, cnt = 0, 0
         right, all = 0, 0
-        vocab_dict = embedding[self.embedding_type].build_dict(self.conf['dict_path'],
+        vocab_dict = embedding[self.embedding_type].build_dict(self.dict_path,
                                                       mode = 'test')
         all_test_x = []
         all_test_y = []
@@ -242,15 +241,15 @@ class Classify(object):
                        'pred': [mp_rev[item] for item in
                                 pred_y],
                        'score': scores })
-        dt.to_csv(self.conf['test_path']+'.result.csv',index=False,sep=',')
+        dt.to_csv(self.test_path+'.result.csv',index=False,sep=',')
         print("Test Accuracy : {0}".format(sum_accuracy / cnt))
         print("Test Thre Accuracy : {0}".format(right / all))
 
     def predict(self):
-        predict_file = self.conf['predict_path']
-        if not os.path.exists(self.conf['model_path']):
+        predict_file = self.predict_path
+        if not os.path.exists(self.model_path):
             self.save_pb()
-        graph = load_pb(self.conf['model_path'])
+        graph = load_pb(self.model_path)
         sess = tf.Session(graph=graph)
 
         self.y = graph.get_operation_by_name("y").outputs[0]
@@ -260,11 +259,11 @@ class Classify(object):
         #self.scores = graph.get_tensor_by_name("output/scores:0")
         self.predictions = graph.get_tensor_by_name("output/predictions:0")
 
-        vocab_dict = embedding[self.embedding_type].build_dict(self.conf['dict_path'],mode = 'test')
-        mp, mp_rev = load_class_mp(self.conf['classes_path']) 
+        vocab_dict = embedding[self.embedding_type].build_dict(self.dict_path,mode = 'test')
+        mp, mp_rev = load_class_mp(self.classes_path) 
         with open(predict_file) as f:
             lines = [line.strip() for line in f.readlines()]
-            batches = batch_iter(lines, self.conf['batch_size'], 1, shuffle=False)
+            batches = batch_iter(lines, self.batch_size, 1, shuffle=False)
             scores = []
             predicts = []
             for batch_x in batches:
@@ -291,12 +290,12 @@ class Classify(object):
             dt = pd.DataFrame({'text': lines,
                                'pred': predicts,
                                'score': scores })
-            dt.to_csv(self.conf['predict_path']+'.result.csv',index=False,sep=',')
+            dt.to_csv(self.predict_path+'.result.csv',index=False,sep=',')
 
     def test_unit(self, text):
-        if not os.path.exists(self.conf['model_path']):
+        if not os.path.exists(self.model_path):
             self.save_pb()
-        graph = load_pb(self.conf['model_path'])
+        graph = load_pb(self.model_path)
         sess = tf.Session(graph=graph)
 
         self.y = graph.get_operation_by_name("y").outputs[0]
@@ -306,9 +305,9 @@ class Classify(object):
         self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
         self.predictions = graph.get_tensor_by_name("output/predictions:0")
 
-        vocab_dict = embedding[self.embedding_type].build_dict(self.conf['dict_path'],mode = 'test')
-        mp, mp_rev = load_class_mp(self.conf['classes_path']) 
-        batches = batch_iter([text], self.conf['batch_size'], 1, shuffle=False)
+        vocab_dict = embedding[self.embedding_type].build_dict(self.dict_path,mode = 'test')
+        mp, mp_rev = load_class_mp(self.classes_path) 
+        batches = batch_iter([text], self.batch_size, 1, shuffle=False)
         for batch_x in batches:
             feed_dict = {
                 self.is_training: False

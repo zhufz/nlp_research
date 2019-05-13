@@ -58,12 +58,12 @@ class RNNLayer:
                     self.initial_state = stack.zero_state(batch_size, dtype=tf.float32)
                 else:
                     self.initial_state = initial_state
-                self.initial_state = tf.identity(self.initial_state, name='initial_state')
                 outputs, state = tf.nn.dynamic_rnn(stack, 
                                                    inputs, 
                                                    seq_len, 
                                                    initial_state = self.initial_state,
                                                    dtype=tf.float32)
+                self.initial_state = tf.identity(self.initial_state, name='initial_state')
                 state_for_feed = tf.identity(state, name="state")
                 self.pb_nodes = [self.initial_state.name.split(':')[0],
                                  state_for_feed.name.split(':')[0]]

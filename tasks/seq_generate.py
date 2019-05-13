@@ -23,18 +23,9 @@ import pdb
 class SeqGenerate(object):
     def __init__(self, conf):
         self.conf = conf
+        for attr in conf:
+            setattr(self, attr, conf[attr])
         self.task_type = 'seq2seq'
-        self.use_language_model = self.conf['use_language_model']
-
-        self.batch_size = self.conf['batch_size']
-        self.learning_rate = self.conf['learning_rate']
-
-        self.embedding_type = self.conf['embedding']
-        self.encoder_type = self.conf['encoder']
-        self.maxlen = self.conf['maxlen']
-        self.embedding_size = self.conf['embedding_size']
-        self.valid_step = self.conf['valid_step']
-
         self.is_training = tf.placeholder(tf.bool, [], name="is_training")
         self.global_step = tf.Variable(0, trainable=False)
         self.keep_prob = tf.where(self.is_training, 0.5, 1.0)
@@ -47,15 +38,15 @@ class SeqGenerate(object):
 
         if not self.use_language_model:
             #build vocabulary map using training data
-            self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.conf['dict_path'], 
+            self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.dict_path, 
                                                                   text_list = self.text_list)
             self.num_class = len(self.vocab_dict)
 
             #define embedding object by embedding_type
             self.embedding = embedding[self.embedding_type](text_list = self.text_list,
                                                             vocab_dict = self.vocab_dict,
-                                                            dict_path = self.conf['dict_path'],
-                                                            random=self.conf['rand_embedding'],
+                                                            dict_path = self.dict_path,
+                                                            random=self.rand_embedding,
                                                             batch_size = self.batch_size,
                                                             maxlen = self.maxlen,
                                                             embedding_size = self.embedding_size)
@@ -121,7 +112,7 @@ class SeqGenerate(object):
     def train(self):
         print("---------start train---------")
         self.train_data = zip(self.text_list, self.label_list)
-        train_batches = batch_iter(self.train_data, self.batch_size, self.conf['num_epochs'])
+        train_batches = batch_iter(self.train_data, self.batch_size, self.num_epochs)
         num_batches_per_epoch = (len(self.text_list) - 1) // self.batch_size + 1
         max_accuracy = -1
         for batch in train_batches:
@@ -150,7 +141,7 @@ class SeqGenerate(object):
             if step % self.valid_step == 0:
                 # Test accuracy with validation data for each epoch.
                 self.saver.save(self.sess,
-                                "{0}/{1}.ckpt".format(self.conf['checkpoint_path'],
+                                "{0}/{1}.ckpt".format(self.checkpoint_path,
                                                           self.task_type),
                                 global_step=step)
                 self.save_pb()
@@ -159,12 +150,12 @@ class SeqGenerate(object):
     def save_pb(self):
         node_list = ['is_training','output/predictions', 'accuracy/accuracy']
         node_list += self.output_nodes
-        write_pb(self.conf['checkpoint_path'], self.conf['model_path'], node_list)
+        write_pb(self.checkpoint_path, self.model_path, node_list)
 
     def test_unit(self, text):
-        if not os.path.exists(self.conf['model_path']):
+        if not os.path.exists(self.model_path):
             self.save_pb()
-        graph = load_pb(self.conf['model_path'])
+        graph = load_pb(self.model_path)
         sess = tf.Session(graph=graph)
 
 
@@ -175,7 +166,7 @@ class SeqGenerate(object):
         self.prob = graph.get_tensor_by_name("output/prob:0")
         self.predictions = graph.get_tensor_by_name("output/predictions:0")
 
-        vocab_dict = embedding[self.embedding_type].build_dict(self.conf['dict_path'],mode = 'test')
+        vocab_dict = embedding[self.embedding_type].build_dict(self.dict_path,mode = 'test')
         vocab_dict_rev = {vocab_dict[key]:key for key in vocab_dict}
 
 

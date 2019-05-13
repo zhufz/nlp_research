@@ -1,8 +1,8 @@
 task_type: 'classify'
 task_type: 'match'
-#task_type: 'ner'
+task_type: 'ner'
 #task_type: 'seq_generate'
-task_type: 'translation'
+#task_type: 'translation'
 
 
 base:
@@ -30,25 +30,25 @@ classify:
   num_epochs: 350
   num_class: 89
   valid_step: 1000 #valid one time every valid_step 
-  # embedding: char_embedding, word_embedding, subword_embedding
-  embedding: 'char_embedding'
-  embedding: 'region_embedding'
+  # embedding_type: char_embedding, word_embedding, subword_embedding
+  embedding_type: 'char_embedding'
+  embedding_type: 'region_embedding'
   rand_embedding: True
-  # encoder: "text_cnn" #88.6
-  # encoder: "cnn"  # 84.7
+  # encoder_type: "text_cnn" #88.6
+  # encoder_type: "cnn"  # 84.7
   loss_type: "softmax_loss"
 
   config_type: 0
   config: 
-    0: {encoder: "fasttext", learning_rate: 0.001}
-    1: {encoder: "transformer", learning_rate: 0.0001}
-    2: {encoder: "transformer", embedding: 'subword_embedding', learning_rate: 0.0001}
-    3: {encoder: "rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
-    4: {encoder: "rnn", rnn_type: "lstm", embedding: 'char_embedding', learning_rate: 0.001}
-    5: {encoder: "attention_rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
-    6: {encoder: "rcnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.001}
-    7: {encoder: "capsule", caps_type: "A", embedding: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
-    8: {encoder: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
+    0: {encoder_type: "fasttext", learning_rate: 0.001}
+    1: {encoder_type: "transformer", learning_rate: 0.0001}
+    2: {encoder_type: "transformer", embedding_type: 'subword_embedding', learning_rate: 0.0001}
+    3: {encoder_type: "rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}
+    4: {encoder_type: "rnn", rnn_type: "lstm", embedding_type: 'char_embedding', learning_rate: 0.001}
+    5: {encoder_type: "attention_rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}
+    6: {encoder_type: "rcnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}
+    7: {encoder_type: "capsule", caps_type: "A", embedding_type: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
+    8: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
 
   mode: "train"  #train\test\test_one
   #mode: "test"  #train\test\test_one
@@ -79,9 +79,9 @@ match:
   valid_step: 1000 #valid one time every valid_step 
 
   use_language_model: False
-  # embedding: 'word_embedding'
-  embedding: 'char_embedding'
-  # embedding: 'subword_embedding'
+  # embedding_type: 'word_embedding'
+  embedding_type: 'char_embedding'
+  # embedding_type: 'subword_embedding'
   rand_embedding: True
   # rand_embedding: False
   # loss_type: 包括pairwise和pointwise,
@@ -90,23 +90,23 @@ match:
   # loss_type: "pointwise"
   #keep_prob: 0.5
   loss_type: "pairwise"
-  config_type: 23
+  config_type: 10
   config: 
-    0: {encoder: "match_pyramid", sim_mode: "cross", num_output: 1}
-    1: {encoder: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
-    2: {encoder: "esim", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
-    3: {encoder: "drmm", sim_mode: "cross", num_output: 1, learning_rate: 0.1}
+    0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1}
+    1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
+    2: {encoder_type: "esim", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
+    3: {encoder_type: "drmm", sim_mode: "cross", num_output: 1, learning_rate: 0.1}
 
     #fine tuned
-    10: {encoder: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}
-    11: {encoder: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
-    12: {encoder: "rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
-    13: {encoder: "rcnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
-    14: {encoder: "attention_rnn", rnn_type: "gru", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
-    15: {encoder: "attention_rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
-    21: {encoder: "text_cnn", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
-    22: {encoder: "transformer", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
-    23: {encoder: "bert", sim_mode: "cross", learning_rate: 0.00002, use_language_model: True, valid_step: 20000, num_output: 1}
+    10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}
+    11: {encoder_type: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
+    12: {encoder_type: "rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+    13: {encoder_type: "rcnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+    14: {encoder_type: "attention_rnn", rnn_type: "gru", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+    15: {encoder_type: "attention_rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+    21: {encoder_type: "text_cnn", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
+    22: {encoder_type: "transformer", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
+    23: {encoder_type: "bert", sim_mode: "cross", learning_rate: 0.00002, use_language_model: True, valid_step: 20000, num_output: 1}
 
   mode: "train"  #train\test\test_one
   #mode: "test"  #train\test\test_one
@@ -126,16 +126,16 @@ ner:
   model_path: "model.pb"
 
   batch_size: 64
-  num_epochs: 30
+  epoch_num: 30
   maxlen: -1
   embedding_size: 128
   valid_step: 1000 #valid one time every valid_step 
-  num_tag: 7
+  num_class: 7
   learning_rate: 0.001
   optimizer_type: "Adam"
   #keep_prob: 0.5
   use_language_model: False
-  embedding: 'char_embedding'
+  embedding_type: 'char_embedding'
   rand_embedding: True
   use_crf: True
   num_hidden: 256
@@ -144,8 +144,8 @@ ner:
               "B-LOC": 3, "I-LOC": 4, "B-ORG": 5, "I-ORG": 6}
   config_type: 1
   config: 
-    0: {encoder: "rnn", rnn_type: "bi_lstm"}
-    1: {encoder: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
+    0: {encoder_type: "rnn", rnn_type: "bi_lstm"}
+    1: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
 
   mode: "train"  #train\test\test_one
   #mode: "test_one"  #train\test\test_one
@@ -167,19 +167,19 @@ seq_generate:
   batch_size: 64
   num_epochs: 350
   valid_step: 1000 #valid one time every valid_step 
-  # embedding: char_embedding, word_embedding, subword_embedding
-  embedding: 'char_embedding'
-  embedding: 'region_embedding'
+  # embedding_type: char_embedding, word_embedding, subword_embedding
+  embedding_type: 'char_embedding'
+  embedding_type: 'region_embedding'
   rand_embedding: True
 
   num_hidden: 128
   num_layers: 1
-  #for sequence generation, encoder only support "rnn" up to now
+  #for sequence generation, encoder_type only support "rnn" up to now
   config_type: 2
   config: 
-    0: {encoder: "rnn", rnn_type: "gru", embedding: 'char_embedding', learning_rate: 0.005}
-    1: {encoder: "rnn", rnn_type: "bi_lstm", embedding: 'char_embedding', learning_rate: 0.001}
-    2: {encoder: "rnn", rnn_type: "bi_gru", embedding: 'char_embedding', learning_rate: 0.001}
+    0: {encoder_type: "rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.005}
+    1: {encoder_type: "rnn", rnn_type: "bi_lstm", embedding_type: 'char_embedding', learning_rate: 0.001}
+    2: {encoder_type: "rnn", rnn_type: "bi_gru", embedding_type: 'char_embedding', learning_rate: 0.001}
 
   mode: "train"  #train\test\test_one
   #mode: "test_one"  #train\test\test_one
@@ -201,18 +201,18 @@ translation:
   batch_size: 64
   num_epochs: 350
   valid_step: 1000 #valid one time every valid_step 
-  # embedding: char_embedding, word_embedding, subword_embedding
-  embedding: 'char_embedding'
-  embedding: 'region_embedding'
+  # embedding_type: char_embedding, word_embedding, subword_embedding
+  embedding_type: 'char_embedding'
+  embedding_type: 'region_embedding'
   rand_embedding: True
 
   num_hidden: 128
   num_layers: 1
-  #for translation, encoder only support "seq2seq" up to now
+  #for translation, encoder_type only support "seq2seq" up to now
   config_type: 1
   config: 
-    0: {encoder: "seq2seq", rnn_type: 'gru', embedding: 'char_embedding', learning_rate: 0.005}
-    1: {encoder: "seq2seq", rnn_type: 'bi_lstm', embedding: 'char_embedding', learning_rate: 0.005}
+    0: {encoder_type: "seq2seq", rnn_type: 'gru', embedding_type: 'char_embedding', learning_rate: 0.005}
+    1: {encoder_type: "seq2seq", rnn_type: 'bi_lstm', embedding_type: 'char_embedding', learning_rate: 0.005}
 
   mode: "train"  #train\test\test_one
   #mode: "test_one"  #train\test\test_one

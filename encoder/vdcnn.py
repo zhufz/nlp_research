@@ -19,28 +19,35 @@ class VDCNN(object):
 
     def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
         # ============= Embedding Layer =============
+        #[N, H, W, C]
         self.x_expanded = tf.expand_dims(embed, -1)
         # ============= First Convolution Layer =============
         with tf.variable_scope("conv-0", reuse = reuse):
+            #[N, H, 1, self.num_filters[0]]
             conv0 = tf.layers.conv2d(
                 self.x_expanded,
                 filters=self.num_filters[0],
                 kernel_size=[self.filter_sizes[0], self.embedding_size],
                 kernel_initializer=self.cnn_initializer,
                 activation=tf.nn.relu)
+            #[N, H, self.num_filters[0], 1]
             conv0 = tf.transpose(conv0, [0, 1, 3, 2])
 
         # ============= Convolution Blocks =============
         with tf.variable_scope("conv-block-1", reuse = reuse):
+            #[N, H, self.num_filters[1], 1]
             conv1 = self.conv_block(conv0, 1, reuse = reuse)
 
         with tf.variable_scope("conv-block-2", reuse = reuse):
+            #[N, H, self.num_filters[2], 1]
             conv2 = self.conv_block(conv1, 2, reuse = reuse)
 
         with tf.variable_scope("conv-block-3", reuse = reuse):
+            #[N, H, self.num_filters[3], 1]
             conv3 = self.conv_block(conv2, 3, reuse = reuse)
 
         with tf.variable_scope("conv-block-4", reuse = reuse):
+            #[N, H, self.num_filters[4], 1]
             conv4 = self.conv_block(conv3, 4, max_pool=False, reuse = reuse)
 
         # ============= k-max Pooling =============
