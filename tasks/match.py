@@ -10,7 +10,7 @@ from utils.data_utils import *
 from utils.preprocess import Preprocess
 from utils.tf_utils import load_pb,write_pb
 from language_model.bert.modeling import get_assignment_map_from_checkpoint
-from utils.recall import Recall3
+from utils.recall import Annoy
 from sklearn.metrics.pairwise import cosine_similarity
 
 
@@ -86,7 +86,7 @@ class Match(object):
 
         if self.mode == 'test_one':
             self.cached_vecs = self._generate_labels_vec()
-            self.recall = Recall3(self.cached_vecs)
+            self.recall = Annoy(self.cached_vecs)
 
     def loss(self, loss_type, pred):
         if loss_type == 'pairwise':
@@ -262,7 +262,8 @@ class Match(object):
         return max_id
 
 
-    def test_step(self, batch, embedding, encoder, vocab_dict,  graph, sess, run_param):
+    def test_step(self, batch, embedding, encoder, vocab_dict,  graph, sess,
+                  run_param, is_training):
         x1_batch,x2_batch,labels_batch = batch
         test_feed_dict = {
             is_training: False
@@ -298,10 +299,11 @@ class Match(object):
         sess = tf.Session(graph=graph)
         #self.scores = graph.get_operation_by_name(self.output_nodes)
         self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
+        self.is_training = graph.get_operation_by_name("is_training").outputs[0]
         sum, rig, thre_rig = 0, 0, 0
         for batch in test_batches:
             pred, labels = self.test_step(batch, self.embedding, self.encoder, self.vocab_dict,
-                           graph, sess, self.scores)
+                           graph, sess, self.scores, self.is_training)
             assert len(pred) == len(labels), "len(pred)!=len(labels)!"
             max_id = self.knn(pred)
             max_score = pred[max_id]

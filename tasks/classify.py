@@ -225,7 +225,7 @@ class Classify(object):
             all_test_y += list(batch_y)
 
             for idx in range(len(predictions_out)):
-                if predictions_out[idx] == int(batch_y[idx]) and max_scores[idx]> 0.4:
+                if predictions_out[idx] == int(batch_y[idx]) and max_scores[idx]> self.thre_score:
                     right += 1
                 all += 1
         dt = pd.DataFrame({'text': all_test_x,

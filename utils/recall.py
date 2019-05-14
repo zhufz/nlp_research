@@ -13,7 +13,13 @@ import sys,os
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 
-class Recall():
+#这里列出一些匹配任务中的召回方案
+#1.OriginRecall:基于tfidf的相似度，通过调用gensim的similarities创建索引实现
+#2.InvertRecall:基于倒排索引实现
+#前面两种都是基于词的召回方案，没有考虑到语义信息，第三种是考虑语义信息的基于句向量
+#3.Annoy:基于语义召回方案
+
+class OriginRecall():
     #基于similarities.SparseMatrixSimilarity
     def __init__(self, data_list):
         data_list = self._check(data_list)
@@ -54,7 +60,7 @@ class Recall():
         query_id_list = np.array(query_id_list)[sorted_idx][:num]
         return query_id_list
 
-class Recall2():
+class InvertRecall():
     #基于倒排索引
     def __init__(self, data_list):
         data_list = self._check(data_list)
@@ -98,7 +104,7 @@ class Recall2():
                 ret += query_id_list
         return ret
 
-class Recall3():
+class Annoy():
     #基于Annoy
     def __init__(self, vecs):
         assert len(vecs)>0, 'no vecs available to init AnnoyIndex'

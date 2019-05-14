@@ -193,6 +193,7 @@ def get_initializer(type = 'random_uniform', **kwargs):
     random_uniform: minval, maxval
     xavier:
     variance_scaling:
+    不同初始化区别参考：https://mp.weixin.qq.com/s/9fQdp4G3dFOvBbDnCPlbYw
     '''
     #default value
     value = kwargs['value'] if 'value' in kwargs else 0.0

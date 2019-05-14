@@ -27,6 +27,7 @@ def get_loss(logits, labels, type = 'cross', labels_sparse = False,  **kwargs):
         raise ValueError("unknown loss type")
 
 def focal_loss(logits, labels, gamma=2.0, alpha=0.25, epsilon=1e-8):
+    logits = tf.nn.softmax(logits)
     logits = tf.cast(logits, tf.float32)
     model_out = tf.add(logits, epsilon)
     ce = tf.multiply(tf.cast(labels, tf.float32), -tf.log(model_out))
@@ -46,6 +47,7 @@ def softmax_cross_entropy(logits, labels):
     return loss
 
 def margin_loss(logits, labels):
+    logits = tf.nn.softmax(logits)
     labels = tf.cast(labels,tf.float32)
     loss = labels * tf.square(tf.maximum(0., 0.9 - logits)) + \
         0.25 * (1.0 - labels) * tf.square(tf.maximum(0., logits - 0.1))

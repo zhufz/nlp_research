@@ -1,5 +1,5 @@
 task_type: 'classify'
-#task_type: 'match'
+task_type: 'match'
 #task_type: 'ner'
 #task_type: 'seq_generate'
 #task_type: 'translation'
@@ -31,6 +31,7 @@ classify:
   num_epochs: 350
   num_class: 89
   valid_step: 1000 #valid one time every valid_step 
+  thre_score: 0.3
   # embedding_type: char_embedding, word_embedding, subword_embedding
   embedding_type: 'char_embedding'
   embedding_type: 'region_embedding'
@@ -38,8 +39,10 @@ classify:
   # encoder_type: "text_cnn" #88.6
   # encoder_type: "cnn"  # 84.7
   loss_type: "softmax_loss"
+  #loss_type: "margin_loss"
+  #loss_type: "focal_loss"
 
-  config_type: 8
+  config_type: 0
   config: 
     0: {encoder_type: "fasttext", learning_rate: 0.001}
     1: {encoder_type: "transformer", learning_rate: 0.0001}
@@ -113,7 +116,7 @@ match:
 
   mode: "train"  #train\test\test_one
   #mode: "test"  #train\test\test_one
-  mode: "test_one"  #train\test\test_one
+  #mode: "test_one"  #train\test\test_one
 
 
 

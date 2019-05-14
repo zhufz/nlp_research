@@ -12,7 +12,7 @@ import sys,os
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 from common.similarity import Similarity
-from utils.recall import Recall, Recall2
+from utils.recall import OriginRecall, InvertRecall, Annoy
 
 def load_class_mp(class_path):
     #load class mapping from class_path
@@ -244,7 +244,7 @@ class PairGenerator():
 
     def get_batch_random(self, data, batch_size, num_epochs, maxlen1, maxlen2):
         #定义召回类对象并初始化
-        recall = Recall2(data)
+        #recall = InvertRecall(data)
         rel_set = self.get_rel_set(self.rel)
         result_list = []
         cnt_batch_size = 0
@@ -274,7 +274,7 @@ class PairGenerator():
     def get_batch_supervised(self, data, batch_size, num_epochs, maxlen1,
                              maxlen2, task):
         #定义召回类对象并初始化
-        recall = Recall2(data)
+        #recall = InvertRecall(data)
         #先动态挑选pair_list,再生成batch数据
         rel_set = self.get_rel_set(self.rel)
         result_list = []
@@ -302,7 +302,7 @@ class PairGenerator():
                 label = 0
                 neg_list = rel_set[d1][label]
                 tmp_list = []
-                neg_list = recall(data, neg_list, d1, num = 64, reverse = True)
+                #neg_list = recall(data, neg_list, d1, num = 64, reverse = True)
                 for item in neg_list:
                     tmp_list.append((data[d1], data[d2]))
                 neg_pred = task.predict_prob(tmp_list)
