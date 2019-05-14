@@ -80,21 +80,3 @@ nlp一些任务集成：classify，match，sequence tagging，translation...
 
     数据处理工具
 
-## 计划
-1.nlp_research初版，支持分类、匹配模型（已完成）
-
-2.集成序列标注模型（已完成）
-
-3.集成bert（已完成）
-
-4.文本生成算法
-
-5.强化学习（基于任务型对话）
-
-
-
-
-
-
-
-
