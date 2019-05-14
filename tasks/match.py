@@ -10,6 +10,10 @@ from utils.data_utils import *
 from utils.preprocess import Preprocess
 from utils.tf_utils import load_pb,write_pb
 from language_model.bert.modeling import get_assignment_map_from_checkpoint
+from utils.recall import Recall3
+from sklearn.metrics.pairwise import cosine_similarity
+
+
 
 
 class Match(object):
@@ -80,6 +84,10 @@ class Match(object):
             (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
             tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
 
+        if self.mode == 'test_one':
+            self.cached_vecs = self.generate_labels_vec()
+            self.recall = Recall3(self.cached_vecs)
+
     def loss(self, loss_type, pred):
         if loss_type == 'pairwise':
             return self.pairwise(pred)
@@ -117,7 +125,6 @@ class Match(object):
     def cross_sim(self, params):
         #cross based match model
         self.encoder = encoder[self.encoder_type](**params)
-
         if not self.use_language_model:
             pred = self.encoder(x_query = self.embed_query, x_sample = self.embed_sample)
         else:
@@ -130,6 +137,7 @@ class Match(object):
         self.encode_query = self.encoder(self.embed_query, 'x_query')
         self.encode_sample = self.encoder(self.embed_sample, 'x_sample')
         pred = self.cosine_similarity(self.encode_query, self.encode_sample)
+        self.rep_nodes = self.encode_query.name.split(':')[0]
         return pred
 
     def cosine_similarity(self, q, a):
@@ -310,31 +318,57 @@ class Match(object):
         return acc
 
 
-    def test_unit(self, text):
-        text = self.pre.get_dl_input_by_text(text)
-        test_batches = self.generator.get_test_batch(self.text_list,
-                                                     self.maxlen,
-                                                     self.maxlen,
-                                                     query = text)
+    def test_unit(self, text, use_recall = True):
+        vec = self.get_raw_texts_vec([text])[0]
+        if use_recall:
+            id_list, score_list = self.recall(vec)
+            vecs = [self.cached_vecs[idx] for idx in id_list]
+            cosine_dis = cosine_similarity([vec], vecs)[0]
+            max_id = id_list[np.argmax(cosine_dis)]
+        else:
+            cosine_dis = cosine_similarity([vec], self.cached_vecs)[0]
+            max_id = np.argmax(cosine_dis)
+        max_score = np.max(cosine_dis)
+        print(self.text_list[max_id], self.label_list[max_id], max_score)
+        return self.label_list[max_id], max_score
+
+    def get_raw_texts_vec(self, text_list):
+        #获取原始句子的句向量
+        for idx, text in enumerate(text_list):
+            text_list[idx] = self.pre.get_dl_input_by_text(text)
+        vec = self.get_vec_by_batches([text_list])
+        return vec
+
+    def generate_labels_vec(self):
+        #生成所有训练样本的句向量
+        assert self.sim_mode == 'represent', "only represent mode supports cache label vectors"
+        vecs = self.get_vec_by_batches([self.text_list])
+        return vecs
+
+    def get_vec_by_batches(self, batches):
+        #根据batches数据生成向量
         if not os.path.exists(self.model_path):
             self.save_pb()
         graph = load_pb(self.model_path)
         sess = tf.Session(graph=graph)
+        rep = graph.get_tensor_by_name(self.rep_nodes+":0")
+        is_training = graph.get_operation_by_name("is_training").outputs[0]
+        feed_dict = {is_training: False}
+        vecs = []
+        for batch in batches:
+            feed_dict = {
+                is_training: False
+            }
+            _, x1_batch, x1_len_batch = self.embedding.text2id(batch,
+                                                     self.vocab_dict,
+                                                     need_preprocess = False)
+            feed_dict.update(self.embedding.pb_feed_dict(graph,x1_batch,'x_query'))
+            feed_dict.update(self.encoder.pb_feed_dict(graph, x_query = x1_len_batch))
+            vecs = sess.run(rep, feed_dict=feed_dict)
+        return vecs
 
-        #self.scores = graph.get_operation_by_name(self.output_nodes)
-        self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
 
-        preds = []
-        for batch in test_batches:
-            pred, labels = self.test_step(batch, self.embedding, self.encoder, self.vocab_dict,
-                           graph, sess, self.scores)
-            preds += list(pred)
-        #preds = np.exp(preds)/sum(np.exp(preds))
-        max_id = self.knn(pred)
-        #max_id = np.argmax(preds)
-        max_score = preds[max_id]
-        print(self.text_list[max_id], self.label_list[max_id], max_score)
-        return self.label_list[max_id], max_score
+
 
 
 

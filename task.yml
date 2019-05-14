@@ -1,6 +1,6 @@
 task_type: 'classify'
 task_type: 'match'
-task_type: 'ner'
+#task_type: 'ner'
 #task_type: 'seq_generate'
 #task_type: 'translation'
 
@@ -38,7 +38,7 @@ classify:
   # encoder_type: "cnn"  # 84.7
   loss_type: "softmax_loss"
 
-  config_type: 0
+  config_type: 8
   config: 
     0: {encoder_type: "fasttext", learning_rate: 0.001}
     1: {encoder_type: "transformer", learning_rate: 0.0001}
@@ -64,6 +64,8 @@ match:
   classes_path: "classes"
   checkpoint_path: "checkpoint"
   model_path: "model.pb"
+
+  cache_vec_path: "cache.vec.pkl"
 
   batch_mode: "random"  #(random/supervised)
   #batch_mode: "supervised"
@@ -110,7 +112,7 @@ match:
 
   mode: "train"  #train\test\test_one
   #mode: "test"  #train\test\test_one
-  #mode: "test_one"  #train\test\test_one
+  mode: "test_one"  #train\test\test_one
 
 
 

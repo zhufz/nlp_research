@@ -2,6 +2,7 @@ from tasks import dl_tasks
 import yaml
 import os,sys
 import pdb
+import time
 
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 sys.path.append(ROOT_PATH)
@@ -48,5 +49,10 @@ if __name__ == '__main__':
         cl.predict()
     elif conf['mode'] == 'test_one':
         while True:
+
             a = input('input:')
-            cl.test_unit(a)
+            start = time.time()
+            cl.test_unit(a, use_recall=False)
+            end = time.time()
+            consume = end-start
+            print(f'consume: {consume}')
