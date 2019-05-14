@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
             a = input('input:')
             start = time.time()
-            cl.test_unit(a, use_recall=False)
+            cl.test_unit(a)
             end = time.time()
             consume = end-start
             print(f'consume: {consume}')

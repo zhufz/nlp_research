@@ -91,7 +91,8 @@ class Classify(object):
 
     def loss(self, out):
         with tf.name_scope("output"):
-            self.predictions = tf.argmax(tf.nn.softmax(out, axis=1, name="scores"), -1, output_type=tf.int32,
+            self.scores = tf.nn.softmax(out, axis=1, name="scores")
+            self.predictions = tf.argmax(self.scores, -1, output_type=tf.int32,
                                          name = 'predictions')
         with tf.name_scope("loss"):
             #self.loss = tf.reduce_mean(
@@ -162,6 +163,7 @@ class Classify(object):
                                     global_step=step)
                     print("Model is saved.\n")
                 else:
+                    self.save_pb()
                     print(f"train finished! accuracy: {max_accuracy}")
                     sys.exit(0)
 
@@ -180,8 +182,8 @@ class Classify(object):
         self.is_training = graph.get_operation_by_name("is_training").outputs[0]
         self.accuracy = graph.get_operation_by_name("accuracy/accuracy").outputs[0]
 
-        #self.scores = graph.get_tensor_by_name("output/scores:0")
-        self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
+        self.scores = graph.get_tensor_by_name("output/scores:0")
+        #self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
         self.predictions = graph.get_tensor_by_name("output/predictions:0")
 
         mp, mp_rev = load_class_mp(self.classes_path)
@@ -246,8 +248,8 @@ class Classify(object):
         self.y = graph.get_operation_by_name("y").outputs[0]
         self.is_training = graph.get_operation_by_name("is_training").outputs[0]
 
-        self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
-        #self.scores = graph.get_tensor_by_name("output/scores:0")
+        #self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
+        self.scores = graph.get_tensor_by_name("output/scores:0")
         self.predictions = graph.get_tensor_by_name("output/predictions:0")
 
         vocab_dict = embedding[self.embedding_type].build_dict(self.dict_path,mode = 'test')
@@ -292,8 +294,8 @@ class Classify(object):
         self.y = graph.get_operation_by_name("y").outputs[0]
         self.is_training = graph.get_operation_by_name("is_training").outputs[0]
 
-        #self.scores = graph.get_tensor_by_name("output/scores:0")
-        self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
+        self.scores = graph.get_tensor_by_name("output/scores:0")
+        #self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
         self.predictions = graph.get_tensor_by_name("output/predictions:0")
 
         vocab_dict = embedding[self.embedding_type].build_dict(self.dict_path,mode = 'test')

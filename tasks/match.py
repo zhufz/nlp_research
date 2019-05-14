@@ -85,7 +85,7 @@ class Match(object):
             tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
 
         if self.mode == 'test_one':
-            self.cached_vecs = self.generate_labels_vec()
+            self.cached_vecs = self._generate_labels_vec()
             self.recall = Recall3(self.cached_vecs)
 
     def loss(self, loss_type, pred):
@@ -319,7 +319,7 @@ class Match(object):
 
 
     def test_unit(self, text, use_recall = True):
-        vec = self.get_raw_texts_vec([text])[0]
+        vec = self._get_raw_texts_vec([text])[0]
         if use_recall:
             id_list, score_list = self.recall(vec)
             vecs = [self.cached_vecs[idx] for idx in id_list]
@@ -332,20 +332,20 @@ class Match(object):
         print(self.text_list[max_id], self.label_list[max_id], max_score)
         return self.label_list[max_id], max_score
 
-    def get_raw_texts_vec(self, text_list):
+    def _get_raw_texts_vec(self, text_list):
         #获取原始句子的句向量
         for idx, text in enumerate(text_list):
             text_list[idx] = self.pre.get_dl_input_by_text(text)
-        vec = self.get_vec_by_batches([text_list])
+        vec = self._get_vec_by_batches([text_list])
         return vec
 
-    def generate_labels_vec(self):
+    def _generate_labels_vec(self):
         #生成所有训练样本的句向量
         assert self.sim_mode == 'represent', "only represent mode supports cache label vectors"
-        vecs = self.get_vec_by_batches([self.text_list])
+        vecs = self._get_vec_by_batches([self.text_list])
         return vecs
 
-    def get_vec_by_batches(self, batches):
+    def _get_vec_by_batches(self, batches):
         #根据batches数据生成向量
         if not os.path.exists(self.model_path):
             self.save_pb()
@@ -366,9 +366,4 @@ class Match(object):
             feed_dict.update(self.encoder.pb_feed_dict(graph, x_query = x1_len_batch))
             vecs = sess.run(rep, feed_dict=feed_dict)
         return vecs
-
-
-
-
-
 

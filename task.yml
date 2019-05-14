@@ -1,5 +1,5 @@
 task_type: 'classify'
-task_type: 'match'
+#task_type: 'match'
 #task_type: 'ner'
 #task_type: 'seq_generate'
 #task_type: 'translation'
@@ -16,6 +16,7 @@ classify:
   ori_path: "intent.csv"
   train_path: "train.csv"
   test_path: "test.csv"
+  #test_path: "train.csv"
   predict_path: "test1.csv"
   dict_path: "dict.pkl"
   classes_path: "classes"
@@ -52,7 +53,7 @@ classify:
 
   mode: "train"  #train\test\test_one
   #mode: "test"  #train\test\test_one
-  # mode: "test_one"
+  #mode: "test_one"
   # mode: "predict"
 match:
   path_root: "data/match/"
