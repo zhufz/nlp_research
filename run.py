@@ -70,8 +70,7 @@ def read_conf(task_type):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) <1:
-        print("task type missed, classify, match, ner...?")
+    assert len(sys.argv) > 1,"task type missed, classify, match, ner...?"
     task_type = sys.argv[1]
 
     conf, task_type = read_conf(task_type)
