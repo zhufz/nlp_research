@@ -4,6 +4,19 @@
 ## 介绍
 nlp一些任务集成：classify，match，sequence tagging，translation...
 
+## 快速开始
+
+1. 分类：
+
+    模型配置文件: conf/model/classify.yml
+
+    训练：python3 run.py classify
+
+    测试：python3 run.py classify model=test
+
+    单个测试：python3 run.py classify model=test_one
+
+
 ## 数据
   数据统一放在data下，
 
