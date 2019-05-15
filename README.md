@@ -5,25 +5,27 @@
 nlp一些任务集成：classify，match，sequence tagging，translation...
 
 ## 数据
-  数据统一放在data下，
+训练语料：
+    
 
-  对于分类和匹配任务，训练文件每行格式为"文本\t类别"，然后调用generate_ml_data.sh进行数据生成！
+    数据统一放在data下，
+    对于分类和匹配任务，训练文件每行格式为"文本\t类别"，然后调用generate_ml_data.sh进行数据生成！
+    对于ner任务，参考示例数据
+  
+语言模型：
 
-  对于ner任务，参考示例数据
+    如果需要使用bert预训练模型，请先下载预训练模型：sh scripts/prepare.sh
   
 ## 快速开始
-如果需要使用bert预训练模型，请先下载预训练模型：sh scripts/prepare.sh
+
 
 1. 分类：
-
-    模型配置文件: conf/model/classify.yml
-
+  
     训练：python3 run.py classify [格式：python3 run.py {task_type}, 对应到conf/model/{task_type}.yml]
 
     测试：python3 run.py classify model=test
 
     单个测试：python3 run.py classify model=test_one
-
 
 
 
