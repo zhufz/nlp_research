@@ -16,7 +16,7 @@ import pdb
 class CharEmbedding():
     def __init__(self, text_list, dict_path, vocab_dict = None, random = False,
                  maxlen = 40, embedding_size = 128, **kwargs):
-        self.embedding_path = None
+        self.embedding_path = kwargs['conf']['char_embedding_path']
         self.dict_path = dict_path
         self.maxlen = maxlen
         self.size = embedding_size

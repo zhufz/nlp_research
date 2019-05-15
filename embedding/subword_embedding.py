@@ -18,7 +18,7 @@ MAX_SUB_LEN = 8
 class SubwordEmbedding():
     def __init__(self, text_list, dict_path, vocab_dict, random = False,\
                  maxlen = 20, embedding_size = 128, **kwargs):
-        self.embedding_path = "data/baike_26g_news_13g_novel_229g.bin.sub"
+        self.embedding_path = kwargs['conf']['subword_embedding_path']
         self.maxlen = maxlen
         self.dict_path = dict_path
         self.size = embedding_size

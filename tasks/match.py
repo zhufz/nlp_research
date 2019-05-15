@@ -1,17 +1,18 @@
 import tensorflow as tf
-from embedding import embedding
-from encoder import encoder
+from sklearn.metrics.pairwise import cosine_similarity
 import pdb
 import os,sys
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 
+from embedding import embedding
+from encoder import encoder
 from utils.data_utils import *
 from utils.preprocess import Preprocess
 from utils.tf_utils import load_pb,write_pb
 from language_model.bert.modeling import get_assignment_map_from_checkpoint
 from utils.recall import Annoy
-from sklearn.metrics.pairwise import cosine_similarity
+from common.loss import get_loss
 
 
 
@@ -46,7 +47,8 @@ class Match(object):
                                                             random=self.rand_embedding,
                                                             maxlen = self.maxlen,
                                                             batch_size = self.batch_size,
-                                                            embedding_size = self.embedding_size)
+                                                            embedding_size = self.embedding_size,
+                                                            conf = self.conf)
 
             self.embed_query = self.embedding('x_query')
             self.embed_sample = self.embedding('x_sample')
@@ -71,7 +73,12 @@ class Match(object):
         self.output_nodes = self.pred.name.split(':')[0]
         self.pos_target = tf.ones(shape = [int(self.batch_size/2)], dtype = tf.float32)
         self.neg_target = tf.zeros(shape = [int(self.batch_size/2)], dtype = tf.float32)
-        self.loss = self.loss(self.loss_type, self.pred)
+        self.loss = self.loss(self.loss_type,
+                              self.pred,
+                              self.pos_target,
+                              self.neg_target,
+                              self.batch_size,
+                              self.conf)
         self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
         self.sess = tf.Session()
         self.writer = tf.summary.FileWriter("logs/match_log", self.sess.graph)
@@ -88,30 +95,19 @@ class Match(object):
             self.cached_vecs = self._generate_labels_vec()
             self.recall = Annoy(self.cached_vecs)
 
-    def loss(self, loss_type, pred):
-        if loss_type == 'pairwise':
-            return self.pairwise(pred)
-        elif loss_type == 'pointwise':
-            return self.pointwise(pred)
+    def loss(self, loss_type, pred, pos_target, neg_target, batch_size, conf):
+        pos = tf.strided_slice(pred, [0], [batch_size], [2])
+        neg = tf.strided_slice(pred, [1], [batch_size], [2])
+        if loss_type == 'hinge_loss':
+            loss = get_loss(type = loss_type, neg_logits = neg, pos_logits =
+                                pos, **conf)
         else:
-            raise ValueError('unknown loss type')
+            pos_loss = get_loss(type = loss_type, logits = pos, labels =
+                                pos_target, **conf)
 
-    def pairwise(self, pred):
-        pos = tf.strided_slice(pred, [0], [self.batch_size], [2])
-        neg = tf.strided_slice(pred, [1], [self.batch_size], [2])
-        loss = tf.reduce_mean(tf.maximum(self.margin + neg - pos, 0.0))
-        return loss
-
-    def pointwise(self, pred):
-        pos = tf.strided_slice(pred, [0], [self.batch_size], [2])
-        neg = tf.strided_slice(pred, [1], [self.batch_size], [2])
-        pos_loss = tf.reduce_mean(\
-                    tf.nn.sigmoid_cross_entropy_with_logits(labels = self.pos_target,
-                                                       logits = pos))
-        neg_loss = tf.reduce_mean(\
-                    tf.nn.sigmoid_cross_entropy_with_logits(labels = self.neg_target,
-                                                       logits = neg))
-        loss = pos_loss + neg_loss
+            neg_loss = get_loss(type = loss_type, logits = neg, labels =
+                                neg_target, **conf)
+            loss = pos_loss + neg_loss
         return loss
 
     def sim(self, mode, params):

@@ -42,7 +42,8 @@ class Classify(object):
                                                             random=self.rand_embedding,
                                                             batch_size = self.batch_size,
                                                             maxlen = self.maxlen,
-                                                            embedding_size = self.embedding_size)
+                                                            embedding_size = self.embedding_size,
+                                                            conf = self.conf)
             self.embed = self.embedding('x')
         self.y = tf.placeholder(tf.int32, [None], name="y")
 

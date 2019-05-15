@@ -10,6 +10,9 @@ base:
   vocab_file_path: "language_model/chinese_L-12_H-768_A-12/vocab.txt"
   bert_config_file_path: "language_model/chinese_L-12_H-768_A-12/bert_config.json"
   init_checkpoint_path: "language_model/chinese_L-12_H-768_A-12/bert_model.ckpt"
+  word_embedding_path: "data/baike_26g_news_13g_novel_229g.bin.sub"
+  char_embedding_path: "data/xxx"
+  subword_embedding_path: "data/xxx"
 
 classify:
   path_root: "data/classify/"
@@ -95,13 +98,12 @@ match:
   # sim_mode=represent: 基于表示的匹配方法
   # loss_type: "pointwise"
   #keep_prob: 0.5
-  loss_type: "pairwise"
-  config_type: 10
+  loss_type: "hinge_loss"
+  config_type: 2
   config: 
     0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1}
     1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
-    2: {encoder_type: "esim", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
-    3: {encoder_type: "drmm", sim_mode: "cross", num_output: 1, learning_rate: 0.1}
+    2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 1, learning_rate: 0.0001}
 
     #fine tuned
     10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}

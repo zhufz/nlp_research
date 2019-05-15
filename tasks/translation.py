@@ -50,7 +50,8 @@ class Translation(object):
                                                             random=self.rand_embedding,
                                                             batch_size = self.batch_size,
                                                             maxlen = self.maxlen,
-                                                            embedding_size = self.embedding_size)
+                                                            embedding_size = self.embedding_size,
+                                                            conf = self.conf)
             self.embed_encode = self.embedding('encode_seq')
             self.embed_decode = self.embedding('decode_seq')
 
