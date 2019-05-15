@@ -1,0 +1,9 @@
+#基础配置，语言模型，词向量等
+path_root: ""
+vocab_file_path: "language_model/chinese_L-12_H-768_A-12/vocab.txt"
+bert_config_file_path: "language_model/chinese_L-12_H-768_A-12/bert_config.json"
+init_checkpoint_path: "language_model/chinese_L-12_H-768_A-12/bert_model.ckpt"
+word_embedding_path: "data/baike_26g_news_13g_novel_229g.bin.sub"
+char_embedding_path: "data/xxx"
+subword_embedding_path: "data/xxx"
+

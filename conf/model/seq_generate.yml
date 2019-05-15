@@ -1,0 +1,31 @@
+path_root: "data/seq_generate/"
+train_path: "tang"
+# train_path: "turing"
+dict_path: "vocab.pkl"
+
+checkpoint_path: "checkpoint"
+model_path: "model.pb"
+use_language_model: False
+
+maxlen: 40
+embedding_size: 128
+learning_rate: 0.001
+batch_size: 64
+num_epochs: 350
+valid_step: 1000 #valid one time every valid_step 
+# embedding_type: char_embedding, word_embedding, subword_embedding
+embedding_type: 'char_embedding'
+embedding_type: 'region_embedding'
+rand_embedding: True
+
+num_hidden: 128
+num_layers: 1
+#for sequence generation, encoder_type only support "rnn" up to now
+config_type: 2
+config: 
+  0: {encoder_type: "rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.005}
+  1: {encoder_type: "rnn", rnn_type: "bi_lstm", embedding_type: 'char_embedding', learning_rate: 0.001}
+  2: {encoder_type: "rnn", rnn_type: "bi_gru", embedding_type: 'char_embedding', learning_rate: 0.001}
+
+mode: "train"  #train\test\test_one
+#mode: "test_one"  #train\test\test_one

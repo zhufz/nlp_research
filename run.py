@@ -28,12 +28,14 @@ def change_path(conf):
         if k.endswith('_path'):
             conf[k] = os.path.join(path_root, conf[k])
 
-def read_conf(yaml_path):
+def read_conf(task_type):
     init_logging('log')
-    conf = yaml.load(open(yaml_path))
-    task_type = conf['task_type']
-    base = conf['base']
-    conf = conf[task_type]
+    base_yml = "conf/model/base.yml"
+    task_yml = f"conf/model/{task_type}.yml"
+    assert os.path.exists(task_yml),'fmodel {task_type} does not exists!'
+
+    conf = yaml.load(open(task_yml))
+    base = yaml.load(open(base_yml))
 
     #相对路径->绝对路径
     change_path(base)
@@ -60,6 +62,7 @@ def read_conf(yaml_path):
         #additional params from cmd
         for idx, arg in enumerate(sys.argv):
             if idx ==0:continue
+            if arg.find("=") == -1:continue
             key,value = arg.split('=')
             if value.isdigit():value = int(value)
             conf[key] = value
@@ -67,7 +70,11 @@ def read_conf(yaml_path):
 
 
 if __name__ == '__main__':
-    conf, task_type = read_conf('task.yml')
+    if len(sys.argv) <1:
+        print("task type missed, classify, match, ner...?")
+    task_type = sys.argv[1]
+
+    conf, task_type = read_conf(task_type)
     cl = dl_tasks[task_type](conf)
     logging.info(conf)
     if conf['mode'] == 'train':

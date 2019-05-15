@@ -1,0 +1,46 @@
+path_root: "data/classify/"
+ori_path: "intent.csv"
+train_path: "train.csv"
+test_path: "test.csv"
+#test_path: "train.csv"
+predict_path: "test1.csv"
+classes_path: "{encoder_type}classes"
+dict_path: "{encoder_type}/dict.pkl"
+checkpoint_path: "{encoder_type}/checkpoint"
+model_path: "{encoder_type}/model.pb"
+use_language_model: False
+
+maxlen: 40
+embedding_size: 128
+learning_rate: 0.001
+batch_size: 64
+num_epochs: 350
+num_class: 89
+valid_step: 1000 #valid one time every valid_step 
+thre_score: 0.3
+# embedding_type: char_embedding, word_embedding, subword_embedding
+embedding_type: 'char_embedding'
+embedding_type: 'region_embedding'
+rand_embedding: True
+# encoder_type: "text_cnn" #88.6
+# encoder_type: "cnn"  # 84.7
+loss_type: "softmax_loss"
+#loss_type: "margin_loss"
+#loss_type: "focal_loss"
+
+config_type: 0
+config: 
+  0: {encoder_type: "fasttext", learning_rate: 0.001}
+  1: {encoder_type: "transformer", learning_rate: 0.0001}
+  2: {encoder_type: "transformer", embedding_type: 'subword_embedding', learning_rate: 0.0001}
+  3: {encoder_type: "rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}
+  4: {encoder_type: "rnn", rnn_type: "lstm", embedding_type: 'char_embedding', learning_rate: 0.001}
+  5: {encoder_type: "attention_rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}
+  6: {encoder_type: "rcnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}
+  7: {encoder_type: "capsule", caps_type: "A", embedding_type: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
+  8: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
+
+mode: "train"  #train\test\test_one
+#mode: "test"  #train\test\test_one
+#mode: "test_one"
+# mode: "predict"

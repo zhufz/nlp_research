@@ -1,0 +1,55 @@
+path_root: "data/match/"
+ori_path: "intent.csv"
+index_path: "index.csv"
+relation_path: "relation.csv"
+test_path: "test.csv"
+classes_path: "{encoder_type}classes"
+dict_path: "{encoder_type}/dict.pkl"
+checkpoint_path: "{encoder_type}/checkpoint"
+model_path: "{encoder_type}/model.pb"
+cache_vec_path: "{encoder_type}/cache.vec.pkl"
+
+batch_mode: "random"  #(random/supervised)
+#batch_mode: "supervised"
+
+batch_size: 64
+num_epochs: 15000
+num_class: 89
+maxlen: 40
+embedding_size: 128
+learning_rate: 0.0001
+margin: 1
+score_thre: 0.8
+valid_step: 1000 #valid one time every valid_step 
+
+use_language_model: False
+# embedding_type: 'word_embedding'
+embedding_type: 'char_embedding'
+# embedding_type: 'subword_embedding'
+rand_embedding: True
+# rand_embedding: False
+# sim_mode=cross: 对于交互的匹配方法
+# sim_mode=represent: 基于表示的匹配方法
+loss_type: "hinge_loss"
+optimizer_type: "Adam"
+lr_mode: 'triangular2'
+config_type: 3
+config: 
+  0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1}
+  1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.0005}
+  2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 1, learning_rate: 0.001}
+  3: {encoder_type: "esim", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
+
+  10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}
+  11: {encoder_type: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
+  12: {encoder_type: "rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+  13: {encoder_type: "rcnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+  14: {encoder_type: "attention_rnn", rnn_type: "gru", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+  15: {encoder_type: "attention_rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
+  21: {encoder_type: "text_cnn", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
+  22: {encoder_type: "transformer", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
+  23: {encoder_type: "bert", sim_mode: "cross", learning_rate: 0.00002, use_language_model: True, valid_step: 20000, num_output: 1}
+
+mode: "train"  #train\test\test_one
+#mode: "test"  #train\test\test_one
+#mode: "test_one"  #train\test\test_one
