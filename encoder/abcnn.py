@@ -14,9 +14,9 @@ class ABCNN():
         :param num_output: The dimension of output.
         :param embedding_size: The size of embedding.
         """
-        self.keep_prob = args['keep_prob']
-        self.batch_size = args['batch_size']
-        self.num_output = args['num_output']
+        self.keep_prob = kwargs['keep_prob']
+        self.batch_size = kwargs['batch_size']
+        self.num_output = kwargs['num_output']
         self.s = kwargs['maxlen']
         self.d0 = kwargs['embedding_size']
         self.w = 4
@@ -179,30 +179,30 @@ class ABCNN():
 
             return left_wp, left_ap, right_wp, right_ap
 
-    def feed_dict(self, len1, len2):
+    def feed_dict(self, x_query, x_sample):
         feed_dict = {}
-        feed_dict[self.len1] = len1
-        feed_dict[self.len2] = len2
+        feed_dict[self.len1] = x_query
+        feed_dict[self.len2] = x_sample
         return feed_dict
 
-    def pb_feed_dict(self,graph,  len1, len2):
+    def pb_feed_dict(self, graph, x_query, x_sample):
         feed_dict = {}
-        feed_dict[graph.get_operation_by_name("len1").outputs[0]] = len1
-        feed_dict[graph.get_operation_by_name("len2").outputs[0]] = len2
+        feed_dict[graph.get_operation_by_name("len1").outputs[0]] = x_query
+        feed_dict[graph.get_operation_by_name("len2").outputs[0]] = x_sample
         return feed_dict
 
-    def __call__(self, embed1, embed2, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, x_query, x_sample, name = 'encoder', reuse = tf.AUTO_REUSE):
         """
-        @param embed1:[batch_size, sentence_size, embedding_size]
-        @param embed2:[batch_size, sentence_size, embedding_size]
+        @param x_query:[batch_size, sentence_size, embedding_size]
+        @param x_sample:[batch_size, sentence_size, embedding_size]
         return:
             [batch_size, num_output]
         """
         with tf.variable_scope('abcnn', reuse = reuse):
-            embed1 = tf.transpose(embed1, [0, 2, 1])
-            embed2 = tf.transpose(embed2, [0, 2, 1])
-            x1_expanded = tf.expand_dims(embed1, -1)
-            x2_expanded = tf.expand_dims(embed2, -1)
+            x_query = tf.transpose(x_query, [0, 2, 1])
+            x_sample = tf.transpose(x_sample, [0, 2, 1])
+            x1_expanded = tf.expand_dims(x_query, -1)
+            x2_expanded = tf.expand_dims(x_sample, -1)
 
             len1=tf.expand_dims(self.len1,axis=-1)
             len2=tf.expand_dims(self.len2,axis=-1)

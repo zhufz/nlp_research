@@ -29,6 +29,14 @@ if __name__ == '__main__':
         config_type = conf['config_type']
         for k,v in (conf['config'][config_type]).items():
             conf[k] = v
+    #更新encoder_type信息
+    for k,v in conf.items():
+        if type(v) == str and (v.find('{encoder_type}')) != -1:
+            conf[k] = v.replace("{encoder_type}", conf['encoder_type'])
+    #创建目录
+    model_path = '/'.join(conf['model_path'].split('/')[:-1])
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
 
     if len(sys.argv) >1:
         #additional params from cmd

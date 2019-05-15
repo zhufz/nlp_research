@@ -178,6 +178,7 @@ class NER(object):
                              self.model_path,
                              ["is_training", self.output_nodes])
                 else:
+                    self.save_pb()
                     print(f'train finished! accuracy: {max_acc}')
                     sys.exit(0)
 

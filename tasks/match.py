@@ -13,13 +13,12 @@ from utils.tf_utils import load_pb,write_pb
 from language_model.bert.modeling import get_assignment_map_from_checkpoint
 from utils.recall import Annoy
 from common.loss import get_loss
-
-
+from common.lr import cyclic_learning_rate
 
 
 class Match(object):
     def __init__(self, conf):
-        self.task_type = 'match_cross'
+        self.task_type = 'match'
         self.conf = conf
         for attr in conf:
             setattr(self, attr, conf[attr])
@@ -47,7 +46,8 @@ class Match(object):
                                                             random=self.rand_embedding,
                                                             maxlen = self.maxlen,
                                                             batch_size = self.batch_size,
-                                                            embedding_size = self.embedding_size,
+                                                            embedding_size =
+                                                            self.embedding_size,
                                                             conf = self.conf)
 
             self.embed_query = self.embedding('x_query')
@@ -79,9 +79,10 @@ class Match(object):
                               self.neg_target,
                               self.batch_size,
                               self.conf)
+        self.learning_rate = cyclic_learning_rate(global_step=self.global_step, mode='triangular2')
         self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
         self.sess = tf.Session()
-        self.writer = tf.summary.FileWriter("logs/match_log", self.sess.graph)
+        #self.writer = tf.summary.FileWriter("logs/match_log", self.sess.graph)
         self.sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver(tf.global_variables())
 
@@ -243,6 +244,7 @@ class Match(object):
                                         self.task_type),
                                     global_step=step)
                 else:
+                    self.save_pb()
                     print(f'train finished! accuracy: {acc}')
                     sys.exit(0)
 
