@@ -1,5 +1,6 @@
 import sys,os
 import yaml
+import logging
 import random
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -111,7 +112,7 @@ class SeqGenerate(object):
             self.accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
     def train(self):
-        print("---------start train---------")
+        logging.info("---------start train---------")
         self.train_data = zip(self.text_list, self.label_list)
         train_batches = batch_iter(self.train_data, self.batch_size, self.num_epochs)
         num_batches_per_epoch = (len(self.text_list) - 1) // self.batch_size + 1
@@ -138,7 +139,7 @@ class SeqGenerate(object):
             #predict_word = [vocab_dict_rev[idx] for idx in predictions[0]]
 
             if step % (self.valid_step/10) == 0:
-                print("step {0}: loss = {1}".format(step, loss))
+                logging.info("step {0}: loss = {1}".format(step, loss))
             if step % self.valid_step == 0:
                 # Test accuracy with validation data for each epoch.
                 self.saver.save(self.sess,
@@ -146,7 +147,7 @@ class SeqGenerate(object):
                                                           self.task_type),
                                 global_step=step)
                 self.save_pb()
-                print("Model is saved.\n")
+                logging.info("Model is saved.\n")
 
     def save_pb(self):
         node_list = ['is_training','output/predictions', 'accuracy/accuracy']
@@ -180,7 +181,7 @@ class SeqGenerate(object):
             word, state = self.run(sess, graph, vocab_dict, vocab_dict_rev, 
                                    state, word)
         text += word
-        print(text)
+        logging.info(text)
 
 
     def choose_word(self, prob, vocab_dict_rev):

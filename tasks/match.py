@@ -1,17 +1,19 @@
 import tensorflow as tf
 from sklearn.metrics.pairwise import cosine_similarity
 import pdb
+import logging
 import os,sys
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 
 from embedding import embedding
 from encoder import encoder
+from language_model.bert.modeling import get_assignment_map_from_checkpoint
 from utils.data_utils import *
 from utils.preprocess import Preprocess
 from utils.tf_utils import load_pb,write_pb
-from language_model.bert.modeling import get_assignment_map_from_checkpoint
 from utils.recall import Annoy
+from common.layers import get_train_op
 from common.loss import get_loss
 from common.lr import cyclic_learning_rate
 
@@ -79,8 +81,14 @@ class Match(object):
                               self.neg_target,
                               self.batch_size,
                               self.conf)
-        self.learning_rate = cyclic_learning_rate(global_step=self.global_step, mode='triangular2')
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
+        self.learning_rate = cyclic_learning_rate(global_step=self.global_step,
+                                                  learning_rate = self.learning_rate, 
+                                                  mode = self.lr_mode)
+        self.optimizer = get_train_op(self.global_step, 
+                                       self.optimizer_type, 
+                                       self.loss,
+                                       self.learning_rate, 
+                                       clip_grad = 5)
         self.sess = tf.Session()
         #self.writer = tf.summary.FileWriter("logs/match_log", self.sess.graph)
         self.sess.run(tf.global_variables_initializer())
@@ -169,7 +177,7 @@ class Match(object):
                                                  task = self,
                                                  mode =self.batch_mode)
 
-        max_accuracy = -1
+        max_acc = -1
         for batch in train_batches:
             x1_batch, x2_batch = batch
             train_feed_dict = {
@@ -190,10 +198,10 @@ class Match(object):
                 train_feed_dict.update(self.encoder.feed_dict(x1_batch, x2_batch))
 
             _, step, loss = self.sess.run([self.optimizer, self.global_step, self.loss], feed_dict=train_feed_dict)
-            #print(loss)
+            #logging.info(loss)
 
             if step % (self.valid_step/10) == 0:
-                print("step {0}: loss = {1}".format(step, loss))
+                logging.info("step {0}: loss = {1}".format(step, loss))
             if step % (self.valid_step) == 0:
                 #validation
                 test_batches = self.generator.get_test_batch(self.text_list,
@@ -232,11 +240,11 @@ class Match(object):
                             thre_rig +=1
 
                 acc = float(rig) / sum
-                print("\nValid Accuracy = {}\n".format(acc))
+                logging.info("\nValid Accuracy = {}\n".format(acc))
 
                 #acc = self.test()
-                if acc > max_accuracy:
-                    max_accuracy = acc
+                if acc > max_acc:
+                    max_acc = acc
                     # Save model
                     self.saver.save(self.sess,
                                     "{0}/{1}.ckpt".format(
@@ -245,7 +253,7 @@ class Match(object):
                                     global_step=step)
                 else:
                     self.save_pb()
-                    print(f'train finished! accuracy: {acc}')
+                    logging.info(f'train finished! max valid accuracy: {max_acc}')
                     sys.exit(0)
 
     def save_pb(self):
@@ -313,8 +321,8 @@ class Match(object):
 
         acc = float(rig) / sum
         thre_acc = float(thre_rig) / sum
-        print("\nTest Accuracy = {}\n".format(acc))
-        print("\nTest Thre Accuracy = {}\n".format(thre_acc))
+        logging.info("\nTest Accuracy = {}\n".format(acc))
+        logging.info("\nTest Thre Accuracy = {}\n".format(thre_acc))
         return acc
 
 
@@ -329,7 +337,7 @@ class Match(object):
             cosine_dis = cosine_similarity([vec], self.cached_vecs)[0]
             max_id = np.argmax(cosine_dis)
         max_score = np.max(cosine_dis)
-        print(self.text_list[max_id], self.label_list[max_id], max_score)
+        logging.info(self.text_list[max_id], self.label_list[max_id], max_score)
         return self.label_list[max_id], max_score
 
     def _get_raw_texts_vec(self, text_list):

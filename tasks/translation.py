@@ -1,7 +1,9 @@
 import sys,os
 import yaml
 import random
+import logging
 import tensorflow as tf
+import pdb
 from sklearn.model_selection import train_test_split
 import tensorflow.contrib.legacy_seq2seq as seq2seq
 from tensorflow.python.platform import gfile
@@ -16,7 +18,7 @@ from encoder import encoder
 from common.loss import get_loss
 from language_model.bert.modeling import get_assignment_map_from_checkpoint
 
-import pdb
+
 
 
 class Translation(object):
@@ -115,7 +117,7 @@ class Translation(object):
             self.accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
     def train(self):
-        print("---------start train---------")
+        logging.info("---------start train---------")
         self.train_data = zip(self.encode_list, self.decode_list, self.target_list)
         train_batches = batch_iter(self.train_data, self.batch_size, self.num_epochs)
         num_batches_per_epoch = (len(self.encode_list) - 1) // self.batch_size + 1
@@ -146,7 +148,7 @@ class Translation(object):
             #predict_word = [vocab_dict_rev[idx] for idx in predictions[0]]
 
             if step % (self.valid_step/10) == 0:
-                print("step {0}: loss = {1}".format(step, loss))
+                logging.info("step {0}: loss = {1}".format(step, loss))
             if step % self.valid_step == 0:
                 # Test accuracy with validation data for each epoch.
                 self.saver.save(self.sess,
@@ -154,7 +156,7 @@ class Translation(object):
                                                           self.task_type),
                                 global_step=step)
                 self.save_pb()
-                print("Model is saved.\n")
+                logging.info("Model is saved.\n")
 
     def save_pb(self):
         node_list = ['is_training','output/predictions', 'accuracy/accuracy']
@@ -200,7 +202,7 @@ class Translation(object):
             word, state = self.run(sess, graph, vocab_dict, vocab_dict_rev, 
                                    state, word)
         text += word
-        print(text)
+        logging.info(text)
 
 
     def choose_word(self, prob, vocab_dict_rev):

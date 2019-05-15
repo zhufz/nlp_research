@@ -27,15 +27,17 @@ class ESIM():
         return feed_dict
 
     def __call__(self, x_query, x_sample, reuse = tf.AUTO_REUSE):
-        embedding_sequence_q1 = BatchNormalization(axis=2)(x_query)
-        embedding_sequence_q2 = BatchNormalization(axis=2)(x_sample)
-        final_embedding_sequence_q1 = SpatialDropout1D(0.25)(embedding_sequence_q1)
-        final_embedding_sequence_q2 = SpatialDropout1D(0.25)(embedding_sequence_q2)
+        #embedding_sequence_q1 = BatchNormalization(axis=2)(x_query)
+        #embedding_sequence_q2 = BatchNormalization(axis=2)(x_sample)
+        #final_embedding_sequence_q1 = SpatialDropout1D(0.25)(embedding_sequence_q1)
+        #final_embedding_sequence_q2 = SpatialDropout1D(0.25)(embedding_sequence_q2)
 
         #################### 输入编码input encoding #######################
         #分别对query和sample进行双向编码
-        rnn_layer_q1 = Bidirectional(LSTM(self.recurrent_units, return_sequences=True))(final_embedding_sequence_q1)
-        rnn_layer_q2 = Bidirectional(LSTM(self.recurrent_units, return_sequences=True))(final_embedding_sequence_q2)
+        rnn_layer_q1 = Bidirectional(LSTM(self.recurrent_units, return_sequences=True))(x_query)
+        rnn_layer_q2 = Bidirectional(LSTM(self.recurrent_units, return_sequences=True))(x_sample)
+        #rnn_layer_q1 = Bidirectional(LSTM(self.recurrent_units, return_sequences=True))(final_embedding_sequence_q1)
+        #rnn_layer_q2 = Bidirectional(LSTM(self.recurrent_units, return_sequences=True))(final_embedding_sequence_q2)
 
         ############## 局部推理local inference modeling ###################
         #计算dot attention

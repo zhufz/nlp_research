@@ -226,7 +226,7 @@ def get_initializer(type = 'random_uniform', **kwargs):
     else:
         raise ValueError('unknown type of initializer!')
 
-def get_trainp_op(global_step, optimizer_type, loss, clip_grad, lr_pl):
+def get_train_op(global_step, optimizer_type, loss, lr_pl, clip_grad = 5):
     with tf.variable_scope("train_step"):
         #self.global_step = tf.Variable(0, name="global_step", trainable=False)
         if optimizer_type == 'Adam':

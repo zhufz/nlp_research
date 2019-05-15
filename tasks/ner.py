@@ -2,6 +2,7 @@ import sys,os
 import yaml
 import time
 import copy
+import logging
 import tensorflow as tf
 from tensorflow.contrib.rnn import LSTMCell
 from tensorflow.contrib.crf import crf_log_likelihood
@@ -16,7 +17,7 @@ from embedding import embedding
 from encoder import encoder
 from utils.data_utils import *
 from utils.tf_utils import load_pb,write_pb
-from common.layers import get_trainp_op
+from common.layers import get_train_op
 from language_model.bert.modeling import get_assignment_map_from_checkpoint
 import pdb
 
@@ -81,7 +82,7 @@ class NER(object):
             self.out = self.encoder()
         self.output_nodes = self.out.name.split(':')[0]
         self.loss(self.out)
-        self.optimizer = get_trainp_op(self.global_step, 
+        self.optimizer = get_train_op(self.global_step, 
                                        self.optimizer_type, 
                                        self.loss, 
                                        self.clip_grad, 
@@ -161,13 +162,13 @@ class NER(object):
                                                       self.global_step],
                                                       feed_dict=feed_dict)
             if step_num % (self.valid_step/10) == 0:
-                print('step {}, loss: {:.4}'.format(\
+                logging.info('step {}, loss: {:.4}'.format(\
                     step_num,
                     loss_train))
             if step_num % (self.valid_step) == 0:
-                print('===========validation / test===========')
+                logging.info('===========validation / test===========')
                 result = self.test()
-                print("result:", result)
+                logging.info("result:", result)
                 if result['acc'] > max_acc:
                     max_acc = result['acc']
                     self.saver.save(self.sess,
@@ -179,13 +180,13 @@ class NER(object):
                              ["is_training", self.output_nodes])
                 else:
                     self.save_pb()
-                    print(f'train finished! accuracy: {max_acc}')
+                    logging.info(f'train finished! accuracy: {max_acc}')
                     sys.exit(0)
 
     def test(self):
         #saver = tf.train.Saver()
         #with tf.Session() as sess:
-        #    print('=========== testing ===========')
+        #    logging.info('=========== testing ===========')
         #    saver.restore(sess, self.model_path)
         #    label_list, seq_len_list = self.dev_one_epoch(sess, test)
         #    self.evaluate(label_list, seq_len_list, test)

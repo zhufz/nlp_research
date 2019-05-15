@@ -95,11 +95,14 @@ match:
   # sim_mode=cross: 对于交互的匹配方法
   # sim_mode=represent: 基于表示的匹配方法
   loss_type: "hinge_loss"
-  config_type: 1
+  optimizer_type: "Adam"
+  lr_mode: 'triangular2'
+  config_type: 3
   config: 
     0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1}
-    1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.005}
-    2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 1, learning_rate: 0.0001}
+    1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.0005}
+    2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 1, learning_rate: 0.001}
+    3: {encoder_type: "esim", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
 
     10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}
     11: {encoder_type: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
@@ -114,8 +117,6 @@ match:
   mode: "train"  #train\test\test_one
   #mode: "test"  #train\test\test_one
   #mode: "test_one"  #train\test\test_one
-
-
 
 
 ner:

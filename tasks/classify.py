@@ -1,5 +1,6 @@
 import sys,os
 import yaml
+import logging
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
@@ -76,7 +77,7 @@ class Classify(object):
             tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
 
     def load_data(self, mode = 'train'):
-        print("Building dataset...")
+        logging.info("Building dataset...")
         if mode == 'train':
             class_mp, class_mp_rev = generate_class_mp(self.label_list, self.classes_path)
             y = [class_mp[item] for item in self.label_list]
@@ -107,7 +108,7 @@ class Classify(object):
             self.accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
     def train(self):
-        print("---------start train---------")
+        logging.info("---------start train---------")
         self.train_data, self.valid_data = self.load_data(mode = 'train')
         self.train_data = list(self.train_data)
         self.valid_data = list(self.valid_data)
@@ -130,7 +131,7 @@ class Classify(object):
                 train_feed_dict.update(self.encoder.feed_dict(x_batch))
             _, step, loss = self.sess.run([self.optimizer, self.global_step, self.loss], feed_dict=train_feed_dict)
             if step % (self.valid_step/10) == 0:
-                print("step {0}: loss = {1}".format(step, loss))
+                logging.info("step {0}: loss = {1}".format(step, loss))
             if step % self.valid_step == 0:
                 # Test accuracy with validation data for each epoch.
                 valid_batches = batch_iter(self.valid_data, self.batch_size, 1, shuffle=False)
@@ -154,7 +155,7 @@ class Classify(object):
                     sum_accuracy += accuracy
                     cnt += 1
                 valid_accuracy = sum_accuracy / cnt
-                print("\nValidation Accuracy = {1}\n".format(step // num_batches_per_epoch, sum_accuracy / cnt))
+                logging.info("\nValidation Accuracy = {1}\n".format(step // num_batches_per_epoch, sum_accuracy / cnt))
                 # Save model
                 if valid_accuracy > max_accuracy:
                     max_accuracy = valid_accuracy
@@ -162,10 +163,10 @@ class Classify(object):
                                     "{0}/{1}.ckpt".format(self.checkpoint_path,
                                                               self.task_type),
                                     global_step=step)
-                    print("Model is saved.\n")
+                    logging.info("Model is saved.\n")
                 else:
                     self.save_pb()
-                    print(f"train finished! accuracy: {max_accuracy}")
+                    logging.info(f"train finished! accuracy: {max_accuracy}")
                     sys.exit(0)
 
     def save_pb(self):
@@ -236,8 +237,8 @@ class Classify(object):
                                 pred_y],
                        'score': scores })
         dt.to_csv(self.test_path+'.result.csv',index=False,sep=',')
-        print("Test Accuracy : {0}".format(sum_accuracy / cnt))
-        print("Test Thre Accuracy : {0}".format(right / all))
+        logging.info("Test Accuracy : {0}".format(sum_accuracy / cnt))
+        logging.info("Test Thre Accuracy : {0}".format(right / all))
 
     def predict(self):
         predict_file = self.predict_path
@@ -317,8 +318,8 @@ class Classify(object):
                                                         feed_dict=feed_dict)
             max_scores = [scores_out[idx][predictions_out[idx]] \
                           for idx in range(len(predictions_out))]
-        print("preprocess: {}".format(preprocess_x))
-        print("class:{}, score:{}, class_id:{}".format(
+        logging.info("preprocess: {}".format(preprocess_x))
+        logging.info("class:{}, score:{}, class_id:{}".format(
             mp_rev[predictions_out[0]],
             max_scores[0],
             predictions_out[0]))
