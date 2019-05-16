@@ -9,8 +9,7 @@ checkpoint_path: "{encoder_type}/checkpoint"
 model_path: "{encoder_type}/model.pb"
 cache_vec_path: "{encoder_type}/cache.vec.pkl"
 
-batch_mode: "random"  #(random/supervised)
-#batch_mode: "supervised"
+
 
 batch_size: 64
 num_epochs: 15000
@@ -19,7 +18,6 @@ maxlen: 40
 embedding_size: 128
 learning_rate: 0.0001
 margin: 1
-score_thre: 0.8
 valid_step: 1000 #valid one time every valid_step 
 
 use_language_model: False
@@ -32,8 +30,13 @@ rand_embedding: True
 # sim_mode=represent: 基于表示的匹配方法
 loss_type: "hinge_loss"
 optimizer_type: "Adam"
-lr_mode: 'triangular2'
-config_type: 3
+use_clr: False
+clr_mode: 'triangular2'
+
+batch_mode: "random"  #(random/supervised)
+batch_mode: "supervised"
+score_thre: 0.7
+config_type: 10
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1}
   1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.0005}

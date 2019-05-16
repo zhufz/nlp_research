@@ -232,88 +232,69 @@ class PairGenerator():
         return pair_list
 
     def get_batch(self,  data, batch_size, num_epochs, maxlen1, maxlen2, task,
-                  mode = 'random', **kwargs):
-        if mode == 'random':
-            return self.get_batch_random(data, batch_size, num_epochs, maxlen1,
-                                  maxlen2)
-        elif mode == 'supervised':
-            return self.get_batch_supervised(data, batch_size, num_epochs, maxlen1,
-                                  maxlen2, task)
-        else:
-            raise ValueError('unknown mode to get batch data!')
-
-    def get_batch_random(self, data, batch_size, num_epochs, maxlen1, maxlen2):
+                  mode = 'random', random_select_query = False, shuffle = True):
+    #def get_batch_random(self, data, batch_size, num_epochs, maxlen1, maxlen2,
+                         #random_select_query = False, shuffle = True):
         #定义召回类对象并初始化
         #recall = InvertRecall(data)
         rel_set = self.get_rel_set(self.rel)
         result_list = []
         cnt_batch_size = 0
         epoch = 0
+        rel_keys_list = list(rel_set.keys())
+        rel_keys_id = 0
+        rel_keys_len = len(rel_keys_list)
         while epoch < num_epochs:
-            #random select a query
-            d1 = random.choice(list(rel_set.keys()))
+            if random_select_query:
+                #random select a query
+                d1 = random.choice(rel_keys_list)
+            else:
+                if rel_keys_id == rel_keys_len - 1:
+                    rel_keys_id = 0
+                    epoch += 1
+                    if shuffle:
+                        random.shuffle(rel_keys_list)
+                d1 = rel_keys_list[rel_keys_id]
+                rel_keys_id += 1
             if cnt_batch_size == 0:
                 X1,X2,X1_len,X2_len = [],[],[],[]
             pos_list = rel_set[d1][1]
             neg_list = rel_set[d1][0]
-            #random select pos and neg sample
-            #pos_list = recall(data, pos_list, d1, num = 64, reverse = False)
-            d2p = random.choice(pos_list)
-            #neg_list = recall(data, neg_list, d1, num = 64, reverse = True)
-            d2n = random.choice(neg_list)
+
+            if mode == 'supervised':
+                min_idx, max_idx = self._get_min_d2_supervised(task, 
+                                                             data, 
+                                                             d1,
+                                                             pos_list,
+                                                             neg_list)
+                d2p = pos_list[min_idx]
+                d2n = neg_list[max_idx]
+            else:
+                d2p = random.choice(pos_list)
+                d2n = random.choice(neg_list)
             X1.append(data[d1])
             X1.append(data[d1])
             X2.append(data[d2p])
             X2.append(data[d2n])
             cnt_batch_size += 2
             if cnt_batch_size == batch_size:
-                epoch += 1
                 cnt_batch_size = 0
                 yield X1,X2
 
-    def get_batch_supervised(self, data, batch_size, num_epochs, maxlen1,
-                             maxlen2, task):
-        #定义召回类对象并初始化
-        #recall = InvertRecall(data)
-        #先动态挑选pair_list,再生成batch数据
-        rel_set = self.get_rel_set(self.rel)
-        result_list = []
-        cnt_batch_size = 0
-        epoch = -1
-        while epoch < num_epochs:
-            epoch += 1
-            for d1 in rel_set:
-                if cnt_batch_size == 0:
-                    X1,X2 = [],[]
-                #find best pos sample
-                label = 1
-                pos_list = rel_set[d1][label]
-                tmp_list = []
-                #pos_list = recall(data, pos_list, d1, num = 64, reverse = False)
-                for d2 in pos_list:
-                    tmp_list.append((data[d1], data[d2]))
-                pos_pred = task.predict_prob(tmp_list)
-                min_idx = np.argmin(pos_pred)
-                min_d2 = pos_list[min_idx]
-                X1.append(data[d1])
-                X2.append(data[min_d2])
+    def _get_min_d2_supervised(self, task, data, d1, pos_list, neg_list):
+        tmp_list = []
+        for d2 in pos_list:
+            tmp_list.append((data[d1], data[d2]))
+        pos_pred = task.predict_prob(tmp_list)
+        min_idx = np.argmin(pos_pred)
 
-                #find best neg sample
-                label = 0
-                neg_list = rel_set[d1][label]
-                tmp_list = []
-                #neg_list = recall(data, neg_list, d1, num = 64, reverse = True)
-                for item in neg_list:
-                    tmp_list.append((data[d1], data[d2]))
-                neg_pred = task.predict_prob(tmp_list)
-                max_idx = np.argmax(neg_pred)
-                max_d2 = neg_list[max_idx]
-                X1.append(data[d1])
-                X2.append(data[max_d2])
-                cnt_batch_size += 2
-                if cnt_batch_size == batch_size:
-                    cnt_batch_size = 0
-                    yield X1,X2
+        tmp_list = []
+        for d2 in neg_list:
+            tmp_list.append((data[d1], data[d2]))
+        neg_pred = task.predict_prob(tmp_list)
+        max_idx = np.argmax(neg_pred)
+
+        return min_idx, max_idx
 
     def get_test_batch(self, data, maxlen1, maxlen2, query = None):
         if query == None:

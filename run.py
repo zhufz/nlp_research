@@ -44,10 +44,13 @@ def read_conf(task_type):
     #加载base信息
     for k,v in base.items():
         conf[k] = v
+    #读取config信息，对应不同的参数
     if "config" and "config_type" in conf:
         config_type = conf['config_type']
         for k,v in (conf['config'][config_type]).items():
             conf[k] = v
+    del conf['config']
+
     #更新encoder_type信息
     for k,v in conf.items():
         if type(v) == str and (v.find('{encoder_type}')) != -1:

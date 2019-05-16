@@ -72,14 +72,15 @@ class ESIM():
         merged_q2 = concatenate([avgpool_q2, maxpool_q2])
 
         final_v = BatchNormalization()(concatenate([merged_q1, merged_q2]))
-        output = Dense(units=self.dense_units, activation='relu')(final_v)
-        output = BatchNormalization()(output)
+        #output = Dense(units=self.dense_units, activation='relu')(final_v)
+        output = Dense(units=self.num_output, activation=None)(final_v)
+        #output = BatchNormalization()(output)
         #output = Dropout(self.dropout_rate)(output)
-        output = tf.nn.dropout(output, self.keep_prob)
+        #output = tf.nn.dropout(output, self.keep_prob)
         #高级api tf.layer.dropout 与 keras的Dropout都使用dropout
         #tf.nn.dropout使用keep_prob
         #output = Dense(units=self.num_output, activation='sigmoid')(output)
-        output = Dense(units=self.num_output, activation=None)(output)
+        #output = Dense(units=self.num_output, activation=None)(output)
         output = tf.squeeze(output, -1)
         return output
 

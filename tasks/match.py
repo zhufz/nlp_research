@@ -81,9 +81,10 @@ class Match(object):
                               self.neg_target,
                               self.batch_size,
                               self.conf)
-        self.learning_rate = cyclic_learning_rate(global_step=self.global_step,
+        if self.use_clr:
+            self.learning_rate = cyclic_learning_rate(global_step=self.global_step,
                                                   learning_rate = self.learning_rate, 
-                                                  mode = self.lr_mode)
+                                                  mode = self.clr_mode)
         self.optimizer = get_train_op(self.global_step, 
                                        self.optimizer_type, 
                                        self.loss,
@@ -337,7 +338,7 @@ class Match(object):
             cosine_dis = cosine_similarity([vec], self.cached_vecs)[0]
             max_id = np.argmax(cosine_dis)
         max_score = np.max(cosine_dis)
-        logging.info(self.text_list[max_id], self.label_list[max_id], max_score)
+        logging.info(f"{self.text_list[max_id]}, {self.label_list[max_id]}, {max_score}")
         return self.label_list[max_id], max_score
 
     def _get_raw_texts_vec(self, text_list):
