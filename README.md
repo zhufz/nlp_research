@@ -17,11 +17,7 @@
     如果需要使用bert预训练模型，请先下载预训练模型：sh scripts/prepare.sh
 
 ## 快速开始
-
-
-1. 分类
-
-  
+    [分类]
     训练：python3 run.py classify 
     [格式：python3 run.py {task_type}, 对应到conf/model/{task_type}.yml]
     测试：python3 run.py classify model=test
@@ -32,16 +28,12 @@
     环境：python3+tensorflow 1.10
     任务参数定义在task.yml中，具体执行代码在tasks文件夹中。
     目前已支持三种常见任务：
-
     1. classify
         分类任务
-    
     2. match
-        匹配任务
-    
+        匹配任务 
     3. ner
         标注任务
-    
     4. seq2seq
         文本生成
 
