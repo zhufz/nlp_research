@@ -166,7 +166,7 @@ class Match(object):
         feed_dict.update(self.embedding.feed_dict(x1,'x_query'))
         feed_dict.update(self.embedding.feed_dict(x2,'x_sample'))
         feed_dict.update(self.encoder.feed_dict(x_query = x1_len, x_sample = x2_len))
-        pred = self.sess.run([self.pred], feed_dict=feed_dict)
+        pred = self.sess.run(self.pred, feed_dict=feed_dict)
         return pred
 
     def train(self):
@@ -176,7 +176,9 @@ class Match(object):
                                                  self.maxlen,
                                                  self.maxlen,
                                                  task = self,
-                                                 mode =self.batch_mode)
+                                                 mode =self.batch_mode,
+                                                 margin = self.margin,
+                                                 semi_hard = self.semi_hard)
 
         max_acc = -1
         for batch in train_batches:

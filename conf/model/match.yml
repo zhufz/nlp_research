@@ -17,7 +17,7 @@ num_class: 89
 maxlen: 40
 embedding_size: 128
 learning_rate: 0.0001
-margin: 1
+
 valid_step: 1000 #valid one time every valid_step 
 early_stop: True
 
@@ -36,6 +36,8 @@ clr_mode: 'triangular2'
 
 batch_mode: "random"  #(random/supervised)
 batch_mode: "supervised"
+margin: 0.5
+semi_hard: True
 score_thre: 0.7
 config_type: 10
 config: 

@@ -4,6 +4,7 @@ import numpy as np
 import os
 import pickle
 import random
+import logging
 import pdb
 from collections import defaultdict
 from gensim import corpora,models,similarities
@@ -232,9 +233,8 @@ class PairGenerator():
         return pair_list
 
     def get_batch(self,  data, batch_size, num_epochs, maxlen1, maxlen2, task,
-                  mode = 'random', random_select_query = False, shuffle = True):
-    #def get_batch_random(self, data, batch_size, num_epochs, maxlen1, maxlen2,
-                         #random_select_query = False, shuffle = True):
+                  mode = 'random', random_select_query = False, shuffle = True,
+                  margin = None, semi_hard = False):
         #定义召回类对象并初始化
         #recall = InvertRecall(data)
         rel_set = self.get_rel_set(self.rel)
@@ -262,11 +262,13 @@ class PairGenerator():
             neg_list = rel_set[d1][0]
 
             if mode == 'supervised':
-                min_idx, max_idx = self._get_min_d2_supervised(task, 
-                                                             data, 
-                                                             d1,
-                                                             pos_list,
-                                                             neg_list)
+                min_idx, max_idx = self._get_hard_d2(task, 
+                                                     data, 
+                                                     d1, 
+                                                     pos_list, 
+                                                     neg_list,
+                                                     margin,
+                                                     semi_hard)
                 d2p = pos_list[min_idx]
                 d2n = neg_list[max_idx]
             else:
@@ -281,19 +283,34 @@ class PairGenerator():
                 cnt_batch_size = 0
                 yield X1,X2
 
-    def _get_min_d2_supervised(self, task, data, d1, pos_list, neg_list):
+    def _get_hard_d2(self, task, data, d1, pos_list, neg_list, margin, semi_hard):
+        #get hard positvie and hard negative sample
         tmp_list = []
         for d2 in pos_list:
             tmp_list.append((data[d1], data[d2]))
         pos_pred = task.predict_prob(tmp_list)
         min_idx = np.argmin(pos_pred)
+        min_score = np.min(pos_pred)
 
         tmp_list = []
+        neg_list = random.sample(neg_list, min(128,len(neg_list)))
+        #logging.info('{} neg sample selected!'.format(len(neg_list)))
         for d2 in neg_list:
             tmp_list.append((data[d1], data[d2]))
         neg_pred = task.predict_prob(tmp_list)
+        #pdb.set_trace()
+        if semi_hard:
+            neg_pred_tmp = [item if item > min_score and \
+                            item < min_score+margin else None \
+                            for item in neg_pred]
+            neg_pred_tmp = list(filter(lambda x : x != None, neg_pred_tmp))
+            if len(neg_pred_tmp) != 0:
+                neg_pred = neg_pred_tmp
+                #logging.warn('{} simi-hard sample selected!'.format(len(neg_pred)))
+            else:
+                pass
+                #logging.warn('no simi-hard sample selected!')
         max_idx = np.argmax(neg_pred)
-
         return min_idx, max_idx
 
     def get_test_batch(self, data, maxlen1, maxlen2, query = None):
