@@ -17,11 +17,13 @@
     如果需要使用bert预训练模型，请先下载预训练模型：sh scripts/prepare.sh
 
 ## 快速开始
+    [依赖]
+         pip3 install --user -r requirements.txt
     [分类]
-    训练：python3 run.py classify 
-    [格式：python3 run.py {task_type}, 对应到conf/model/{task_type}.yml]
-    测试：python3 run.py classify model=test
-    单个测试：python3 run.py classify model=test_one
+         训练：python3 run.py classify 
+              [格式：python3 run.py {task_type}, 对应到conf/model/{task_type}.yml]
+         测试：python3 run.py classify model=test
+         单个测试：python3 run.py classify model=test_one
 
 ## 任务
 
