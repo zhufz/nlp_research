@@ -26,40 +26,37 @@
 ## 任务
 
     环境：python3+tensorflow 1.10
-    任务参数定义在task.yml中，具体执行代码在tasks文件夹中。
-    目前已支持三种常见任务：
-    1. classify
-        分类任务
-    2. match
-        匹配任务 
-    3. ner
-        标注任务
-    4. seq2seq
-        文本生成
+    各类任务的参数分别定义在conf/model/的，以任务名命名的yml文件中！
+    目前已支持的常见任务如下：
+    1. classify 分类任务
+    2. match    匹配任务 
+    3. ner      标注任务
+    4. seq2seq  文本生成
 
 ## 模块说明
 
-    1. encoder
-        存放编码器，目前已支持的编码器列表：
-        abcnn
-        attention_rnn
-        capsule
+    1. encoder（存放编码器）
         cnn
+        fasttext
+        text_cnn
         dcnn
         dpcnn
+        vdcnn
+        rnn        
+        rcnn
+        attention_rnn
+        capsule
         esim
-        fast_attention_text
-        fasttext
         han
         matchpyramid
-        rcnn
-        rnn
-        text_cnn
+        abcnn
         transformer
-        vdcnn
-    
-    2. common
-        存放一些通用网络中间层
+  
+    2. common（存放一些通用网络中间层）
+        loss
+        attention
+        lr
+        ...
     
     3. utils
         数据处理工具
