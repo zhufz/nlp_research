@@ -255,7 +255,8 @@ class Match(object):
                 else:
                     self.save_pb()
                     logging.info(f'train finished! max valid accuracy: {max_acc}')
-                    sys.exit(0)
+                    if self.early_stop == True:
+                        sys.exit(0)
 
     def save_pb(self):
         write_pb(self.checkpoint_path,self.model_path,["is_training", self.output_nodes])
