@@ -3,6 +3,7 @@ import jieba
 import pdb
 import pandas as pd
 import sys,os
+import logging
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 from utils.ac import AC
@@ -40,11 +41,14 @@ class Preprocess():
 
     def load_gen(self, path):
         mp = {}
-        lines = [line.strip() for line in open(path).readlines()]
-        for line in lines:
-            arr = line.split('\t')
-            if len(arr) <2:continue
-            mp[arr[0]] = "<"+arr[1]+">"
+        if os.path.exists(path):
+            lines = [line.strip() for line in open(path).readlines()]
+            for line in lines:
+                arr = line.split('\t')
+                if len(arr) <2:continue
+                mp[arr[0]] = "<"+arr[1]+">"
+        else:
+            logging.warn("gen file not found!")
         return mp
 
 
