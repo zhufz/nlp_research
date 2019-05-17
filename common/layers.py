@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.contrib import rnn
 
 from utils.tf_utils import  get_placeholder_batch_size
 import numpy as np
@@ -51,9 +50,9 @@ class RNNLayer:
             assert self.num_hidden >0, "num_hidden need larger than 0"
             batch_size = get_placeholder_batch_size(inputs)
             if self.rnn_type == 'lstm':
-                cells = [rnn.LSTMCell(self.num_hidden, state_is_tuple=True) for n in
+                cells = [tf.nn.rnn.LSTMCell(self.num_hidden, state_is_tuple=True) for n in
                          range(self.num_layers)]
-                stack = rnn.MultiRNNCell(cells)
+                stack = tf.nn.rnn.MultiRNNCell(cells)
                 if initial_state == None:
                     self.initial_state = stack.zero_state(batch_size, dtype=tf.float32)
                 else:
@@ -69,8 +68,8 @@ class RNNLayer:
                                  state_for_feed.name.split(':')[0]]
 
             elif self.rnn_type == 'gru':
-                cells = [rnn.GRUCell(self.num_hidden) for n in range(self.num_layers)]
-                stack = rnn.MultiRNNCell(cells)
+                cells = [tf.nn.rnn.GRUCell(self.num_hidden) for n in range(self.num_layers)]
+                stack = tf.nn.rnn.MultiRNNCell(cells)
                 if initial_state == None:
                     self.initial_state = stack.zero_state(batch_size, dtype=tf.float32)
                 else:
@@ -87,8 +86,8 @@ class RNNLayer:
 
             elif self.rnn_type == 'bi_lstm' and self.num_layers == 1:
                 #sigle layer lstm
-                cell_fw = rnn.LSTMCell(self.num_hidden)
-                cell_bw = rnn.LSTMCell(self.num_hidden)
+                cell_fw = tf.nn.rnn.LSTMCell(self.num_hidden)
+                cell_bw = tf.nn.rnn.LSTMCell(self.num_hidden)
                 if initial_state == None:
                     self.initial_state_fw = cell_fw.zero_state(batch_size, dtype=tf.float32)
                     self.initial_state_bw = cell_fw.zero_state(batch_size, dtype=tf.float32)
@@ -115,14 +114,14 @@ class RNNLayer:
 
             elif self.rnn_type == 'bi_lstm':
                 #multi layer lstm
-                fw_cells = cells = [rnn.LSTMCell(self.num_hidden,
+                fw_cells = cells = [tf.nn.rnn.LSTMCell(self.num_hidden,
                                                  state_is_tuple=True) for n in
                                     range(self.num_layers)]
-                bw_cells = cells = [rnn.LSTMCell(self.num_hidden,
+                bw_cells = cells = [tf.nn.rnn.LSTMCell(self.num_hidden,
                                                  state_is_tuple=True) for n in
                                     range(self.num_layers)]
-                stack_fw = rnn.MultiRNNCell(fw_cells)
-                stack_bw = rnn.MultiRNNCell(bw_cells)
+                stack_fw = tf.nn.rnn.MultiRNNCell(fw_cells)
+                stack_bw = tf.nn.rnn.MultiRNNCell(bw_cells)
                 if initial_state == None:
                     self.initial_state_fw = stack_fw.zero_state(batch_size, dtype=tf.float32)
                     self.initial_state_bw = stack_bw.zero_state(batch_size, dtype=tf.float32)
@@ -150,10 +149,10 @@ class RNNLayer:
                                  state_for_feed.name.split(':')[0]]
 
             elif self.rnn_type == 'bi_gru':
-                fw_cells = [rnn.GRUCell(self.num_hidden) for n in range(self.num_layers)]
-                bw_cells = [rnn.GRUCell(self.num_hidden) for n in range(self.num_layers)]
-                stack_fw = rnn.MultiRNNCell(fw_cells)
-                stack_bw = rnn.MultiRNNCell(bw_cells)
+                fw_cells = [tf.nn.rnn.GRUCell(self.num_hidden) for n in range(self.num_layers)]
+                bw_cells = [tf.nn.rnn.GRUCell(self.num_hidden) for n in range(self.num_layers)]
+                stack_fw = tf.nn.rnn.MultiRNNCell(fw_cells)
+                stack_bw = tf.nn.rnn.MultiRNNCell(bw_cells)
                 if initial_state == None:
                     self.initial_state_fw = stack_fw.zero_state(batch_size, dtype=tf.float32)
                     self.initial_state_bw = stack_bw.zero_state(batch_size, dtype=tf.float32)
