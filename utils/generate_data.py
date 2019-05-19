@@ -1,17 +1,18 @@
 import pandas as pd
 import pdb
-import sys
+import sys,os
 import random
 import yaml
 from collections import defaultdict
 
 class GenerateData():
-    def __init__(self):
-        self.conf = yaml.load(open('task.yml'))
+    def __init__(self, conf):
+        self.conf = conf
 
     def process(self, train_rate = 0.9):
-        ori_file = self.conf['classify']['ori_path']
-        csv = pd.read_csv(ori_file, header = 0, error_bad_lines=False)
+        ori_file = self.conf['ori_path']
+        #csv = pd.read_csv(ori_file, header = 0, error_bad_lines=False)
+        csv = pd.read_csv(ori_file, header = 0, sep="\t", error_bad_lines=False)
         self.text = csv['text']
         self.label = csv['target']
         self.data = defaultdict(list)
@@ -20,8 +21,8 @@ class GenerateData():
 
         #train_path = 'data/classify_train.csv'
         #test_path = 'data/classify_test.csv'
-        train_path = self.conf['classify']['train_path']
-        test_path = self.conf['classify']['test_path']
+        train_path = self.conf['train_path']
+        test_path = self.conf['test_path']
 
         for idx in range(len(self.text)):
             self.data[self.label[idx]].append(self.text[idx])
@@ -91,14 +92,16 @@ class GenerateData():
 
 
     def process_match(self):
-        ori_file = self.conf['match']['ori_path']
-        csv = pd.read_csv(ori_file, header = 0, error_bad_lines=False)
+        pdb.set_trace()
+        ori_file = self.conf['ori_path']
+        csv = pd.read_csv(ori_file, header = 0, sep="\t", error_bad_lines=False)
         self.text = csv['text']
         self.label = csv['target']
         self.data = defaultdict(list)
-        index_path = self.conf['match']['index_path']
-        test_path = self.conf['match']['test_path']
-        relation_path = self.conf['match']['relation_path']
+        pdb.set_trace()
+        index_path = self.conf['index_path']
+        test_path = self.conf['test_path']
+        relation_path = self.conf['relation_path']
 
         #index_path = 'data/match_index.csv'
         #relation_path = 'data/match_relation.csv'
@@ -141,19 +144,6 @@ class GenerateData():
                 for data in item[1]:
                     #d1, label, d2
                     f_test.write("{}\t{}\t{}\n".format(item[0], data[0], data[1]))
-
-if __name__ == '__main__':
-    split = GenerateData()
-    if len(sys.argv) > 1:
-        if sys.argv[1] == 'match':
-            split.process_match()
-        else:
-            split.process()
-    else:
-        print('match or classfiy?')
-
-
-
 
 
 

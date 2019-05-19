@@ -4,6 +4,7 @@ import os,sys
 import pdb
 import time
 import logging
+from utils.generate_data import GenerateData
 
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 sys.path.append(ROOT_PATH)
@@ -77,14 +78,18 @@ if __name__ == '__main__':
     task_type = sys.argv[1]
 
     conf, task_type = read_conf(task_type)
-    cl = dl_tasks[task_type](conf)
+
     logging.info(conf)
+
     if conf['mode'] == 'train':
+        cl = dl_tasks[task_type](conf)
         cl.train()
         cl.test()
     elif conf['mode'] == 'test':
+        cl = dl_tasks[task_type](conf)
         cl.test()
     elif conf['mode'] == 'predict':
+        cl = dl_tasks[task_type](conf)
         cl.predict()
     elif conf['mode'] == 'test_one':
         while True:
@@ -94,3 +99,13 @@ if __name__ == '__main__':
             end = time.time()
             consume = end-start
             print(f'consume: {consume}')
+    elif conf['mode'] == 'prepare':
+        split = GenerateData(conf)
+        if task_type == 'match':
+            split.process_match()
+        elif task_type == 'classify':
+            split.process()
+        else:
+            raise ValueError('unknown task type for prepare data step!')
+    else:
+        raise ValueError('unknown mode!')
