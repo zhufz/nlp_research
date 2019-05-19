@@ -60,6 +60,10 @@ def read_conf(task_type):
     model_path = '/'.join(conf['model_path'].split('/')[:-1])
     if not os.path.exists(model_path):
         os.makedirs(model_path)
+    if 'tfrecords_path' in conf:
+        tfrecords_path = conf['tfrecords_path']
+        if not os.path.exists(tfrecords_path):
+            os.makedirs(tfrecords_path)
 
     #使用指令中的额外参数更新conf
     if len(sys.argv) >1:

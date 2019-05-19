@@ -8,6 +8,7 @@ dict_path: "{encoder_type}/dict.pkl"
 checkpoint_path: "{encoder_type}/checkpoint"
 model_path: "{encoder_type}/model.pb"
 cache_vec_path: "{encoder_type}/cache.vec.pkl"
+tfrecords_path: "{encoder_type}/tfrecords"
 
 
 

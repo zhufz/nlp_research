@@ -29,10 +29,13 @@ class CharEmbedding():
             tf.assign(self.embedding, self._get_embedding(vocab_dict))
         self.input_ids = {}
 
-    def __call__(self, name = "char_embedding"):
+    def __call__(self, features = None, name = "char_embedding"):
         """define placeholder"""
-        self.input_ids[name] = tf.placeholder(dtype=tf.int32, shape=[None,
+        if features == None:
+            self.input_ids[name] = tf.placeholder(dtype=tf.int32, shape=[None,
                                                                      self.maxlen], name = name)
+        else:
+            self.input_ids[name] = features[name]
         return tf.nn.embedding_lookup(self.embedding, self.input_ids[name])
 
     def feed_dict(self, input_x, name = 'char_embedding'):

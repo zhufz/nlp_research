@@ -335,59 +335,37 @@ class PairGenerator():
                 X2.append(item)
             yield X1,X2,labels
 
+class GenerateTfrecords():
+    def _create_serialized_example(self, sentence_id, label):
+        """Helper for creating a serialized Example proto."""
+        example = tf.train.Example(features=tf.train.Features(feature={
+            "input": tf.train.Feature(int64_list=tf.train.Int64List(value=sentence_id)),
+            "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label]))
+        }))
+        return example.SerializeToString()
 
-def _create_serialized_example(current, vocab):
-    """Helper for creating a serialized Example proto."""
-    #example = tf.train.Example(features=tf.train.Features(feature={
-    #    "decode_pre": _int64_feature(_sentence_to_ids(predecessor, vocab)),
-    #    "encode": _int64_feature(_sentence_to_ids(current, vocab)),
-    #    "decode_post": _int64_feature(_sentence_to_ids(successor, vocab)),
-    #}))
-    example = tf.train.Example(features=tf.train.Features(feature={
-        "features": _int64_feature(_sentence_to_ids(current, vocab)),
-    }))
-    #example = tf.train.Example(features=tf.train.Features(feature=
-    #    _int64_feature(_sentence_to_ids(current, vocab)),
-    #))
-    return example.SerializeToString()
+    def _output_tfrecords(self, dataset, idx, path):
+        file_name = os.path.join(path, "class_{:04d}".format(idx))
+        with tf.python_io.TFRecordWriter(file_name) as writer:
+          for item in dataset:
+            writer.write(item)
+
+    def process(self, text_list, label_list, sen2id_fun, vocab_dict, conf):
+        dataset = []
+        tmp_label = None
+        output_path = conf['tfrecords_path']
+        label_id = 0
+        mp_label = {item:idx for idx,item in enumerate(list(set(label_list)))}
+        mp_dataset = defaultdict(list)
+        _, text_id_list, _ = sen2id_fun(text_list, vocab_dict,
+                                       need_preprocess=False)
+        for idx,text_id in enumerate(text_id_list):
+            label = label_list[idx]
+            serialized = self._create_serialized_example(text_id, 
+                                                         mp_label[label])
+            mp_dataset[label].append(serialized)
+        for label in mp_dataset:
+            dataset = mp_dataset[label]
+            self._output_tfrecords(dataset, mp_label[label], output_path)
 
 
-def _write_shard(filename, dataset, indices):
-    """Writes a TFRecord shard."""
-    with tf.python_io.TFRecordWriter(filename) as writer:
-      for j in indices:
-        writer.write(dataset[j])
-
-def _write_dataset(name, dataset, indices, num_shards):
-    """Writes a sharded TFRecord dataset.
-    Args:
-      name: Name of the dataset (e.g. "train").
-      dataset: List of serialized Example protos.
-      indices: List of indices of 'dataset' to be written.
-      num_shards: The number of output shards.
-    """
-    tf.logging.info("Writing dataset %s", name)
-    borders = np.int32(np.linspace(0, len(indices), num_shards + 1))
-    for i in range(num_shards):
-        filename = os.path.join(FLAGS.output_dir, "%s-%.5d-of-%.5d" % (name, i,
-                                                                       num_shards))
-        shard_indices = indices[borders[i]:borders[i + 1]]
-        _write_shard(filename, dataset, shard_indices)
-        tf.logging.info("Wrote dataset indices [%d, %d) to output shard %s",
-                        borders[i], borders[i + 1], filename)
-    tf.logging.info("Finished writing %d sentences in dataset %s.", len(indices), name)
-
-def process_input_file(file_name):
-    dataset = []
-    for sentence_str in tf.gfile.FastGFile(filename):
-        sentence_tokens = sentence_str.split()
-        sentence_tokens = sentence_tokens[:FLAGS.max_sentence_length]
-        serialized = _create_serialized_example(sentence_tokens, vocab)
-        dataset.append(serialized)
-        stats.update(["sentence_count"])
-    indices = range(len(dataset))
-    val_indices = indices[:FLAGS.num_validation_sentences]
-    train_indices = indices[FLAGS.num_validation_sentences:]
-
-    _write_dataset("train", dataset, train_indices, FLAGS.train_output_shards)
-    _write_dataset("validation", dataset, val_indices, FLAGS.validation_output_shards)
