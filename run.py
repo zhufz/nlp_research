@@ -106,7 +106,8 @@ if __name__ == '__main__':
     elif conf['mode'] == 'prepare':
         split = GenerateData(conf)
         if task_type == 'match':
-            split.process_match()
+            cl = dl_tasks[task_type](conf)
+            cl.prepare()
         elif task_type == 'classify':
             split.process()
         else:

@@ -2,6 +2,7 @@ import tensorflow as tf
 from sklearn.metrics.pairwise import cosine_similarity
 import pdb
 import logging
+import multiprocessing
 import os,sys
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
@@ -16,6 +17,7 @@ from utils.recall import Annoy
 from common.layers import get_train_op
 from common.loss import get_loss
 from common.lr import cyclic_learning_rate
+from common.triplet_loss import batch_hard_triplet_loss
 
 
 class Match(object):
@@ -24,10 +26,7 @@ class Match(object):
         self.conf = conf
         for attr in conf:
             setattr(self, attr, conf[attr])
-        self.is_training = tf.placeholder(tf.bool, [], name="is_training")
-        self.global_step = tf.Variable(0, trainable=False)
-        self.keep_prob = tf.where(self.is_training, 0.5, 1.0)
-
+        self.graph = tf.get_default_graph()
         self.pre = Preprocess()
         self.generator = PairGenerator(self.relation_path,\
                                        self.index_path,
@@ -35,6 +34,8 @@ class Match(object):
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
                           self.generator.index_data]
         self.label_list = self.generator.label_data
+
+    def init_embedding(self):
         self.vocab_dict = embedding[self.embedding_type].build_dict(\
                                             dict_path = self.dict_path,
                                             text_list = self.text_list,
@@ -49,23 +50,27 @@ class Match(object):
                                                         self.embedding_size,
                                                         conf = self.conf)
 
+    def prepare(self):
+        self.init_embedding()
         self.gt = GenerateTfrecords()
-        self.gt.process(self.text_list, self.label_list, self.embedding.text2id, self.vocab_dict, self.conf)
+        self.gt.process(self.text_list, self.label_list, self.embedding.text2id,
+                        self.vocab_dict, self.tfrecords_path)
+    def train(self):
+        config = tf.estimator.RunConfig(tf_random_seed=230,
+                                        model_dir=self.checkpoint_path)
+        estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(), config=config)
+        estimator.train(input_fn = self.create_input_fn())
 
-            #_, x1_batch, x1_len_batch = self.embedding.text2id(batch,
-            #                                         self.vocab_dict,
-            #                                         need_preprocess = False)
+    def test(self):
+        pass
+
     def create_model_fn(self):
-        def model_fn(features, labels, mode, params, config):
+        def model_fn(features, labels, mode, params):
+            self.init_embedding()
             if not self.use_language_model:
-
-                #define embedding object by embedding_type
-
                 self.embed_query = self.embedding(features = features, name = 'x_query')
-                self.embed_sample = self.embedding(features = features, name = 'x_sample')
             else:
                 self.embedding = None
-
             #model params
             params = self.conf
             params.update({
@@ -74,18 +79,20 @@ class Match(object):
                 "maxlen2":self.maxlen,
                 "num_class":self.num_class,
                 "embedding_size":self.embedding_size,
-                "keep_prob":self.keep_prob,
-                "is_training": self.is_training,
+                "keep_prob":features['keep_prob'],
+                "is_training": features['is_training'],
                 "batch_size": self.batch_size,
                 "num_output": self.num_output
             })
 
+            self.global_step = tf.train.get_or_create_global_step()
             self.pred = self.sim(self.sim_mode, params) #encoder
             self.output_nodes = self.pred.name.split(':')[0]
             self.pos_target = tf.ones(shape = [int(self.batch_size/2)], dtype = tf.float32)
             self.neg_target = tf.zeros(shape = [int(self.batch_size/2)], dtype = tf.float32)
-            self.loss = self.loss(self.loss_type,
+            self.loss = self.cal_loss(self.loss_type,
                                   self.pred,
+                                  labels,
                                   self.pos_target,
                                   self.neg_target,
                                   self.batch_size,
@@ -100,29 +107,33 @@ class Match(object):
                                            self.learning_rate, 
                                            clip_grad = 5)
             return tf.estimator.EstimatorSpec(mode, loss=self.loss,
-                                              train_op=self.optimizer)
+                                                  train_op=self.optimizer)
         return model_fn
 
-
     def create_input_fn(self):
-        filenames = ["{}/class_{:04d}".format(self.tfrecords_path,i) \
-                         for i in range(self.num_class)]
-        datasets = tf.data.TFRecordDataset(filenames)
-
-        def parser(record):
-            keys_to_features = {
-                "input": tf.FixedLenFeature((), tf.string),
-                "label": tf.FixedLenFeature((), tf.string),
-            }
-            parsed = tf.parse_single_example(record, keys_to_features)
-            # Perform additional preprocessing on the parsed data.
-            input = tf.decode_raw(parsed["input"], tf.int64)
-            label = tf.decode_raw(parsed["label"], tf.int64)
-            return {'input':input, 'label':label} , label
-
         def input_fn():
+            filenames = ["{}/class_{:04d}".format(self.tfrecords_path,i) \
+                             for i in range(self.num_class)]
+            assert self.num_class == len(filenames), "the num of tfrecords file error!"
+            logging.info("tfrecords class num: {}".format(len(filenames)))
+            datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
+            datasets = [dataset.repeat() for dataset in datasets]
+            n_cpu = multiprocessing.cpu_count()
             num_classes_per_batch = 8
             num_sentences_per_class = 8
+            batch_size = num_classes_per_batch * num_sentences_per_class
+
+            def parse_record(record):
+                keys_to_features = {
+                    "input": tf.FixedLenFeature([self.maxlen], tf.int64),
+                    "label": tf.FixedLenFeature([1], tf.int64),
+                }
+                parsed = tf.parse_single_example(record, keys_to_features)
+                # Perform additional preprocessing on the parsed data.
+                input = tf.reshape(parsed['input'], [self.maxlen])
+                label = tf.reshape(parsed['label'], [1])
+                return {'x_query':input, 'keep_prob': 0.5, 'is_training': True} , label[0]
+
             def generator():
                 while True:
                     labels = np.random.choice(range(self.num_class),
@@ -134,26 +145,20 @@ class Match(object):
 
             choice_dataset = tf.data.Dataset.from_generator(generator, tf.int64)
             dataset = tf.contrib.data.choose_from_datasets(datasets, choice_dataset)
-
-            batch_size = num_classes_per_batch * num_images_per_class
-            dataset = dataset.map(parser)
+            dataset = dataset.map(lambda record: parse_record(record), num_parallel_calls=n_cpu)
             dataset = dataset.batch(batch_size)
-            dataset = dataset.prefetch(1)
+            dataset = dataset.prefetch(4*batch_size)
             iterator = dataset.make_one_shot_iterator()
-            features, label = iterator.get_next() return features, label return input_fn
+            features, label = iterator.get_next()
+            return features, label
+        return input_fn
 
-    def train(self):
-        config = tf.estimator.RunConfig(tf_random_seed=230,
-                                        model_dir=self.model_path)
-        estimator = tf.estimator.Estimator(self.create_model_fn(), config=config)
-        estimator.train(self.create_input_fn())
 
-    def loss(self, loss_type, pred, pos_target, neg_target, batch_size, conf):
+    def cal_loss(self, loss_type, pred, labels, pos_target, neg_target, batch_size, conf):
         pos = tf.strided_slice(pred, [0], [batch_size], [2])
         neg = tf.strided_slice(pred, [1], [batch_size], [2])
         if loss_type == 'hinge_loss':
-            loss = get_loss(type = loss_type, neg_logits = neg, pos_logits =
-                                pos, **conf)
+            loss = batch_hard_triplet_loss(labels, pred, conf['margin'])
         else:
             pos_loss = get_loss(type = loss_type, logits = pos, labels =
                                 pos_target, **conf)
@@ -184,10 +189,7 @@ class Match(object):
         #representation based match model
         self.encoder = encoder[self.encoder_type](**params)
         self.encode_query = self.encoder(self.embed_query, 'x_query')
-        self.encode_sample = self.encoder(self.embed_sample, 'x_sample')
-        pred = self.cosine_similarity(self.encode_query, self.encode_sample)
-        self.rep_nodes = self.encode_query.name.split(':')[0]
-        return pred
+        return self.encode_query
 
     def cosine_similarity(self, q, a):
         pooled_len_1 = tf.sqrt(tf.reduce_sum(q * q, 1))

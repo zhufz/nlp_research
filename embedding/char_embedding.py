@@ -22,9 +22,9 @@ class CharEmbedding():
         self.size = embedding_size
         self.vocab_dict = vocab_dict
         self.embedding = tf.get_variable("embeddings",
-                                         shape = [len(self.vocab_dict),self.size],
-                                         initializer=get_initializer('xavier'),
-                                         trainable = True)
+                                     shape = [len(self.vocab_dict),self.size],
+                                     initializer=get_initializer('xavier'),
+                                     trainable = True)
         if not random:
             tf.assign(self.embedding, self._get_embedding(vocab_dict))
         self.input_ids = {}

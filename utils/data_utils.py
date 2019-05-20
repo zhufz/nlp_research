@@ -350,10 +350,10 @@ class GenerateTfrecords():
           for item in dataset:
             writer.write(item)
 
-    def process(self, text_list, label_list, sen2id_fun, vocab_dict, conf):
+    def process(self, text_list, label_list, sen2id_fun, vocab_dict, path):
         dataset = []
         tmp_label = None
-        output_path = conf['tfrecords_path']
+        output_path = path
         label_id = 0
         mp_label = {item:idx for idx,item in enumerate(list(set(label_list)))}
         mp_dataset = defaultdict(list)
