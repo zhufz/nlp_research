@@ -336,36 +336,44 @@ class PairGenerator():
             yield X1,X2,labels
 
 class GenerateTfrecords():
-    def _create_serialized_example(self, sentence_id, label):
+    def _create_serialized_example(self, sentence_id, sentence_len, label):
         """Helper for creating a serialized Example proto."""
         example = tf.train.Example(features=tf.train.Features(feature={
             "input": tf.train.Feature(int64_list=tf.train.Int64List(value=sentence_id)),
+            "length": tf.train.Feature(int64_list=tf.train.Int64List(value=[sentence_len])),
             "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label]))
         }))
         return example.SerializeToString()
 
-    def _output_tfrecords(self, dataset, idx, path):
-        file_name = os.path.join(path, "class_{:04d}".format(idx))
+    def _output_tfrecords(self, dataset, idx, path, mode):
+        file_name = os.path.join(path, "{}_class_{:04d}".format(mode, idx))
         with tf.python_io.TFRecordWriter(file_name) as writer:
           for item in dataset:
             writer.write(item)
 
-    def process(self, text_list, label_list, sen2id_fun, vocab_dict, path):
+    def process(self, text_list, label_list, sen2id_fun, vocab_dict, path,
+                label_path):
         dataset = []
         tmp_label = None
         output_path = path
         label_id = 0
         mp_label = {item:idx for idx,item in enumerate(list(set(label_list)))}
         mp_dataset = defaultdict(list)
-        _, text_id_list, _ = sen2id_fun(text_list, vocab_dict,
+        _, text_id_list, len_id_list = sen2id_fun(text_list, vocab_dict,
                                        need_preprocess=False)
         for idx,text_id in enumerate(text_id_list):
             label = label_list[idx]
             serialized = self._create_serialized_example(text_id, 
+                                                         len_id_list[idx],
                                                          mp_label[label])
             mp_dataset[label].append(serialized)
         for label in mp_dataset:
-            dataset = mp_dataset[label]
-            self._output_tfrecords(dataset, mp_label[label], output_path)
+            dataset_train = mp_dataset[label][:-1]
+            dataset_test = [mp_dataset[label][-1]]
+            self._output_tfrecords(dataset_train, mp_label[label], output_path,
+                                   "train")
+            self._output_tfrecords(dataset_test, mp_label[label], output_path, 
+                                   "test")
+        pickle.dump(mp_label, open(label_path, 'wb'))
 
 

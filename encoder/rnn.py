@@ -19,13 +19,17 @@ class RNN(object):
         self.placeholder = {}
 
     def __call__(self, embed, name = 'encoder', middle_flag = False, hidden_flag
-                 = False, reuse = tf.AUTO_REUSE):
+                 = False,  features = None, reuse = tf.AUTO_REUSE):
         #middle_flag: if True return middle output for each time step
         #hidden_flag: if True return hidden state
         length_name = name + "_length" 
-        self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
+        if features == None:
+            self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
                                                     shape=[None], 
                                                     name = length_name)
+        else:
+            self.placeholder[length_name] = features[length_name]
+
         self.initial_state = None
         with tf.variable_scope("rnn", reuse = reuse):
             #for gru,lstm outputs:[batch_size, max_time, num_hidden]

@@ -32,17 +32,20 @@ class SubwordEmbedding():
         self.input_ids = {}
 
 
-    def __call__(self, name = "subword_embedding"):
+    def __call__(self, features = None, name = "subword_embedding"):
         """define placeholder"""
-        self.indices[name] = tf.placeholder(dtype=tf.int64, shape=[None,2], name
-                                            = name+"_indices")
-        self.values[name] = tf.placeholder(dtype=tf.int64, shape=[None], name
-                                            = name+"_values")
+        if features == None:
+            self.indices[name] = tf.placeholder(dtype=tf.int64, shape=[None,2], name
+                                                = name+"_indices")
+            self.values[name] = tf.placeholder(dtype=tf.int64, shape=[None], name
+                                                = name+"_values")
+        else:
+            self.indices[name] = features[name+"_indices"]
+            self.values[name] = features[name+"_values"]
 
         self.input_ids[name] = tf.SparseTensor(indices=self.indices[name],
                                                values=self.values[name],
                                                dense_shape = (self.batch_size*self.maxlen,MAX_SUB_LEN))
-
         embed =  tf.nn.embedding_lookup_sparse(self.embedding,\
                                              self.input_ids[name],
                                              sp_weights = None,

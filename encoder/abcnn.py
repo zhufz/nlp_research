@@ -26,8 +26,7 @@ class ABCNN():
         self.di = 50
         self.num_layers = 2
 
-        self.len1 = tf.placeholder(tf.float32, shape=[None], name="len1")
-        self.len2 = tf.placeholder(tf.float32, shape=[None], name="len2")
+
 
         # zero padding to inputs for wide convolution
     def pad_for_wide_conv(self, x):
@@ -191,13 +190,21 @@ class ABCNN():
         feed_dict[graph.get_operation_by_name("len2").outputs[0]] = x_sample
         return feed_dict
 
-    def __call__(self, x_query, x_sample, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, x_query, x_sample, name = 'encoder', 
+                 features = None, reuse = tf.AUTO_REUSE):
         """
         @param x_query:[batch_size, sentence_size, embedding_size]
         @param x_sample:[batch_size, sentence_size, embedding_size]
         return:
             [batch_size, num_output]
         """
+        if features == None:
+            self.len1 = tf.placeholder(tf.float32, shape=[None], name="len1")
+            self.len2 = tf.placeholder(tf.float32, shape=[None], name="len2")
+        else:
+            self.len1 = features["len1"]
+            self.len2 = features["len2"]
+
         with tf.variable_scope('abcnn', reuse = reuse):
             x_query = tf.transpose(x_query, [0, 2, 1])
             x_sample = tf.transpose(x_sample, [0, 2, 1])

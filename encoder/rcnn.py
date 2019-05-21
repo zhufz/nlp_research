@@ -14,11 +14,16 @@ class RCNN(object):
         self.fc_num_hidden = 256
         self.placeholder = {}
 
-    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', features = None,
+                 reuse = tf.AUTO_REUSE):
         length_name = name + "_length" 
-        self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
+        if features == None:
+            self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
                                                     shape=[None], 
                                                     name = length_name)
+        else:
+            self.placeholder[length_name] = features[length_name]
+
         with tf.variable_scope("birnn", reuse = reuse):
             fw_cells = [tf.contrib.rnn.LSTMCell(self.num_hidden,state_is_tuple=True)\
                                     for n in range(self.num_layers)]

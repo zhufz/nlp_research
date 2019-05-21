@@ -18,11 +18,16 @@ class AttentionRNN(object):
                                   self.num_layers)
         self.placeholder = {}
 
-    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', features = None, 
+                 reuse = tf.AUTO_REUSE):
         length_name = name + "_length" 
-        self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
+        if features == None:
+            self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
                                                     shape=[None], 
                                                     name = length_name)
+        else:
+            self.placeholder[length_name] = features[length_name]
+
         with tf.variable_scope("attention_rnn", reuse = reuse):
             outputs, state = self.rnn_layer(inputs = embed,
                               seq_len = self.placeholder[length_name])

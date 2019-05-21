@@ -8,9 +8,13 @@ class MatchPyramid():
         self.maxlen2 = kwargs['maxlen2']
         self.psize1 = 3
         self.psize2 = 3
-        self.dpool_index = tf.placeholder(tf.int32, name='dpool_index',\
+
+    def __call__(self, x_query, x_sample, features = None, name = 'encoder'):
+        if features == None:
+            self.dpool_index = tf.placeholder(tf.int32, name='dpool_index',\
                                           shape=(None, self.maxlen1, self.maxlen2, 3))
-    def __call__(self, x_query, x_sample, name = 'encoder'):
+        else:
+            self.dpool_index = features['dpool_index']
         # batch_size * X1_maxlen * X2_maxlen
         self.cross = tf.einsum('abd,acd->abc', x_query, x_sample)
         self.cross_img = tf.expand_dims(self.cross, 3)

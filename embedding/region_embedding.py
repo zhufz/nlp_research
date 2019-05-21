@@ -369,10 +369,13 @@ class RegionEmbedding():
         x = list(map(lambda d: d + (self.maxlen - len(d)) * [vocab_dict["<pad>"]], x))
         return text_list, x, x_len
 
-    def __call__(self, name = "region_embedding"):
+    def __call__(self, features = None, name = "region_embedding"):
         """define placeholder"""
-        self.input_ids[name] = tf.placeholder(dtype=tf.int32, shape=[None,
+        if features == None:
+            self.input_ids[name] = tf.placeholder(dtype=tf.int32, shape=[None,
                                                                      self.maxlen], name = name)
+        else:
+            self.input_ids[name] = features[name]
         return self.embedding._forward(self.input_ids[name])
 
     def feed_dict(self, input_x, name = 'region_embedding'):
@@ -385,5 +388,4 @@ class RegionEmbedding():
         input_x_node = graph.get_operation_by_name(name).outputs[0]
         feed_dict[input_x_node] = input_x
         return feed_dict
-
 
