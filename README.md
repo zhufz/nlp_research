@@ -24,7 +24,9 @@
               [格式：python3 run.py {task_type}, 对应到conf/model/{task_type}.yml]
          测试：python3 run.py classify model=test
          单个测试：python3 run.py classify model=test_one
-
+    [匹配]
+         生成tfrecords语料: python3 run.py match mode=prepare
+         训练: python3 run.py match mode=train
 ## 任务
 
     环境：python3+tensorflow 1.10
