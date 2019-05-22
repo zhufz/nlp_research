@@ -10,45 +10,54 @@ model_path: "{encoder_type}/model.pb"
 label_path: "{encoder_type}/label"
 cache_vec_path: "{encoder_type}/cache.vec.pkl"
 tfrecords_path: "tfrecords"
+export_dir_path: "{encoder_type}/model"
 
 
 
 batch_size: 64
 num_epochs: 15000
-num_class: 89
-maxlen: 40
-embedding_size: 128
+
+maxlen: 20
+
 learning_rate: 0.0001
 
 valid_step: 1000 #valid one time every valid_step 
 early_stop: True
 
 use_language_model: False
+embedding_size: 300
 # embedding_type: 'word_embedding'
 embedding_type: 'char_embedding'
 # embedding_type: 'subword_embedding'
-rand_embedding: True
+rand_embedding: False
 # rand_embedding: False
 # sim_mode=cross: 对于交互的匹配方法
 # sim_mode=represent: 基于表示的匹配方法
-loss_type: "hinge_loss"
+
 optimizer_type: "Adam"
 use_clr: False
 clr_mode: 'triangular2'
 
+#class/89   pair/2
+tfrecords_mode: "class"
+num_class: 89
+loss_type: "hinge_loss"
+
 batch_mode: "random"  #(random/supervised)
 batch_mode: "supervised"
-margin: 0.5
+margin: 1
 semi_hard: True
-score_thre: 0.7
-config_type: 11
+score_thre: 0
+config_type: 10
 config: 
-  0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1}
-  1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.0005}
-  2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 1, learning_rate: 0.001}
-  3: {encoder_type: "esim", sim_mode: "cross", num_output: 1, learning_rate: 0.001}
+  0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1, 
+    tfrecords_mode: "pair", num_pair: 2, loss_type: "softmax_loss"}
+  1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.0005, 
+    tfrecords_mode: "pair", num_pair: 2, loss_type: "softmax_loss"}
+  2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 1, learning_rate: 0.001, 
+    tfrecords_mode: "pair", num_pair: 2, loss_type: "softmax_loss"}
 
-  10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}
+  10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0003}
   11: {encoder_type: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
   12: {encoder_type: "rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
   13: {encoder_type: "rcnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}

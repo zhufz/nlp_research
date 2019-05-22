@@ -19,7 +19,7 @@ class Bert():
         self.vocab_file = kwargs['vocab_file_path']
         self.placeholder = {}
 
-    def __call__(self, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
         self.placeholder[name+'_input_ids'] = tf.placeholder(tf.int32, 
                                         shape=[None, self.maxlen], 
                                         name = name+"_input_ids")

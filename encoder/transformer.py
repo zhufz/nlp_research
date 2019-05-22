@@ -9,7 +9,7 @@ class Transformer():
         self.d_model = args['embedding_size']
         self.dropout_rate = 1 - args['keep_prob']
         self.num_output = args['num_output']
-        self.training=args['is_training']
+        self.training = args['is_training']
         self.num_blocks = 3
         self.num_heads = 8
         self.d_ff = 512 #hidden size
@@ -233,7 +233,7 @@ class Transformer():
         feed_dict = {}
         return feed_dict
 
-    def __call__(self, enc, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, enc, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
         '''
         Returns
         memory: encoder outputs. (N, T1, d_model)

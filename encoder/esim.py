@@ -26,7 +26,10 @@ class ESIM():
         feed_dict = {}
         return feed_dict
 
-    def __call__(self, x_query, x_sample, reuse = tf.AUTO_REUSE):
+    def update_features(self, features):
+        pass
+
+    def __call__(self, x_query, x_sample, reuse = tf.AUTO_REUSE, **kwargs):
         #embedding_sequence_q1 = BatchNormalization(axis=2)(x_query)
         #embedding_sequence_q2 = BatchNormalization(axis=2)(x_sample)
         #final_embedding_sequence_q1 = SpatialDropout1D(0.25)(embedding_sequence_q1)

@@ -336,14 +336,59 @@ class PairGenerator():
             yield X1,X2,labels
 
 class GenerateTfrecords():
-    def _create_serialized_example(self, sentence_id, sentence_len, label):
+    """utils for tfrecords
+    """
+    def __init__(self, mode, maxlen):
+        #class mode: label: class id 
+        #pair mode: label: 1/0, whether come from same class 
+        self.mode = mode
+        self.maxlen = maxlen
+        assert mode in ['pair','class']
+
+    def _serialized_example(self, **kwargs):
+        def get_feature(kwargs):
+            ret = {}
+            for key in kwargs:
+                ret[key] = tf.train.Feature(
+                    int64_list=tf.train.Int64List(value=kwargs[key]))
+            return ret
         """Helper for creating a serialized Example proto."""
-        example = tf.train.Example(features=tf.train.Features(feature={
-            "input": tf.train.Feature(int64_list=tf.train.Int64List(value=sentence_id)),
-            "length": tf.train.Feature(int64_list=tf.train.Int64List(value=[sentence_len])),
-            "label": tf.train.Feature(int64_list=tf.train.Int64List(value=[label]))
-        }))
+        example = tf.train.Example(features=
+                                   tf.train.Features(
+                                       feature=get_feature(kwargs)))
         return example.SerializeToString()
+
+    def parse_record(self, record, encoder):
+        if self.mode == 'class':
+            keys_to_features = {
+                "x_query": tf.FixedLenFeature([self.maxlen], tf.int64),
+                "length": tf.FixedLenFeature([1], tf.int64),
+                "label": tf.FixedLenFeature([1], tf.int64),
+            }
+            parsed = tf.parse_single_example(record, keys_to_features)
+            # Perform additional preprocessing on the parsed data.
+            label = tf.reshape(parsed['label'], [1])
+            return {'x_query': tf.reshape(parsed['x_query'], [self.maxlen]),
+                    'length': tf.reshape(parsed['length'], [1])[0],
+                    'label': label[0]} , label[0]
+        else:
+            keys_to_features = {
+                "x_query": tf.FixedLenFeature([self.maxlen], tf.int64),
+                "x_sample": tf.FixedLenFeature([self.maxlen], tf.int64),
+                "x_query_length": tf.FixedLenFeature([1], tf.int64),
+                "x_sample_length": tf.FixedLenFeature([1], tf.int64),
+                "label": tf.FixedLenFeature([1], tf.int64),
+            }
+            parsed = tf.parse_single_example(record, keys_to_features)
+            # Perform additional preprocessing on the parsed data.
+            label = tf.reshape(parsed['label'], [1])
+            ret =  {'x_query': tf.reshape(parsed['x_query'], [self.maxlen]),
+                    'x_sample': tf.reshape(parsed['x_sample'], [self.maxlen]),
+                    'x_query_length': tf.reshape(parsed['x_query_length'], [1])[0],
+                    'x_sample_length': tf.reshape(parsed['x_sample_length'], [1])[0],
+                    'label': label[0]
+                    } 
+            return ret, label[0]
 
     def _output_tfrecords(self, dataset, idx, path, mode):
         file_name = os.path.join(path, "{}_class_{:04d}".format(mode, idx))
@@ -358,22 +403,109 @@ class GenerateTfrecords():
         output_path = path
         label_id = 0
         mp_label = {item:idx for idx,item in enumerate(list(set(label_list)))}
+        pickle.dump(mp_label, open(label_path, 'wb'))
+
         mp_dataset = defaultdict(list)
         _, text_id_list, len_id_list = sen2id_fun(text_list, vocab_dict,
                                        need_preprocess=False)
-        for idx,text_id in enumerate(text_id_list):
-            label = label_list[idx]
-            serialized = self._create_serialized_example(text_id, 
-                                                         len_id_list[idx],
-                                                         mp_label[label])
-            mp_dataset[label].append(serialized)
-        for label in mp_dataset:
-            dataset_train = mp_dataset[label][:-1]
-            dataset_test = [mp_dataset[label][-1]]
-            self._output_tfrecords(dataset_train, mp_label[label], output_path,
-                                   "train")
-            self._output_tfrecords(dataset_test, mp_label[label], output_path, 
-                                   "test")
-        pickle.dump(mp_label, open(label_path, 'wb'))
+        if self.mode == 'class':
+            for idx,text_id in enumerate(text_id_list):
+                label = label_list[idx]
+                serialized = self._serialized_example(x_query = text_id, 
+                                                             length = [len_id_list[idx]],
+                                                             label = [mp_label[label]])
+                mp_dataset[label].append(serialized)
+            for label in mp_dataset:
+                dataset_train = mp_dataset[label][:-1]
+                dataset_test = [mp_dataset[label][-1]]
+                self._output_tfrecords(dataset_train, mp_label[label], output_path,
+                                       "train")
+                self._output_tfrecords(dataset_test, mp_label[label], output_path, 
+                                       "test")
+        else:
+            train_list, test_list = self.get_pair_id(text_id_list, label_list)
+            ###################################################
+            for label, query_id, sample_id in train_list:
+                serialized = self._serialized_example(x_query = text_id_list[query_id], 
+                                                      x_sample = text_id_list[sample_id], 
+                                                      x_query_length = [len_id_list[query_id]],
+                                                      x_sample_length = [len_id_list[sample_id]],
+                                                      label = [label])
+                mp_dataset[label].append(serialized)
+            for label in mp_dataset:
+                self._output_tfrecords(mp_dataset[label], label, output_path, "train")
+            ##################################################
+            for query_id, item_list in test_list:
+                for label, sample_id in item_list:
+                    serialized = self._serialized_example(x_query = text_id_list[query_id], 
+                                                      x_sample = text_id_list[sample_id], 
+                                                      x_query_length = [len_id_list[query_id]],
+                                                      x_sample_length = [len_id_list[sample_id]],
+                                                      label = [label])
+                    mp_dataset[query_id].append(serialized)
+            for idx,query_id in enumerate(mp_dataset):
+                self._output_tfrecords(mp_dataset[query_id], idx, output_path, "test")
 
+    def get_pair_id(self, text_id_list, label_list):
+        #return:
+        #train_list:[(1/0, 样本id, 正/负样本id),...]
+        #test_list: (样本id, [(1/0, 正/负样本id),(1/0, 正/负样本id),...]
+        mp_label = defaultdict(list)
+        for idx in range(len(text_id_list)):
+            mp_label[label_list[idx]].append(idx)
 
+        label_set = set(mp_label) # all labels set
+        #label d1 d2
+        train_list = []
+        test_list = []
+
+        test_size = 1
+        for label in mp_label:
+            #choose positive sample
+            pos_list = mp_label[label]
+            for idx in range(len(pos_list)-test_size):
+                #if len(pos_list)-1 == 1:pdb.set_trace()
+                tmp_pos_list = self.get_pos(pos_list, idx, len(pos_list)-test_size)
+                for item in tmp_pos_list:
+                    train_list.append((1, pos_list[idx], item))
+
+                tmp_neg_list = self.get_neg(mp_label, label, label_set)
+                for item in tmp_neg_list:
+                    train_list.append((0, pos_list[idx], item))
+            #test: the last sample fot each label 
+            test_list.append((pos_list[-1], \
+                                   self.get_pos_neg(mp_label, label,
+                                                     label_set, test_size)))
+        return train_list, test_list
+
+    def get_pos(self, pos_data, idx, length):
+        #select an id not equals to the idx from range(0,length) 
+        assert 1 != length, "can't select diff pos sample with max=1"
+        res_idx = idx
+        #pdb.set_trace()
+        res_list = []
+        for tmp_idx in range(length):
+            if idx == tmp_idx:continue
+            res_list.append(pos_data[tmp_idx])
+        return res_list
+
+    def get_neg(self, data, label, label_set):
+        #select an neg label sample from data
+        res_list = []
+        for tmp_label in list(label_set):
+            if tmp_label == label: continue
+            res_list.append(random.choice(data[tmp_label][:-1]))
+        return res_list
+
+    def get_pos_neg(self, data, label, label_set, test_size):
+        data_list = []
+        for tmp_label in list(label_set):
+            if label == tmp_label:
+                for item in data[tmp_label][:-test_size]:
+                    data_list.append((1, item))
+                #data_list.append((1, random.choice(data[tmp_label][:-1])))
+            else:
+                for item in data[tmp_label][:-test_size]:
+                    data_list.append((0, item))
+                #data_list.append((0, random.choice(data[tmp_label][:-1])))
+        return data_list

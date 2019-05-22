@@ -9,7 +9,7 @@ class CNN:
         self.filter_sizes = [3, 4, 5]
         self.num_filters = 100
 
-    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
         #input: [batch_size, sentence_len, embedding_size,1]
         #output:[batch_size, num_filters*filter_sizes]
         embed = tf.expand_dims(embed, -1)

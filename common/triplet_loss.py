@@ -6,6 +6,12 @@
 
 import tensorflow as tf
 
+def _cosine_similarity(q, a):
+    pooled_len_1 = tf.sqrt(tf.reduce_sum(q * q, 1))
+    pooled_len_2 = tf.sqrt(tf.reduce_sum(a * a, 1))
+    pooled_mul_12 = tf.reduce_sum(q * a, 1)
+    score = tf.div(pooled_mul_12, pooled_len_1 * pooled_len_2 +1e-8, name="scores")
+    return score
 
 def _pairwise_distances(embeddings, squared=False):
     """Compute the 2D matrix of distances between all the embeddings.
@@ -18,6 +24,14 @@ def _pairwise_distances(embeddings, squared=False):
     Returns:
         pairwise_distances: tensor of shape (batch_size, batch_size)
     """
+    #cosine similarity
+    embeddings_trans = tf.transpose(embeddings)
+    dot_product = tf.matmul(embeddings, embeddings_trans)
+    len1 = tf.sqrt(tf.reduce_sum(embeddings* embeddings))
+    len2 = tf.sqrt(tf.reduce_sum(embeddings* embeddings))
+    scores = tf.div(dot_product, len1*len2+1e-8)
+    return 1-scores
+
     # Get the dot product between all embeddings
     # shape (batch_size, batch_size)
     dot_product = tf.matmul(embeddings, tf.transpose(embeddings))
@@ -172,7 +186,9 @@ def batch_all_triplet_loss(labels, embeddings, margin, squared=False):
     # Get final mean triplet loss over the positive valid triplets
     triplet_loss = tf.reduce_sum(triplet_loss) / (num_positive_triplets + 1e-16)
 
+    return triplet_loss
     return triplet_loss, fraction_positive_triplets
+
 
 
 def batch_hard_triplet_loss(labels, embeddings, margin, squared=False):

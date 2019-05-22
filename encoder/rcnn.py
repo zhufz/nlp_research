@@ -15,7 +15,7 @@ class RCNN(object):
         self.placeholder = {}
 
     def __call__(self, embed, name = 'encoder', features = None,
-                 reuse = tf.AUTO_REUSE):
+                 reuse = tf.AUTO_REUSE, **kwargs):
         length_name = name + "_length" 
         if features == None:
             self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 

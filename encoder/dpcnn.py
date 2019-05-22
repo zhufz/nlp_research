@@ -9,7 +9,7 @@ class DPCNN():
         self.num_filters = 250
         self.kernel_size = 3
 
-    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
         embedding_inputs = tf.expand_dims(embed, axis=-1)  # [None,seq,embedding,1]
         # region_embedding  # [batch,seq-3+1,1,250]
         region_embedding = tf.layers.conv2d(embedding_inputs, self.num_filters,

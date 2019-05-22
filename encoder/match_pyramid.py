@@ -1,6 +1,7 @@
 import sys
 import tensorflow as tf
 import numpy as np
+import pdb
 
 class MatchPyramid():
     def __init__(self, **kwargs):
@@ -9,7 +10,7 @@ class MatchPyramid():
         self.psize1 = 3
         self.psize2 = 3
 
-    def __call__(self, x_query, x_sample, features = None, name = 'encoder'):
+    def __call__(self, x_query, x_sample, features = None, name = 'encoder', **kwargs):
         if features == None:
             self.dpool_index = tf.placeholder(tf.int32, name='dpool_index',\
                                           shape=(None, self.maxlen1, self.maxlen2, 3))
@@ -72,6 +73,10 @@ class MatchPyramid():
         feed_dict[pool_index] = self.dynamic_pooling_index(kwargs['x_query'], kwargs['x_sample'])
         return feed_dict
 
+    def update_features(self, features):
+        features['dpool_index'] = self.dynamic_pooling_index(
+            features['x_query_length'], features['x_sample_length'])
+
     def dynamic_pooling_index(self, len1, len2, compress_ratio1 = 1, compress_ratio2 = 1):
         def dpool_index_(batch_idx, len1_one, len2_one, cur_maxlen1, cur_maxlen2):
             '''
@@ -99,7 +104,7 @@ class MatchPyramid():
             mesh1, mesh2 = np.meshgrid(idx1_one, idx2_one)
             index_one = np.transpose(np.stack([np.ones(mesh1.shape) * batch_idx,
                                       mesh1, mesh2]), (2,1,0))
-            return index_one
+            return index_one.astype(int)
         index = []
         dpool_bias1 = dpool_bias2 = 0
         if self.maxlen1 % compress_ratio1 != 0:

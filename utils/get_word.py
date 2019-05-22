@@ -34,10 +34,17 @@ def subsample_embedding(path, words):
         f_w.seek(0)
         f_w.write("{} {}\n".format(cnt, length))
 
+def get_char_embedding(path):
+    with open(path) as f, open(path+'.sub','w') as f_w:
+        for idx, line in enumerate(f):
+            if idx ==0:continue
+            if len(line.split()[0]) ==1:
+                f_w.write(line)
 
 if __name__ == "__main__":
-    words = get_word(sys.argv[1])
-    subsample_embedding(sys.argv[2], words)
+    #words = get_word(sys.argv[1])
+    #subsample_embedding(sys.argv[2], words)
+    get_char_embedding(sys.argv[1])
 
 
 

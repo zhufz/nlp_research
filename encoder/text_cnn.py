@@ -10,7 +10,7 @@ class TextCNN:
         self.filter_sizes = [3, 4, 5]
         self.num_filters = 100
 
-    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
         #input: [batch_size, sentence_len, embedding_size,1]
         #output:[batch_size, num_output]
         with tf.variable_scope("text_cnn", reuse = reuse):

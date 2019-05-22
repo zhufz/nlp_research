@@ -96,6 +96,7 @@ if __name__ == '__main__':
         cl = dl_tasks[task_type](conf)
         cl.predict()
     elif conf['mode'] == 'test_one':
+        cl = dl_tasks[task_type](conf)
         while True:
             a = input('input:')
             start = time.time()

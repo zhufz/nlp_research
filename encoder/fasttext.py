@@ -10,7 +10,7 @@ class FastText():
         self.keep_prob = kwargs['keep_prob']
         self.num_output = kwargs['num_output']
 
-    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
         with tf.variable_scope("fast_text", reuse = reuse):
             mean_sentence = tf.reduce_mean(embed, axis=1)
             logits = tf.layers.dense(mean_sentence,

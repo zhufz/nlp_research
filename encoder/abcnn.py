@@ -186,12 +186,15 @@ class ABCNN():
 
     def pb_feed_dict(self, graph, x_query, x_sample):
         feed_dict = {}
-        feed_dict[graph.get_operation_by_name("len1").outputs[0]] = x_query
-        feed_dict[graph.get_operation_by_name("len2").outputs[0]] = x_sample
+        feed_dict[graph.get_operation_by_name("x_query_length").outputs[0]] = x_query
+        feed_dict[graph.get_operation_by_name("x_sample_length").outputs[0]] = x_sample
         return feed_dict
 
+    def update_features(self, features):
+        pass
+
     def __call__(self, x_query, x_sample, name = 'encoder', 
-                 features = None, reuse = tf.AUTO_REUSE):
+                 features = None, reuse = tf.AUTO_REUSE, **kwargs):
         """
         @param x_query:[batch_size, sentence_size, embedding_size]
         @param x_sample:[batch_size, sentence_size, embedding_size]
@@ -199,11 +202,13 @@ class ABCNN():
             [batch_size, num_output]
         """
         if features == None:
-            self.len1 = tf.placeholder(tf.float32, shape=[None], name="len1")
-            self.len2 = tf.placeholder(tf.float32, shape=[None], name="len2")
+            self.len1 = tf.placeholder(tf.float32, shape=[None],
+                                       name="x_query_length")
+            self.len2 = tf.placeholder(tf.float32, shape=[None],
+                                       name="x_sample_length")
         else:
-            self.len1 = features["len1"]
-            self.len2 = features["len2"]
+            self.len1 = features["x_query_length"].astype(np.float32)
+            self.len2 = features["x_sample_length"].astype(np.float32)
 
         with tf.variable_scope('abcnn', reuse = reuse):
             x_query = tf.transpose(x_query, [0, 2, 1])

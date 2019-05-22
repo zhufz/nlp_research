@@ -17,7 +17,7 @@ class VDCNN(object):
         self.fc_initializer = tf.truncated_normal_initializer(stddev=0.05)
 
 
-    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
         # ============= Embedding Layer =============
         #[N, H, W, C]
         self.x_expanded = tf.expand_dims(embed, -1)

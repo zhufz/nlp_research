@@ -19,7 +19,7 @@ class RNN(object):
         self.placeholder = {}
 
     def __call__(self, embed, name = 'encoder', middle_flag = False, hidden_flag
-                 = False,  features = None, reuse = tf.AUTO_REUSE):
+                 = False,  features = None, reuse = tf.AUTO_REUSE, **kwargs):
         #middle_flag: if True return middle output for each time step
         #hidden_flag: if True return hidden state
         length_name = name + "_length" 

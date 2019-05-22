@@ -402,7 +402,7 @@ class Capsule():
         feed_dict = {}
         return feed_dict
 
-    def __call__(self, embed, reuse = tf.AUTO_REUSE):
+    def __call__(self, embed, reuse = tf.AUTO_REUSE, **kwargs):
         embed = tf.expand_dims(embed, -1)
         if self.caps_type == 'A':
             return self.capsule_model_A(embed)

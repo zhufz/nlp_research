@@ -19,7 +19,7 @@ class AttentionRNN(object):
         self.placeholder = {}
 
     def __call__(self, embed, name = 'encoder', features = None, 
-                 reuse = tf.AUTO_REUSE):
+                 reuse = tf.AUTO_REUSE, **kwargs):
         length_name = name + "_length" 
         if features == None:
             self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
@@ -29,7 +29,8 @@ class AttentionRNN(object):
             self.placeholder[length_name] = features[length_name]
 
         with tf.variable_scope("attention_rnn", reuse = reuse):
-            outputs, state = self.rnn_layer(inputs = embed,
+            pdb.set_trace()
+            outputs, _, state = self.rnn_layer(inputs = embed,
                               seq_len = self.placeholder[length_name])
             with tf.variable_scope("attention", reuse = reuse):
                 attention_score = tf.nn.softmax(tf.layers.dense(outputs, 1, activation=tf.nn.tanh), axis=1)

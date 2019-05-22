@@ -19,7 +19,7 @@ class Seq2seq(object):
         self.placeholder = {}
 
     def __call__(self, net_encode, net_decode, name = 'seq2seq', 
-                 features = None,  reuse = tf.AUTO_REUSE):
+                 features = None,  reuse = tf.AUTO_REUSE, **kwargs):
         #def create_model(encode_seqs, decode_seqs, src_vocab_size, emb_dim, is_train=True, reuse=False):
         length_encode_name = name + "_encoder_length" 
         length_decode_name = name + "_decoder_length" 

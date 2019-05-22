@@ -4,6 +4,6 @@ vocab_file_path: "language_model/chinese_L-12_H-768_A-12/vocab.txt"
 bert_config_file_path: "language_model/chinese_L-12_H-768_A-12/bert_config.json"
 init_checkpoint_path: "language_model/chinese_L-12_H-768_A-12/bert_model.ckpt"
 word_embedding_path: "data/baike_26g_news_13g_novel_229g.bin.sub"
-char_embedding_path: "data/xxx"
+char_embedding_path: "data/sgns.weibo.char.sub"
 subword_embedding_path: "data/xxx"
 
