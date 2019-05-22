@@ -7,3 +7,4 @@ word_embedding_path: "data/baike_26g_news_13g_novel_229g.bin.sub"
 char_embedding_path: "data/sgns.weibo.char.sub"
 subword_embedding_path: "data/xxx"
 
+

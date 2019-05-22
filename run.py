@@ -29,6 +29,14 @@ def change_path(conf):
         if k.endswith('_path'):
             conf[k] = os.path.join(path_root, conf[k])
 
+def read_config_type(conf):
+    #读取config信息，对应不同的参数
+    if "config" and "config_type" in conf:
+        config_type = conf['config_type']
+        for k,v in (conf['config'][config_type]).items():
+            conf[k] = v
+    del conf['config']
+
 def read_conf(task_type):
     init_logging('log')
     base_yml = "conf/model/base.yml"
@@ -36,6 +44,7 @@ def read_conf(task_type):
     assert os.path.exists(task_yml),'fmodel {task_type} does not exists!'
 
     conf = yaml.load(open(task_yml))
+    read_config_type(conf)
     base = yaml.load(open(base_yml))
 
     #相对路径->绝对路径
@@ -45,12 +54,6 @@ def read_conf(task_type):
     #加载base信息
     for k,v in base.items():
         conf[k] = v
-    #读取config信息，对应不同的参数
-    if "config" and "config_type" in conf:
-        config_type = conf['config_type']
-        for k,v in (conf['config'][config_type]).items():
-            conf[k] = v
-    del conf['config']
 
     #更新encoder_type信息
     for k,v in conf.items():

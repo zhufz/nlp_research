@@ -23,13 +23,15 @@ learning_rate: 0.0001
 
 valid_step: 1000 #valid one time every valid_step 
 early_stop: True
+#embedding_type: "word_embedding"
+#embedding_size: 128
+embedding_type: "char_embedding"
+embedding_size: 300
+
+rand_embedding: False
 
 use_language_model: False
-embedding_size: 300
-# embedding_type: 'word_embedding'
-embedding_type: 'char_embedding'
-# embedding_type: 'subword_embedding'
-rand_embedding: False
+
 # rand_embedding: False
 # sim_mode=cross: 对于交互的匹配方法
 # sim_mode=represent: 基于表示的匹配方法

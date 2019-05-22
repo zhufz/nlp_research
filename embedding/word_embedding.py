@@ -17,15 +17,24 @@ class WordEmbedding():
     def __init__(self, text_list, dict_path, vocab_dict, random = False,\
                  maxlen = 20, embedding_size = 128, **kwargs):
         self.embedding_path = kwargs['conf']['word_embedding_path']
+        self.vocab_dict = vocab_dict
         self.maxlen= maxlen
         self.dict_path = dict_path
         self.size = embedding_size
-        self.embedding = tf.get_variable("embeddings",
-                                         shape = [len(vocab_dict), self.size],
+        if random:
+            self.embedding = tf.get_variable("embeddings",
+                                         shape = [len(self.vocab_dict), self.size],
                                          initializer=get_initializer('xavier'),
                                          trainable = True)
-        if not random:
-            tf.assign(self.embedding, self._get_embedding(vocab_dict))
+
+
+        else:
+            loaded_embedding = self._get_embedding(self.vocab_dict)
+            self.embedding = tf.get_variable("embeddings",
+                                     shape = [len(self.vocab_dict),self.size],
+                                     initializer=get_initializer('xavier'),
+                                     trainable = True)
+            tf.assign(self.embedding, loaded_embedding)
         self.input_ids = {}
 
     def __call__(self, features = None, name = "word_embedding"):
@@ -86,7 +95,7 @@ class WordEmbedding():
         x = list(map(lambda d: d + (self.maxlen - len(d)) * [vocab_dict["<pad>"]], x))
         return text_list, x, x_len
 
-    def _get_embedding(self, vocab_dict):
+    def _get_embedding(self, vocab_dict, add_embedding_word = True):
         """get embedding vector by dict and embedding_file"""
         model = self._load_embedding_file(self.embedding_path)
         embedding = []
@@ -97,6 +106,13 @@ class WordEmbedding():
                 embedding.append(model[word])
             else:
                 embedding.append(self._get_rand_embedding())
+        if add_embedding_word:
+            for key in model.vocab.keys():
+                if key not in vocab_dict:
+                    vocab_dict[key] = len(vocab_dict)
+                    embedding.append(model[key])
+            with open(self.dict_path, "wb") as f:
+                pickle.dump(vocab_dict, f)
         return tf.convert_to_tensor(np.array(embedding), tf.float32)
 
     def _get_rand_embedding(self):
@@ -112,6 +128,9 @@ class WordEmbedding():
         """
         model = gensim.models.KeyedVectors.load_word2vec_format(path,
                                                                 binary=False)
+        assert model.vector_size == self.size, "the size of vector\
+            from embedding file {} != defined embedding_size {}".format(
+                model.vector_size, self.size)
         return model
 
 if __name__ == '__main__':

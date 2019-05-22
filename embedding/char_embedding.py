@@ -119,7 +119,7 @@ class CharEmbedding():
             for key in model.vocab.keys():
                 if key not in vocab_dict:
                     vocab_dict[key] = len(vocab_dict)
-                    embedding.append(model[char])
+                    embedding.append(model[key])
             with open(self.dict_path, "wb") as f:
                 pickle.dump(vocab_dict, f)
         return tf.convert_to_tensor(np.array(embedding), tf.float32)
@@ -137,6 +137,9 @@ class CharEmbedding():
         """
         model = gensim.models.KeyedVectors.load_word2vec_format(path,
                                                                 binary=False)
+        assert model.vector_size == self.size, "the size of vector\
+            from embedding file {} must equals to defined embedding_size {}".format(
+                model.vector_size, self.size)
         return model
 
 if __name__ == '__main__':
