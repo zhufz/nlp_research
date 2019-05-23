@@ -103,7 +103,7 @@ class Match(object):
                                         x_sample = self.embed_sample,
                                         features = features)
                 else:
-                    pred = self.encoder()
+                    pred = self.encoder(features = features)
             elif self.sim_mode == 'represent':
                 features['x_query_length'] = features['length']
                 pred = self.encoder(self.embed_query, 
