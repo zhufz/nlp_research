@@ -382,7 +382,7 @@ class GenerateTfrecords():
                     'x_query_raw': parsed['x_query_raw'],
                     'length': tf.reshape(parsed['length'], [1])[0],
                     'label': label[0]}
-            ret.update(encoder.parsed_to_features(parsed))
+            ret.update(encoder.parsed_to_features(parsed = parsed))
             return ret, label[0]
         else:
             keys_to_features = {
@@ -410,7 +410,7 @@ class GenerateTfrecords():
                     'x_sample_length': tf.reshape(parsed['x_sample_length'], [1])[0],
                     'label': label[0]
                     } 
-            ret.update(encoder.parsed_to_features(parsed))
+            ret.update(encoder.parsed_to_features(parsed = parsed))
             return ret, label[0]
 
     def _output_tfrecords(self, dataset, idx, path, mode):

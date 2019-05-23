@@ -4,10 +4,11 @@ class Base():
         pass
 
     def encoder_fun(self, **kwargs):
-        pass
+        #用于计算encoder内部所需要的id值，如长度特征
+        return {}
 
     def keys_to_features(self, **kwargs):
-        pass
+        return {}
 
     def parsed_to_features(self, **kwargs):
-        pass
+        return {}

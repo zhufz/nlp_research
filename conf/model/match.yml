@@ -50,7 +50,7 @@ batch_mode: "supervised"
 margin: 1
 semi_hard: True
 score_thre: 0
-config_type: 23
+config_type: 10
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1, 
     tfrecords_mode: "pair", num_pair: 2, loss_type: "sigmoid_loss"}

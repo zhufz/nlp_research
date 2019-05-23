@@ -79,18 +79,22 @@ class MatchPyramid(Base):
     #######################################
     #for tfrecords operation
     def encoder_fun(self, x_query_length, x_sample_length, name = 'encoder', **kwargs):
-        return {'dpool_index': self.dynamic_pooling_index(
-            x_query_length, x_sample_length)}
+        dpool_index = self.dynamic_pooling_index(
+            x_query_length, x_sample_length)
+        dpool_index = dpool_index.flatten()
+        return {'dpool_index': dpool_index}
 
     def keys_to_features(self, name = 'encoder'):
         keys_to_features = {
-            "dpool_index": tf.FixedLenFeature([self.maxlen], tf.int64)
+            "dpool_index": tf.FixedLenFeature([self.maxlen1*self.maxlen1*self.psize1], tf.int64)
         }
         return keys_to_features
 
     def parsed_to_features(self, parsed, name = 'encoder'):
         ret = {
-            "dpool_index": tf.reshape(parsed[dpool_index], [self.maxlen]), 
+            #shape:[1,20,20,3]
+            "dpool_index": tf.reshape(parsed['dpool_index'],
+                                      [self.maxlen1,self.maxlen1, self.psize1]), 
         }
         return ret
     ######################################
