@@ -9,7 +9,7 @@
 训练语料
 
     数据统一放在data下，
-    对于分类和匹配任务，训练文件每行格式为"文本\t类别"，然后调用generate_ml_data.sh进行数据生成！
+    对于分类和匹配任务，训练文件每行格式为"文本\t类别".
     对于ner任务，参考示例数据
 
 语言模型
@@ -20,6 +20,7 @@
     [依赖]
          pip3 install --user -r requirements.txt
     [分类]
+         生成语料：python3 utils/generate_data.py classify
          训练：python3 run.py classify 
               [格式：python3 run.py {task_type}, 对应到conf/model/{task_type}.yml]
          测试：python3 run.py classify model=test
