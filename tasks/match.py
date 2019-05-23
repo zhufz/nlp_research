@@ -3,6 +3,7 @@ from tensorflow.contrib import predictor
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from pathlib import Path
 import pdb
+import traceback
 import pickle
 import logging
 import multiprocessing
@@ -90,8 +91,8 @@ class Match(object):
 
     def create_model_fn(self):
         def model_fn(features, labels, mode, params):
-            self.init_embedding()
             if not self.use_language_model:
+                self.init_embedding()
                 if self.tfrecords_mode == 'class':
                     self.embed_query = self.embedding(features = features, name = 'x_query')
                 else:
@@ -191,11 +192,24 @@ class Match(object):
             dataset = dataset.prefetch(4*self.batch_size)
             iterator = dataset.make_one_shot_iterator()
             features, label = iterator.get_next()
-            if self.tfrecords_mode == 'pair':
-                sess = tf.Session()
+
+            sess = tf.Session()
+            if 'x_query_length' in features:
                 features['x_query_length'] = features['x_query_length'].eval(session = sess)
+            if 'x_sample_length' in features:
                 features['x_sample_length'] = features['x_sample_length'].eval(session = sess)
+            if 'x_query_raw' in features:
+                features['x_query_raw'] = features['x_query_raw'].eval(session = sess)
+                features['x_query_raw'] = [item.decode('utf-8') for item in
+                                           features['x_query_raw'][1]]
+            if 'x_sample_raw' in features:
+                features['x_sample_raw'] = features['x_sample_raw'].eval(session = sess)
+                features['x_sample_raw'] = [item.decode('utf-8') for item in
+                                            features['x_sample_raw'][1]]
+            try:
                 self.encoder.update_features(features)
+            except:
+                logging.info(traceback.print_exc())
             return features, label
 
         def test_input_fn(mode):
@@ -319,22 +333,25 @@ class Match(object):
             self.init_embedding()
             self.model_loaded = True
             self.vec_list = self._get_vecs(self.predict_fn, self.text_list)
-            self.set_zdy_labels(['睡觉','我回家了','晚安','娃娃了'],['打开情景模式','打开情景模式','打开情景模式','打开情景模式'])
+            #self.set_zdy_labels(['睡觉','我回家了','晚安','娃娃了','周杰伦','自然语言处理'],
+            #                    ['打开情景模式','打开情景模式','打开情景模式',
+            #                     '打开情景模式','打开情景模式','打开情景模式'])
         text_list = self.text_list
         vec_list = self.vec_list
         label_list = self.label_list
 
-        #用于添加自定义问句
+        #用于添加自定义问句(自定义优先)
         if self.zdy != {}:
-            text_list += self.zdy['text_list']
-            vec_list = np.concatenate([self.vec_list, self.zdy['vec_list']], axis = 0)
-            label_list += self.zdy['label_list']
+            text_list = self.zdy['text_list'] + text_list
+            vec_list = np.concatenate([self.zdy['vec_list'], self.vec_list], axis = 0)
+            label_list = self.zdy['label_list'] + label_list
         vec = self._get_vecs(self.predict_fn, [text], need_preprocess = True)
         scores = cosine_similarity(vec, vec_list)[0]
         max_id = np.argmax(scores)
         max_score = scores[max_id]
         max_similar = text_list[max_id]
         print(label_list[max_id], max_score, max_similar)
+        return label_list[max_id], max_score
 
     def set_zdy_labels(self, text_list, label_list):
         self.zdy['text_list'] = text_list
@@ -348,7 +365,6 @@ class Match(object):
         text_list_pred, x_query, x_query_length = self.embedding.text2id(text_list,
                                                      self.vocab_dict,
                                                      need_preprocess)
-        print(x_query)
         label = [0 for _ in range(len(text_list))]
 
         predictions = predict_fn({'x_query': x_query, 

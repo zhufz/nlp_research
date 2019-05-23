@@ -242,7 +242,6 @@ def get_train_op(global_step, optimizer_type, loss, lr_pl, clip_grad = 5):
             optim = tf.train.GradientDescentOptimizer(learning_rate=lr_pl)
         else:
             optim = tf.train.GradientDescentOptimizer(learning_rate=lr_pl)
-
         grads_and_vars = optim.compute_gradients(loss)
         grads_and_vars_clip = [[tf.clip_by_value(g, -clip_grad, clip_grad), v] for g, v in grads_and_vars]
         train_op = optim.apply_gradients(grads_and_vars_clip, global_step=global_step)

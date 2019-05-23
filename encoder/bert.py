@@ -19,16 +19,22 @@ class Bert():
         self.vocab_file = kwargs['vocab_file_path']
         self.placeholder = {}
 
-    def __call__(self, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
-        self.placeholder[name+'_input_ids'] = tf.placeholder(tf.int32, 
-                                        shape=[None, self.maxlen], 
-                                        name = name+"_input_ids")
-        self.placeholder[name+'_input_mask'] = tf.placeholder(tf.int32, 
-                                        shape=[None, self.maxlen], 
-                                        name = name+"_input_mask")
-        self.placeholder[name+'_segment_ids'] = tf.placeholder(tf.int32, 
-                                        shape=[None, self.maxlen], 
-                                        name = name+"_segment_ids")
+    def __call__(self, name = 'encoder', features = None, reuse = tf.AUTO_REUSE, **kwargs):
+        if features == None:
+            self.placeholder[name+'_input_ids'] = tf.placeholder(tf.int32, 
+                                            shape=[None, self.maxlen], 
+                                            name = name+"_input_ids")
+            self.placeholder[name+'_input_mask'] = tf.placeholder(tf.int32, 
+                                            shape=[None, self.maxlen], 
+                                            name = name+"_input_mask")
+            self.placeholder[name+'_segment_ids'] = tf.placeholder(tf.int32, 
+                                            shape=[None, self.maxlen], 
+                                            name = name+"_segment_ids")
+        else:
+            self.placeholder[name+'_input_ids'] = features[name+'_input_ids']
+            self.placeholder[name+'_input_mask'] = features[name+'_input_mask']
+            self.placeholder[name+'_segment_ids'] = features[name+'_segment_ids']
+
         with tf.variable_scope("bert", reuse = reuse):
 
             model = modeling.BertModel(
@@ -156,3 +162,21 @@ class Bert():
         feed_dict[input_mask_node ] = input_mask_list
         feed_dict[segment_ids_node ] = segment_ids_list
         return feed_dict
+
+    def update_features(self, features, name = 'encoder'):
+        text_a_list = features['x_query_raw']
+        if 'x_sample_raw' in features:
+            text_b_list = features['x_sample_raw']
+        else:
+            text_b_list = None
+        input_ids_list, input_mask_list, segment_ids_list = [],[],[]
+        for idx,text in enumerate(text_a_list):
+            input_ids, input_mask, segment_ids = \
+                self.build_ids(text, text_b_list[idx] if text_b_list != None else None)
+            input_ids_list.append(input_ids)
+            input_mask_list.append(input_mask)
+            segment_ids_list.append(segment_ids)
+        features[name+"_input_ids"] = input_ids_list
+        features[name+'_input_mask'] = input_mask_list
+        features[name+'_segment_ids'] = segment_ids_list
+

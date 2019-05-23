@@ -349,8 +349,13 @@ class GenerateTfrecords():
         def get_feature(kwargs):
             ret = {}
             for key in kwargs:
-                ret[key] = tf.train.Feature(
-                    int64_list=tf.train.Int64List(value=kwargs[key]))
+                if type(kwargs[key]) != str:
+                    ret[key] = tf.train.Feature(
+                        int64_list=tf.train.Int64List(value = kwargs[key]))
+                else:
+                    ret[key] = tf.train.Feature(
+                        bytes_list = tf.train.BytesList(
+                            value = [tf.compat.as_bytes(kwargs[key])]))
             return ret
         """Helper for creating a serialized Example proto."""
         example = tf.train.Example(features=
@@ -362,6 +367,7 @@ class GenerateTfrecords():
         if self.mode == 'class':
             keys_to_features = {
                 "x_query": tf.FixedLenFeature([self.maxlen], tf.int64),
+                "x_query_raw": tf.VarLenFeature(tf.string),
                 "length": tf.FixedLenFeature([1], tf.int64),
                 "label": tf.FixedLenFeature([1], tf.int64),
             }
@@ -369,12 +375,15 @@ class GenerateTfrecords():
             # Perform additional preprocessing on the parsed data.
             label = tf.reshape(parsed['label'], [1])
             return {'x_query': tf.reshape(parsed['x_query'], [self.maxlen]),
+                    'x_query_raw': parsed['x_query_raw'],
                     'length': tf.reshape(parsed['length'], [1])[0],
                     'label': label[0]} , label[0]
         else:
             keys_to_features = {
                 "x_query": tf.FixedLenFeature([self.maxlen], tf.int64),
                 "x_sample": tf.FixedLenFeature([self.maxlen], tf.int64),
+                "x_query_raw": tf.VarLenFeature(tf.string),
+                "x_sample_raw": tf.VarLenFeature(tf.string),
                 "x_query_length": tf.FixedLenFeature([1], tf.int64),
                 "x_sample_length": tf.FixedLenFeature([1], tf.int64),
                 "label": tf.FixedLenFeature([1], tf.int64),
@@ -384,6 +393,8 @@ class GenerateTfrecords():
             label = tf.reshape(parsed['label'], [1])
             ret =  {'x_query': tf.reshape(parsed['x_query'], [self.maxlen]),
                     'x_sample': tf.reshape(parsed['x_sample'], [self.maxlen]),
+                    'x_query_raw': parsed['x_query_raw'],
+                    'x_sample_raw': parsed['x_sample_raw'],
                     'x_query_length': tf.reshape(parsed['x_query_length'], [1])[0],
                     'x_sample_length': tf.reshape(parsed['x_sample_length'], [1])[0],
                     'label': label[0]
@@ -406,14 +417,15 @@ class GenerateTfrecords():
         pickle.dump(mp_label, open(label_path, 'wb'))
 
         mp_dataset = defaultdict(list)
-        _, text_id_list, len_id_list = sen2id_fun(text_list, vocab_dict,
+        text_pred_list, text_id_list, len_id_list = sen2id_fun(text_list, vocab_dict,
                                        need_preprocess=False)
         if self.mode == 'class':
             for idx,text_id in enumerate(text_id_list):
                 label = label_list[idx]
                 serialized = self._serialized_example(x_query = text_id, 
-                                                             length = [len_id_list[idx]],
-                                                             label = [mp_label[label]])
+                                                      x_query_raw = text_pred_list[idx],
+                                                      length = [len_id_list[idx]],
+                                                      label = [mp_label[label]])
                 mp_dataset[label].append(serialized)
             for label in mp_dataset:
                 dataset_train = mp_dataset[label][:-1]
@@ -428,6 +440,8 @@ class GenerateTfrecords():
             for label, query_id, sample_id in train_list:
                 serialized = self._serialized_example(x_query = text_id_list[query_id], 
                                                       x_sample = text_id_list[sample_id], 
+                                                      x_query_raw = text_pred_list[query_id],
+                                                      x_sample_raw = text_pred_list[sample_id],
                                                       x_query_length = [len_id_list[query_id]],
                                                       x_sample_length = [len_id_list[sample_id]],
                                                       label = [label])
@@ -439,6 +453,8 @@ class GenerateTfrecords():
                 for label, sample_id in item_list:
                     serialized = self._serialized_example(x_query = text_id_list[query_id], 
                                                       x_sample = text_id_list[sample_id], 
+                                                      x_query_raw = text_pred_list[query_id],
+                                                      x_sample_raw = text_pred_list[sample_id],
                                                       x_query_length = [len_id_list[query_id]],
                                                       x_sample_length = [len_id_list[sample_id]],
                                                       label = [label])
