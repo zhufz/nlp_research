@@ -50,14 +50,14 @@ batch_mode: "supervised"
 margin: 1
 semi_hard: True
 score_thre: 0
-config_type: 10
+config_type: 0
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1, 
-    tfrecords_mode: "pair", num_pair: 2, loss_type: "softmax_loss"}
+    tfrecords_mode: "pair", num_pair: 2, loss_type: "sigmoid_loss"}
   1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.0005, 
-    tfrecords_mode: "pair", num_pair: 2, loss_type: "softmax_loss"}
+    tfrecords_mode: "pair", num_pair: 2, loss_type: "sigmoid_loss"}
   2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 1, learning_rate: 0.001, 
-    tfrecords_mode: "pair", num_pair: 2, loss_type: "softmax_loss"}
+    tfrecords_mode: "pair", num_pair: 2, loss_type: "sigmoid_loss"}
 
   10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0003}
   11: {encoder_type: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}

@@ -449,6 +449,7 @@ class GenerateTfrecords():
             for label in mp_dataset:
                 self._output_tfrecords(mp_dataset[label], label, output_path, "train")
             ##################################################
+            mp_dataset = defaultdict(list)
             for query_id, item_list in test_list:
                 for label, sample_id in item_list:
                     serialized = self._serialized_example(x_query = text_id_list[query_id], 

@@ -79,14 +79,8 @@ class Match(object):
             loss = batch_hard_triplet_loss(labels, pred, conf['margin'])
             #loss = batch_all_triplet_loss(labels, pred, conf['margin'])
         else:
-            pos = tf.strided_slice(pred, [0], [batch_size], [2])
-            neg = tf.strided_slice(pred, [1], [batch_size], [2])
-            pos_loss = get_loss(type = loss_type, logits = pos, labels =
-                                pos_target, **conf)
-
-            neg_loss = get_loss(type = loss_type, logits = neg, labels =
-                                neg_target, **conf)
-            loss = pos_loss + neg_loss
+            loss = get_loss(type = loss_type, logits = pred, labels =
+                                labels, **conf)
         return loss
 
     def create_model_fn(self):
@@ -159,32 +153,30 @@ class Match(object):
         def train_input_fn():
             if self.tfrecords_mode == 'pair':
                 size = self.num_pair
+                num_classes_per_batch = 2
+                num_sentences_per_class = 32
             else:
                 size = self.num_class
+                num_classes_per_batch = 16
+                num_sentences_per_class = 4
+
             filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
                              for i in range(size)]
             logging.info("tfrecords train class num: {}".format(len(filenames)))
-            if self.tfrecords_mode == 'pair':
-                dataset = tf.data.TFRecordDataset(filenames)
-            else:
+            datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
+            datasets = [dataset.repeat() for dataset in datasets]
+            assert self.batch_size == num_sentences_per_class* num_classes_per_batch
+            def generator():
+                while True:
+                    labels = np.random.choice(range(size),
+                                              num_classes_per_batch,
+                                              replace=False)
+                    for label in labels:
+                        for _ in range(num_sentences_per_class):
+                            yield label
 
-                datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
-                datasets = [dataset.repeat() for dataset in datasets]
-
-                num_sentences_per_class = 4
-                num_classes_per_batch = 16
-                assert self.batch_size == num_sentences_per_class* num_classes_per_batch
-                def generator():
-                    while True:
-                        labels = np.random.choice(range(self.num_class),
-                                                  num_classes_per_batch,
-                                                  replace=False)
-                        for label in labels:
-                            for _ in range(num_sentences_per_class):
-                                yield label
-
-                choice_dataset = tf.data.Dataset.from_generator(generator, tf.int64)
-                dataset = tf.contrib.data.choose_from_datasets(datasets, choice_dataset)
+            choice_dataset = tf.data.Dataset.from_generator(generator, tf.int64)
+            dataset = tf.contrib.data.choose_from_datasets(datasets, choice_dataset)
             gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
             dataset = dataset.map(lambda record: gt.parse_record(record, self.encoder),
                                   num_parallel_calls=n_cpu)
@@ -193,17 +185,19 @@ class Match(object):
             iterator = dataset.make_one_shot_iterator()
             features, label = iterator.get_next()
 
+
             sess = tf.Session()
-            if 'x_query_length' in features:
-                features['x_query_length'] = features['x_query_length'].eval(session = sess)
-            if 'x_sample_length' in features:
-                features['x_sample_length'] = features['x_sample_length'].eval(session = sess)
+            features,label = sess.run([features,label])
+            ##length feature
+            #if 'x_query_length' in features:
+            #    features['x_query_length'] = features['x_query_length'].eval(session = sess)
+            #if 'x_sample_length' in features:
+            #    features['x_sample_length'] = features['x_sample_length'].eval(session = sess)
+            #pred segmented feature
             if 'x_query_raw' in features:
-                features['x_query_raw'] = features['x_query_raw'].eval(session = sess)
                 features['x_query_raw'] = [item.decode('utf-8') for item in
                                            features['x_query_raw'][1]]
             if 'x_sample_raw' in features:
-                features['x_sample_raw'] = features['x_sample_raw'].eval(session = sess)
                 features['x_sample_raw'] = [item.decode('utf-8') for item in
                                             features['x_sample_raw'][1]]
             try:
@@ -354,6 +348,9 @@ class Match(object):
         return label_list[max_id], max_score
 
     def set_zdy_labels(self, text_list, label_list):
+        if len(text_list) == 0 or len(label_list) == 0: 
+            self.zdy = {}
+            return
         self.zdy['text_list'] = text_list
         self.zdy['vec_list'] = self._get_vecs(self.predict_fn, 
                                               text_list,
