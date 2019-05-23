@@ -45,7 +45,7 @@ class Classify(object):
                                                             maxlen = self.maxlen,
                                                             embedding_size = self.embedding_size,
                                                             conf = self.conf)
-            self.embed = self.embedding('x')
+            self.embed = self.embedding(name = 'x')
         self.y = tf.placeholder(tf.int32, [None], name="y")
 
         #model params

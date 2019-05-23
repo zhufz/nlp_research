@@ -20,7 +20,7 @@ valid_step: 1000 #valid one time every valid_step
 thre_score: 0.3
 # embedding_type: char_embedding, word_embedding, subword_embedding
 embedding_type: 'char_embedding'
-embedding_type: 'region_embedding'
+#embedding_type: 'region_embedding'
 rand_embedding: True
 # encoder_type: "text_cnn" #88.6
 # encoder_type: "cnn"  # 84.7
