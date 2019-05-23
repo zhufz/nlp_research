@@ -2,8 +2,10 @@ import sys
 import tensorflow as tf
 import numpy as np
 import pdb
+import pickle
+from encoder import Base
 
-class MatchPyramid():
+class MatchPyramid(Base):
     def __init__(self, **kwargs):
         self.maxlen1 = kwargs['maxlen1']
         self.maxlen2 = kwargs['maxlen2']
@@ -61,7 +63,8 @@ class MatchPyramid():
         out = tf.squeeze(self.pred, -1)
         #self.pred = tf.contrib.layers.linear(self.fc1, 1)
         return out
-
+    #######################################
+    #for placeholder
     def feed_dict(self, **kwargs):
         feed_dict = {}
         feed_dict[self.dpool_index] = self.dynamic_pooling_index(kwargs['x_query'], kwargs['x_sample'])
@@ -73,9 +76,24 @@ class MatchPyramid():
         feed_dict[pool_index] = self.dynamic_pooling_index(kwargs['x_query'], kwargs['x_sample'])
         return feed_dict
 
-    def update_features(self, features):
-        features['dpool_index'] = self.dynamic_pooling_index(
-            features['x_query_length'], features['x_sample_length'])
+    #######################################
+    #for tfrecords operation
+    def encoder_fun(self, x_query_length, x_sample_length, name = 'encoder', **kwargs):
+        return {'dpool_index': self.dynamic_pooling_index(
+            x_query_length, x_sample_length)}
+
+    def keys_to_features(self, name = 'encoder'):
+        keys_to_features = {
+            "dpool_index": tf.FixedLenFeature([self.maxlen], tf.int64)
+        }
+        return keys_to_features
+
+    def parsed_to_features(self, parsed, name = 'encoder'):
+        ret = {
+            "dpool_index": tf.reshape(parsed[dpool_index], [self.maxlen]), 
+        }
+        return ret
+    ######################################
 
     def dynamic_pooling_index(self, len1, len2, compress_ratio1 = 1, compress_ratio2 = 1):
         def dpool_index_(batch_idx, len1_one, len2_one, cur_maxlen1, cur_maxlen2):

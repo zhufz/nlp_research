@@ -3,6 +3,7 @@ from tensorflow.contrib import rnn
 import numpy as np
 import pdb
 from common.layers import RNNLayer
+from encoder_base import Base
 
 class AttentionRNN(object):
     def __init__(self, **args):

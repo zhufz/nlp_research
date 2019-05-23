@@ -1,9 +1,10 @@
 import tensorflow as tf
 import numpy as np
 import pdb
+from encoder import Base
 
 
-class Transformer():
+class Transformer(Base):
     def __init__(self, **args):
         self.maxlen = args['maxlen']
         self.d_model = args['embedding_size']

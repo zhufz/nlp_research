@@ -2,10 +2,11 @@ import tensorflow as tf
 import numpy as np
 import pdb
 from common.layers import get_initializer
+from encoder import Base
 #refer:https://github.com/galsang/ABCNN/blob/master/ABCNN.py
 
 
-class ABCNN():
+class ABCNN(Base):
     def __init__(self, **kwargs):
         """
         Implmenentaion of ABCNNs

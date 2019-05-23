@@ -71,7 +71,8 @@ class Match(object):
         self.init_embedding()
         self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
         self.gt.process(self.text_list, self.label_list, self.embedding.text2id,
-                        self.vocab_dict, self.tfrecords_path, self.label_path)
+                        self.encoder.encoder_fun, self.vocab_dict,
+                        self.tfrecords_path, self.label_path)
 
     def cal_loss(self, loss_type, pred, labels, pos_target, neg_target, batch_size, conf):
         if loss_type == 'hinge_loss':
@@ -105,10 +106,13 @@ class Match(object):
                 else:
                     pred = self.encoder(features = features)
             elif self.sim_mode == 'represent':
-                features['x_query_length'] = features['length']
-                pred = self.encoder(self.embed_query, 
-                                                 name = 'x_query', 
-                                                 features = features)
+                if not self.use_language_model:
+                    #features['x_query_length'] = features['length']
+                    pred = self.encoder(self.embed_query, 
+                                                     name = 'x_query', 
+                                                     features = features)
+                else:
+                    pred = self.encoder(features = features)
             else:
                 raise ValueError('unknown sim mode')
 
@@ -183,26 +187,11 @@ class Match(object):
             dataset = dataset.prefetch(4*self.batch_size)
             iterator = dataset.make_one_shot_iterator()
             features, label = iterator.get_next()
-
-
-            sess = tf.Session()
-            features,label = sess.run([features,label])
-            ##length feature
-            #if 'x_query_length' in features:
-            #    features['x_query_length'] = features['x_query_length'].eval(session = sess)
-            #if 'x_sample_length' in features:
-            #    features['x_sample_length'] = features['x_sample_length'].eval(session = sess)
-            #pred segmented feature
-            if 'x_query_raw' in features:
-                features['x_query_raw'] = [item.decode('utf-8') for item in
-                                           features['x_query_raw'][1]]
-            if 'x_sample_raw' in features:
-                features['x_sample_raw'] = [item.decode('utf-8') for item in
-                                            features['x_sample_raw'][1]]
-            try:
-                self.encoder.update_features(features)
-            except:
-                logging.info(traceback.print_exc())
+            #test
+            #sess = tf.Session()
+            #features,label = sess.run([features,label])
+            #features['x_query_pred'] = [item.decode('utf-8') for item in
+            #                           features['x_query_pred'][1]]
             return features, label
 
         def test_input_fn(mode):

@@ -1,6 +1,7 @@
 import tensorflow as tf
+from encoder import Base
 #simple CNN demo
-class CNN:
+class CNN(Base):
     def __init__(self, **args):
         self.document_max_len = args['maxlen']
         self.embedding_size = args['embedding_size']

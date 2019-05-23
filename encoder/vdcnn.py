@@ -1,8 +1,9 @@
 import tensorflow as tf
 import pdb
+from encoder import Base
 
 
-class VDCNN(object):
+class VDCNN(Base):
     def __init__(self, **args):
         #TODO: fix problem
         self.embedding_size = args['embedding_size']

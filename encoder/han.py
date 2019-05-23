@@ -1,8 +1,9 @@
 import tensorflow as tf
+from encoder import Base
 
 
 
-class HAN(object):
+class HAN(Base):
     def __init__(self, **args):
         self.seq_length = args['maxlen']
         self.embedding_dim = args['embedding_size']

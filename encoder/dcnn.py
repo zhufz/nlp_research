@@ -1,7 +1,8 @@
 import tensorflow as tf
 from common.layers import get_initializer
+from encoder import Base
 
-class DCNN():
+class DCNN(Base):
     def __init__(self, **args):
         self.batch_size = args['batch_size']
         self.sentence_length = args['maxlen']

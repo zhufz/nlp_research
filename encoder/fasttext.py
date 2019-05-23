@@ -1,6 +1,7 @@
 import tensorflow as tf
+from encoder import Base
 
-class FastText():
+class FastText(Base):
     def __init__(self, **kwargs):
         """
         :param config:

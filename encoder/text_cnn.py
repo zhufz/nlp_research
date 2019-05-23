@@ -1,7 +1,10 @@
 import tensorflow as tf
 from common.layers import get_initializer
+from encoder import Base
 #from kim cnn 2014:https://arxiv.org/abs/1408.5882
-class TextCNN:
+
+
+class TextCNN(Base):
     def __init__(self, **args):
         self.maxlen = args['maxlen']
         self.embedding_size = args['embedding_size']

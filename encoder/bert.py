@@ -2,9 +2,10 @@ import tensorflow as tf
 from language_model.bert import modeling
 from language_model.bert import optimization
 from language_model.bert import tokenization
+from encoder import Base
 import pdb
 
-class Bert():
+class Bert(Base):
     def __init__(self, **kwargs):
         """
         :param config:
@@ -163,20 +164,25 @@ class Bert():
         feed_dict[segment_ids_node ] = segment_ids_list
         return feed_dict
 
-    def update_features(self, features, name = 'encoder'):
-        text_a_list = features['x_query_raw']
-        if 'x_sample_raw' in features:
-            text_b_list = features['x_sample_raw']
-        else:
-            text_b_list = None
-        input_ids_list, input_mask_list, segment_ids_list = [],[],[]
-        for idx,text in enumerate(text_a_list):
-            input_ids, input_mask, segment_ids = \
-                self.build_ids(text, text_b_list[idx] if text_b_list != None else None)
-            input_ids_list.append(input_ids)
-            input_mask_list.append(input_mask)
-            segment_ids_list.append(segment_ids)
-        features[name+"_input_ids"] = input_ids_list
-        features[name+'_input_mask'] = input_mask_list
-        features[name+'_segment_ids'] = segment_ids_list
+    def encoder_fun(self, x_query_raw, x_sample_raw = None, name = 'encoder', **kwargs):
+        input_ids, input_mask, segment_ids = \
+            self.build_ids(x_query_raw, x_sample_raw)
+        return {name+"_input_ids": input_ids, 
+                name+"_input_mask": input_mask, 
+                name+"_segment_ids": segment_ids}
 
+    def keys_to_features(self, name = 'encoder'):
+        keys_to_features = {
+            name+"_input_ids": tf.FixedLenFeature([self.maxlen], tf.int64), 
+            name+"_input_mask": tf.FixedLenFeature([self.maxlen], tf.int64), 
+            name+"_segment_ids": tf.FixedLenFeature([self.maxlen], tf.int64)
+        }
+        return keys_to_features
+
+    def parsed_to_features(self, parsed, name = 'encoder'):
+        ret = {
+            name + "_input_ids": tf.reshape(parsed[name+ "_input_ids"], [self.maxlen]), 
+            name + "_input_mask": tf.reshape(parsed[name + "_input_ids"], [self.maxlen]),
+            name+"_segment_ids": tf.reshape(parsed[name + "_input_ids"], [self.maxlen])
+        }
+        return ret

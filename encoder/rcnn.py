@@ -1,9 +1,10 @@
 import tensorflow as tf
 from tensorflow.contrib import rnn
 from common.layers import get_initializer
+from encoder import Base
 import pdb
 
-class RCNN(object):
+class RCNN(Base):
     def __init__(self, **args):
         self.keep_prob = args['keep_prob']
         self.num_output = args['num_output']

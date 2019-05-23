@@ -50,7 +50,7 @@ batch_mode: "supervised"
 margin: 1
 semi_hard: True
 score_thre: 0
-config_type: 0
+config_type: 23
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1, 
     tfrecords_mode: "pair", num_pair: 2, loss_type: "sigmoid_loss"}
@@ -67,7 +67,7 @@ config:
   15: {encoder_type: "attention_rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
   21: {encoder_type: "text_cnn", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
   22: {encoder_type: "transformer", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
-  23: {encoder_type: "bert", sim_mode: "cross", learning_rate: 0.00002, use_language_model: True, valid_step: 20000, num_output: 1}
+  23: {encoder_type: "bert", sim_mode: "represent", learning_rate: 0.00002, use_language_model: True, valid_step: 20000, num_output: 1}
 
 mode: "train"  #train\test\test_one
 #mode: "test"  #train\test\test_one

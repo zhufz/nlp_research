@@ -3,9 +3,9 @@ from tensorflow.contrib import rnn
 import numpy as np
 import pdb
 from common.layers import RNNLayer
+from encoder import Base
 
-
-class Seq2seq(object):
+class Seq2seq(Base):
     def __init__(self, **args):
         self.maxlen = args['maxlen']
         self.num_hidden = args['num_hidden'] if 'num_hidden' in args else 256

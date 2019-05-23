@@ -1,6 +1,7 @@
 import tensorflow as tf
+from encoder import Base
 
-class DPCNN():
+class DPCNN(Base):
     def __init__(self, **args):
         self.seq_length = args['maxlen']
         self.keep_prob = args['keep_prob']

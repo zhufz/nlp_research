@@ -3,6 +3,7 @@ import keras
 from keras import backend as K
 import tensorflow.contrib.slim as slim
 from tensorflow.contrib.layers.python.layers import initializers
+from encoder import Base
 import pdb
 #refer:https://github.com/andyweizhao/capsule_text_classification/blob/master/network.py
 
@@ -234,7 +235,7 @@ def vec_transformationByMat(poses, input_capsule_dim, input_capsule_num, output_
     return u_hat_vecs
 
 
-class Capsule():
+class Capsule(Base):
     def __init__(self, **kwargs):
         self.seq_length = kwargs['maxlen']
         self.embedding_size = kwargs['embedding_size']

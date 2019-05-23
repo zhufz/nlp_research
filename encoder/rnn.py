@@ -3,8 +3,9 @@ from tensorflow.contrib import rnn
 import numpy as np
 import pdb
 from common.layers import RNNLayer
+from encoder import Base
 
-class RNN(object):
+class RNN(Base):
     def __init__(self, **args):
         self.maxlen = args['maxlen']
         self.num_hidden = args['num_hidden'] if 'num_hidden' in args else 256

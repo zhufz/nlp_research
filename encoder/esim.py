@@ -6,10 +6,11 @@ from keras.models import Model
 from keras.layers.merge import concatenate
 from keras.layers.normalization import BatchNormalization
 from keras.utils import multi_gpu_model
+from encoder import Base
 
 #refer:https://arxiv.org/abs/1609.06038
 
-class ESIM():
+class ESIM(Base):
     def __init__(self, **kwargs):
         self.maxlen = kwargs['maxlen']
         self.embedding_size = kwargs['embedding_size']
