@@ -34,12 +34,11 @@ class Match(object):
         self.pre = Preprocess()
         self.model_loaded = False
         self.zdy = {}
-        self.generator = PairGenerator(self.relation_path,\
-                                       self.index_path,
-                                       self.test_path)
+        csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
+        self.text_list = csv['text']
+        self.label_list = csv['target']
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
-                          self.generator.index_data]
-        self.label_list = self.generator.label_data
+                          self.text_list]
         self.conf.update({
             "maxlen": self.maxlen,
             "maxlen1": self.maxlen,
