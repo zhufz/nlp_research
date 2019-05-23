@@ -58,7 +58,7 @@ class NER(object):
                                                             maxlen = self.maxlen,
                                                             embedding_size = self.embedding_size,
                                                             conf = self.conf)
-            self.embed = self.embedding('x')
+            self.embed = self.embedding(name = 'x')
         else:
             self.embedding = None
         self.labels = tf.placeholder(tf.int32, shape=[None, None], name="labels")

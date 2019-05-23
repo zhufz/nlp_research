@@ -54,8 +54,8 @@ class Translation(object):
                                                             maxlen = self.maxlen,
                                                             embedding_size = self.embedding_size,
                                                             conf = self.conf)
-            self.embed_encode = self.embedding('encode_seq')
-            self.embed_decode = self.embedding('decode_seq')
+            self.embed_encode = self.embedding(name = 'encode_seq')
+            self.embed_decode = self.embedding(name = 'decode_seq')
 
         self.target = tf.placeholder(tf.int32, [None, None], name = 'target_seq')
 
