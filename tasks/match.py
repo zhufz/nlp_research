@@ -284,6 +284,7 @@ class Match(object):
             refers_label = [item['label'] for item in refers]
 
             right = 0
+            thre_right = 0
             sum = 0
             scores = cosine_similarity(predictions_vec, refers_vec)
             max_id = np.argmax(scores, axis=-1)
@@ -291,9 +292,11 @@ class Match(object):
             for idx, item in enumerate(max_id):
                 if refers_label[item] == predictions_label[idx]:
                     if scores[idx][item] > self.score_thre:
-                        right += 1
+                        thre_right += 1
+                    right += 1
                 sum += 1
             print("Acc:{}".format(float(right)/sum))
+            print("ThreAcc:{}".format(float(thre_right)/sum))
         else:
             #TODO: 对于pair方式的评估
             pdb.set_trace()
