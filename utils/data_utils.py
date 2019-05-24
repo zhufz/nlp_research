@@ -368,9 +368,9 @@ class GenerateTfrecords():
         if self.mode == 'class':
             keys_to_features = {
                 "x_query": tf.FixedLenFeature([self.maxlen], tf.int64),
-                "x_query_pred": tf.VarLenFeature(tf.string),
-                "x_query_raw": tf.VarLenFeature(tf.string),
-                "length": tf.FixedLenFeature([1], tf.int64),
+                #"x_query_pred": tf.VarLenFeature(tf.string),
+                #"x_query_raw": tf.VarLenFeature(tf.string),
+                "x_query_length": tf.FixedLenFeature([1], tf.int64),
                 "label": tf.FixedLenFeature([1], tf.int64),
             }
             keys_to_features.update(encoder.keys_to_features())
@@ -378,9 +378,9 @@ class GenerateTfrecords():
             # Perform additional preprocessing on the parsed data.
             label = tf.reshape(parsed['label'], [1])
             ret =  {'x_query': tf.reshape(parsed['x_query'], [self.maxlen]),
-                    'x_query_pred': parsed['x_query_pred'],
-                    'x_query_raw': parsed['x_query_raw'],
-                    'length': tf.reshape(parsed['length'], [1])[0],
+                    #'x_query_pred': parsed['x_query_pred'],
+                    #'x_query_raw': parsed['x_query_raw'],
+                    'x_query_length': tf.reshape(parsed['x_query_length'], [1])[0],
                     'label': label[0]}
             ret.update(encoder.parsed_to_features(parsed = parsed))
             return ret, label[0]
@@ -388,10 +388,10 @@ class GenerateTfrecords():
             keys_to_features = {
                 "x_query": tf.FixedLenFeature([self.maxlen], tf.int64),
                 "x_sample": tf.FixedLenFeature([self.maxlen], tf.int64),
-                "x_query_pred": tf.VarLenFeature(tf.string),
-                "x_sample_pred": tf.VarLenFeature(tf.string),
-                "x_query_raw": tf.VarLenFeature(tf.string),
-                "x_sample_raw": tf.VarLenFeature(tf.string),
+                #"x_query_pred": tf.VarLenFeature(tf.string),
+                #"x_sample_pred": tf.VarLenFeature(tf.string),
+                #"x_query_raw": tf.VarLenFeature(tf.string),
+                #"x_sample_raw": tf.VarLenFeature(tf.string),
                 "x_query_length": tf.FixedLenFeature([1], tf.int64),
                 "x_sample_length": tf.FixedLenFeature([1], tf.int64),
                 "label": tf.FixedLenFeature([1], tf.int64),
@@ -402,10 +402,10 @@ class GenerateTfrecords():
             label = tf.reshape(parsed['label'], [1])
             ret =  {'x_query': tf.reshape(parsed['x_query'], [self.maxlen]),
                     'x_sample': tf.reshape(parsed['x_sample'], [self.maxlen]),
-                    'x_query_pred': parsed['x_query_pred'],
-                    'x_sample_pred': parsed['x_sample_pred'],
-                    'x_query_raw': parsed['x_query_raw'],
-                    'x_sample_raw': parsed['x_sample_raw'],
+                    #'x_query_pred': parsed['x_query_pred'],
+                    #'x_sample_pred': parsed['x_sample_pred'],
+                    #'x_query_raw': parsed['x_query_raw'],
+                    #'x_sample_raw': parsed['x_sample_raw'],
                     'x_query_length': tf.reshape(parsed['x_query_length'], [1])[0],
                     'x_sample_length': tf.reshape(parsed['x_sample_length'], [1])[0],
                     'label': label[0]
@@ -443,10 +443,12 @@ class GenerateTfrecords():
                 input_dict = {'x_query': text_id, 
                               'x_query_pred': text_pred_list[idx], 
                               'x_query_raw': text_list[idx], 
-                              'length': [len_id_list[idx]], 
+                              'x_query_length': [len_id_list[idx]], 
                               'label': [mp_label[label]]
                               }
                 input_dict.update(encoder_fun(**input_dict))
+                del input_dict['x_query_pred']
+                del input_dict['x_query_raw']
                 serialized = self._serialized_example(**input_dict)
                 mp_dataset[label].append(serialized)
 
@@ -471,6 +473,10 @@ class GenerateTfrecords():
                               'x_sample_length': [len_id_list[sample_id]],
                               'label': [label]}
                 input_dict.update(encoder_fun(**input_dict))
+                del input_dict['x_query_pred']
+                del input_dict['x_query_raw']
+                del input_dict['x_sample_pred']
+                del input_dict['x_sample_raw']
                 serialized = self._serialized_example(**input_dict)
                 mp_dataset[label].append(serialized)
 
@@ -490,6 +496,10 @@ class GenerateTfrecords():
                                   'x_sample_length': [len_id_list[sample_id]],
                                   'label': [label]}
                     input_dict.update(encoder_fun(**input_dict))
+                    del input_dict['x_query_pred']
+                    del input_dict['x_query_raw']
+                    del input_dict['x_sample_pred']
+                    del input_dict['x_sample_raw']
                     serialized = self._serialized_example(**input_dict)
                     mp_dataset[query_id].append(serialized)
             for idx,query_id in enumerate(mp_dataset):

@@ -28,7 +28,7 @@ early_stop: True
 embedding_type: "char_embedding"
 embedding_size: 300
 
-rand_embedding: False
+rand_embedding: True
 
 use_language_model: False
 
@@ -42,12 +42,12 @@ clr_mode: 'triangular2'
 
 #class/89   pair/2
 tfrecords_mode: "class"
-num_class: 89
 loss_type: "hinge_loss"
+max_steps: 5000
 
-batch_mode: "random"  #(random/supervised)
-batch_mode: "supervised"
-margin: 1
+# batch_mode: "random"  #(random/supervised)
+# batch_mode: "supervised"
+margin: 0.5
 semi_hard: True
 score_thre: 0
 config_type: 10
@@ -59,7 +59,7 @@ config:
   2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 1, learning_rate: 0.001, 
     tfrecords_mode: "pair", num_pair: 2, loss_type: "sigmoid_loss"}
 
-  10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0003}
+  10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}
   11: {encoder_type: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
   12: {encoder_type: "rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
   13: {encoder_type: "rcnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}

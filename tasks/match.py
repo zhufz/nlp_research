@@ -37,6 +37,8 @@ class Match(object):
         csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
         self.text_list = csv['text']
         self.label_list = csv['target']
+        self.num_class = len(set(self.label_list))
+        logging.info(f">>>>>>>>>>>>>>class num:{self.num_class}")
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
                           self.text_list]
         self.conf.update({
@@ -228,7 +230,8 @@ class Match(object):
         estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
                                            config = config,
                                            params = params)
-        estimator.train(input_fn = self.create_input_fn("train"), max_steps = 3000)
+        estimator.train(input_fn = self.create_input_fn("train"), max_steps =
+                        self.max_steps)
         self.save()
 
     def save(self):
@@ -244,11 +247,11 @@ class Match(object):
         def serving_input_receiver_fn():
             x_query = tf.placeholder(dtype=tf.int64, shape=[None, self.maxlen],
                                    name='x_query')
-            length = tf.placeholder(dtype=tf.int64, shape=[None], name='length')
+            length = tf.placeholder(dtype=tf.int64, shape=[None], name='x_query_length')
             label = tf.placeholder(dtype=tf.int64, shape=[None], name='label')
 
-            receiver_tensors = {'x_query': x_query, 'length': length, 'label': label}
-            features = {'x_query': x_query, 'length': length, 'label': label}
+            receiver_tensors = {'x_query': x_query, 'x_query_length': length, 'label': label}
+            features = {'x_query': x_query, 'x_query_length': length, 'label': label}
             return tf.estimator.export.ServingInputReceiver(receiver_tensors,
                                                             features)
         estimator.export_savedmodel(
@@ -353,6 +356,6 @@ class Match(object):
         label = [0 for _ in range(len(text_list))]
 
         predictions = predict_fn({'x_query': x_query, 
-                                  'length': x_query_length, 
+                                  'x_query_length': x_query_length, 
                                   'label': label})
         return predictions['pred']
