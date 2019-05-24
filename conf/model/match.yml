@@ -1,5 +1,6 @@
 path_root: "data/match/"
 ori_path: "intent.csv"
+no_train_path: "no_train.csv"
 index_path: "index.csv"
 relation_path: "relation.csv"
 test_path: "test.csv"
@@ -52,7 +53,7 @@ batch_mode: "random"  #(random/supervised)
 # batch_mode: "supervised"
 margin: 0.5
 semi_hard: True
-score_thre: 0
+score_thre: 0.8
 config_type: 10
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1, 

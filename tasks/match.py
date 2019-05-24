@@ -13,7 +13,6 @@ sys.path.append(ROOT_PATH)
 
 from embedding import embedding
 from encoder import encoder
-from language_model.bert.modeling import get_assignment_map_from_checkpoint
 from utils.data_utils import *
 from utils.preprocess import Preprocess
 from utils.tf_utils import load_pb,write_pb
@@ -35,8 +34,8 @@ class Match(object):
         self.model_loaded = False
         self.zdy = {}
         csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
-        self.text_list = csv['text']
-        self.label_list = csv['target']
+        self.text_list = list(csv['text'])
+        self.label_list = list(csv['target'])
         self.num_class = len(set(self.label_list))
         logging.info(f">>>>>>>>>>>>>>class num:{self.num_class}")
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
@@ -315,6 +314,11 @@ class Match(object):
     def test_unit(self, text):
         #######################init#########################
         if self.model_loaded == False:
+            #添加不参与训练样本
+            if os.path.exists(self.no_train_path):
+                csv = pd.read_csv(self.no_train_path, header = 0, sep=",", error_bad_lines=False)
+                self.text_list += list(csv['text'])
+                self.label_list += list(csv['target'])
             subdirs = [x for x in Path(self.export_dir_path).iterdir()
                     if x.is_dir() and 'temp' not in str(x)]
             latest = str(sorted(subdirs)[-1])
@@ -339,8 +343,8 @@ class Match(object):
         max_id = np.argmax(scores)
         max_score = scores[max_id]
         max_similar = text_list[max_id]
-        print(label_list[max_id], max_score, max_similar)
-        return label_list[max_id], max_score
+        logging.info("test result: {}, {}, {}".format(label_list[max_id], max_score, max_similar))
+        return label_list[max_id], max_score, max_id
 
     def set_zdy_labels(self, text_list, label_list):
         if len(text_list) == 0 or len(label_list) == 0: 
