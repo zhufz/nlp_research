@@ -163,7 +163,7 @@ class Match(object):
                 num_sentences_per_class = self.batch_size // num_classes_per_batch
             else:
                 size = self.num_class
-                num_classes_per_batch = 64
+                num_classes_per_batch = 16
                 num_sentences_per_class = self.batch_size // num_classes_per_batch
 
             filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \

@@ -25,12 +25,21 @@ def _pairwise_distances(embeddings, squared=False):
         pairwise_distances: tensor of shape (batch_size, batch_size)
     """
     #cosine similarity
+    #embeddings: [batch, embed_size]
+    #embeddings_trans: [embed_size, batch]
     embeddings_trans = tf.transpose(embeddings)
-    dot_product = tf.matmul(embeddings, embeddings_trans)
-    len1 = tf.sqrt(tf.reduce_sum(embeddings* embeddings))
-    len2 = tf.sqrt(tf.reduce_sum(embeddings* embeddings))
-    scores = tf.div(dot_product, len1*len2+1e-8)
-    return 1-scores
+
+    #[batch, batch]
+    dot_product = tf.matmul(embeddings, embeddings_trans)  
+
+    #len: [batch, 1]
+    len = tf.expand_dims(tf.sqrt(tf.reduce_sum(embeddings* embeddings, axis =
+                                               -1)),-1)
+    #len_trans: [1, batch]
+    len_trans = tf.transpose(len)
+
+    scores = tf.div(dot_product, tf.matmul(len, len_trans)+1e-8)
+    return 1 - scores
 
     # Get the dot product between all embeddings
     # shape (batch_size, batch_size)

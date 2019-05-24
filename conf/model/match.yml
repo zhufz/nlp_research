@@ -28,7 +28,7 @@ early_stop: True
 embedding_type: "char_embedding"
 embedding_size: 300
 
-rand_embedding: True
+rand_embedding: False
 
 use_language_model: False
 
@@ -43,10 +43,10 @@ clr_mode: 'triangular'
 #class/89   pair/2
 tfrecords_mode: "class"
 loss_type: "hinge_loss"
-sub_loss_type: "all"
+sub_loss_type: "hard"
 max_steps: 4000
 num_class: 92
-batch_size: 256
+batch_size: 64
 
 batch_mode: "random"  #(random/supervised)
 # batch_mode: "supervised"
