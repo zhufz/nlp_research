@@ -52,8 +52,8 @@ class Match(object):
                                                             self.embedding_size,
                                                             conf = self.conf)
 
-            self.embed_query = self.embedding('x_query')
-            self.embed_sample = self.embedding('x_sample')
+            self.embed_query = self.embedding(name = 'x_query')
+            self.embed_sample = self.embedding(name = 'x_sample')
         else:
             self.embedding = None
 

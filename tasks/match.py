@@ -76,12 +76,14 @@ class Match(object):
                         self.encoder.encoder_fun, self.vocab_dict,
                         self.tfrecords_path, self.label_path)
 
-    def cal_loss(self, loss_type, pred, labels, pos_target, neg_target, batch_size, conf):
-        if loss_type == 'hinge_loss':
-            loss = batch_hard_triplet_loss(labels, pred, conf['margin'])
-            #loss = batch_all_triplet_loss(labels, pred, conf['margin'])
+    def cal_loss(self, pred, labels, pos_target, neg_target, batch_size, conf):
+        if self.loss_type == 'hinge_loss':
+            if self.sub_loss_type == 'all':
+                loss = batch_all_triplet_loss(labels, pred, conf['margin'])
+            else:
+                loss = batch_hard_triplet_loss(labels, pred, conf['margin'])
         else:
-            loss = get_loss(type = loss_type, logits = pred, labels =
+            loss = get_loss(type = self.loss_type, logits = pred, labels =
                                 labels, **conf)
         return loss
 
@@ -126,8 +128,7 @@ class Match(object):
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
-            loss = self.cal_loss(self.loss_type,
-                             pred,
+            loss = self.cal_loss(pred,
                              labels,
                              pos_target,
                              neg_target,
@@ -159,18 +160,18 @@ class Match(object):
             if self.tfrecords_mode == 'pair':
                 size = self.num_pair
                 num_classes_per_batch = 2
-                num_sentences_per_class = 32
+                num_sentences_per_class = self.batch_size // num_classes_per_batch
             else:
                 size = self.num_class
-                num_classes_per_batch = 16
-                num_sentences_per_class = 4
+                num_classes_per_batch = 64
+                num_sentences_per_class = self.batch_size // num_classes_per_batch
 
             filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
                              for i in range(size)]
             logging.info("tfrecords train class num: {}".format(len(filenames)))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
-            assert self.batch_size == num_sentences_per_class* num_classes_per_batch
+            #assert self.batch_size == num_sentences_per_class* num_classes_per_batch
             def generator():
                 while True:
                     labels = np.random.choice(range(size),

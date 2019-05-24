@@ -96,11 +96,11 @@ def cyclic_learning_rate(global_step,
       """Helper to recompute learning rate; most helpful in eager-mode."""
       # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
       double_step = math_ops.multiply(2., step_size)
-      global_div_double_step = math_ops.divide(global_step, double_step)
+      global_div_double_step = math_ops.divide(global_step, double_step + 1e-8)
       cycle = math_ops.floor(math_ops.add(1., global_div_double_step))
       # computing: x = abs( global_step / step_size – 2 * cycle + 1 )
       double_cycle = math_ops.multiply(2., cycle)
-      global_div_step = math_ops.divide(global_step, step_size)
+      global_div_step = math_ops.divide(global_step, step_size + 1e-8)
       tmp = math_ops.subtract(global_div_step, double_cycle)
       x = math_ops.abs(math_ops.add(1., tmp))
       # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
@@ -109,7 +109,7 @@ def cyclic_learning_rate(global_step,
       clr = math_ops.multiply(a1, a2)
       if mode == 'triangular2':
         clr = math_ops.divide(clr, math_ops.cast(math_ops.pow(2, math_ops.cast(
-            cycle-1, tf.int32)), tf.float32))
+            cycle-1, tf.int32)), tf.float32) + 1e-8)
       if mode == 'exp_range':
         clr = math_ops.multiply(math_ops.pow(gamma, global_step), clr)
       return math_ops.add(clr, learning_rate, name=name)

@@ -17,9 +17,9 @@ class FastText(Base):
         with tf.variable_scope("fast_text", reuse = reuse):
             #embed: [batch_size, self.maxlen, embedding_size]
             if features == None:
-                length = tf.placeholder(tf.int32, name='x_query_length',shape=[])
+                length = tf.placeholder(tf.int32, name=name + '_length',shape=[])
             else:
-                length = features['x_query_length']
+                length = features[name + '_length']
             #pdb.set_trace()
             #mask:[batch_size, self.maxlen]
             mask = tf.sequence_mask(length, self.maxlen, tf.float32)
@@ -33,10 +33,17 @@ class FastText(Base):
                                     reuse = reuse)
             return logits
 
-    def feed_dict(self, **kwargs):
+    def feed_dict(self, name = 'encoder', **kwargs):
         feed_dict = {}
+        for key in kwargs:
+            length_name = name + "_length" 
+            feed_dict[self.placeholder[length_name]] = kwargs[key]
         return feed_dict
 
-    def pb_feed_dict(self, graph, **kwargs):
+    def pb_feed_dict(self, graph, name = 'encoder', **kwargs):
         feed_dict = {}
+        for key in kwargs:
+            length_name = name + "_length" 
+            key_node = graph.get_operation_by_name(length_name).outputs[0]
+            feed_dict[key_node] = kwargs[key]
         return feed_dict

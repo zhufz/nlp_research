@@ -14,7 +14,7 @@ export_dir_path: "{encoder_type}/model"
 
 
 
-batch_size: 64
+
 num_epochs: 15000
 
 maxlen: 20
@@ -38,14 +38,17 @@ use_language_model: False
 
 optimizer_type: "Adam"
 use_clr: False
-clr_mode: 'triangular2'
+clr_mode: 'triangular'
 
 #class/89   pair/2
 tfrecords_mode: "class"
 loss_type: "hinge_loss"
-max_steps: 5000
+sub_loss_type: "all"
+max_steps: 4000
+num_class: 92
+batch_size: 256
 
-# batch_mode: "random"  #(random/supervised)
+batch_mode: "random"  #(random/supervised)
 # batch_mode: "supervised"
 margin: 0.5
 semi_hard: True
@@ -59,7 +62,7 @@ config:
   2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 1, learning_rate: 0.001, 
     tfrecords_mode: "pair", num_pair: 2, loss_type: "sigmoid_loss"}
 
-  10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}
+  10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
   11: {encoder_type: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
   12: {encoder_type: "rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
   13: {encoder_type: "rcnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
