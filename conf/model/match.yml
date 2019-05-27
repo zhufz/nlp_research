@@ -49,6 +49,7 @@ max_steps: 3000
 num_class: 91
 batch_size: 64
 
+test_size: 1
 batch_mode: "random"  #(random/supervised)
 # batch_mode: "supervised"
 margin: 0.5

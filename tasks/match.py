@@ -73,7 +73,8 @@ class Match(object):
         self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
         self.gt.process(self.text_list, self.label_list, self.embedding.text2id,
                         self.encoder.encoder_fun, self.vocab_dict,
-                        self.tfrecords_path, self.label_path)
+                        self.tfrecords_path, self.label_path, self.test_size)
+        logging.info("tfrecords generated!")
 
     def cal_loss(self, pred, labels, pos_target, neg_target, batch_size, conf):
         if self.sim_mode == 'represent':
