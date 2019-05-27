@@ -4,20 +4,23 @@ import numpy as np
 import pdb
 import pickle
 from encoder import Base
+import copy
 
 class MatchPyramid(Base):
     def __init__(self, **kwargs):
+        super(MatchPyramid, self).__init__(**kwargs)
         self.maxlen1 = kwargs['maxlen1']
         self.maxlen2 = kwargs['maxlen2']
         self.psize1 = 3
         self.psize2 = 3
+        self.placeholder = {}
 
     def __call__(self, x_query, x_sample, features = None, name = 'encoder', **kwargs):
-        if features == None:
-            self.dpool_index = tf.placeholder(tf.int32, name='dpool_index',\
+        self.placeholder['dpool_index'] = tf.placeholder(tf.int32, name='dpool_index',\
                                           shape=(None, self.maxlen1, self.maxlen2, 3))
-        else:
-            self.dpool_index = features['dpool_index']
+        if features != None:
+            self.features = copy.copy(self.placeholder)
+            self.placeholder['dpool_index'] = features['dpool_index']
         # batch_size * X1_maxlen * X2_maxlen
         self.cross = tf.einsum('abd,acd->abc', x_query, x_sample)
         self.cross_img = tf.expand_dims(self.cross, 3)
@@ -34,7 +37,8 @@ class MatchPyramid(Base):
             self.w1, [1, 1, 1, 1], "SAME") + self.b1)
 
         # dynamic pooling
-        self.conv1_expand = tf.gather_nd(self.conv1, self.dpool_index)
+        self.conv1_expand = tf.gather_nd(self.conv1,
+                                         self.placeholder['dpool_index'])
         stride1 = self.maxlen1 / self.psize1
         stride2 = self.maxlen2 / self.psize2
         suggestion1 = self.maxlen1 / stride1
@@ -67,7 +71,8 @@ class MatchPyramid(Base):
     #for placeholder
     def feed_dict(self, **kwargs):
         feed_dict = {}
-        feed_dict[self.dpool_index] = self.dynamic_pooling_index(kwargs['x_query'], kwargs['x_sample'])
+        feed_dict[self.placeholder['dpool_index']] = \
+                  self.dynamic_pooling_index(kwargs['x_query'], kwargs['x_sample'])
         return feed_dict
 
     def pb_feed_dict(self,graph,  name = 'dpool_index', **kwargs):

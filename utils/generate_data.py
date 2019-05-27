@@ -12,7 +12,7 @@ class GenerateData():
     def process(self, train_rate = 0.9):
         ori_file = self.conf['ori_path']
         #csv = pd.read_csv(ori_file, header = 0, error_bad_lines=False)
-        csv = pd.read_csv(ori_file, header = 0, sep="\t", error_bad_lines=False)
+        csv = pd.read_csv(ori_file, header = 0, sep=",", error_bad_lines=False)
         self.text = csv['text']
         self.label = csv['target']
         self.data = defaultdict(list)

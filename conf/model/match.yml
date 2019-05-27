@@ -43,9 +43,10 @@ clr_mode: 'triangular'
 #class/89   pair/2
 tfrecords_mode: "class"
 loss_type: "hinge_loss"
+loss_type: "am_softmax_loss"
 sub_loss_type: "hard"
-max_steps: 4000
-num_class: 92
+max_steps: 3000
+num_class: 91
 batch_size: 64
 
 batch_mode: "random"  #(random/supervised)
@@ -68,7 +69,7 @@ config:
   13: {encoder_type: "rcnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
   14: {encoder_type: "attention_rnn", rnn_type: "gru", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
   15: {encoder_type: "attention_rnn", rnn_type: "lstm", sim_mode: "represent", num_output: 128, learning_rate: 0.001}
-  21: {encoder_type: "text_cnn", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
+  21: {encoder_type: "text_cnn", sim_mode: "represent", num_output: 256, learning_rate: 0.0001}
   22: {encoder_type: "transformer", sim_mode: "represent", num_output: 256, 
     learning_rate: 0.00001, embedding_size: 128, rand_embedding: True}
   23: {encoder_type: "bert", sim_mode: "represent", learning_rate: 0.00002, use_language_model: True, valid_step: 20000, num_output: 1}

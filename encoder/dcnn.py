@@ -3,12 +3,13 @@ from common.layers import get_initializer
 from encoder import Base
 
 class DCNN(Base):
-    def __init__(self, **args):
-        self.batch_size = args['batch_size']
-        self.sentence_length = args['maxlen']
-        self.embed_dim = args['embedding_size']
-        self.keep_prob = args['keep_prob']
-        self.num_output = args['num_output']
+    def __init__(self, **kwargs):
+        super(DCNN, self).__init__(**kwargs)
+        self.batch_size = kwargs['batch_size']
+        self.sentence_length = kwargs['maxlen']
+        self.embed_dim = kwargs['embedding_size']
+        self.keep_prob = kwargs['keep_prob']
+        self.num_output = kwargs['num_output']
         self.num_filters = [6,14]
         self.top_k = 4
         self.k1 = 19

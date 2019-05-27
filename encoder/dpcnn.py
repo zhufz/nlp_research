@@ -2,11 +2,12 @@ import tensorflow as tf
 from encoder import Base
 
 class DPCNN(Base):
-    def __init__(self, **args):
-        self.seq_length = args['maxlen']
-        self.keep_prob = args['keep_prob']
-        self.embedding_dim = args['embedding_size']
-        self.num_output = args['num_output']
+    def __init__(self, **kwargs):
+        super(DPCNN, self).__init__(**kwargs)
+        self.seq_length = kwargs['maxlen']
+        self.keep_prob = kwargs['keep_prob']
+        self.embedding_dim = kwargs['embedding_size']
+        self.num_output = kwargs['num_output']
         self.num_filters = 250
         self.kernel_size = 3
 

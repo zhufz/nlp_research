@@ -12,6 +12,7 @@ from encoder import Base
 
 class ESIM(Base):
     def __init__(self, **kwargs):
+        super(ESIM, self).__init__(**kwargs)
         self.maxlen = kwargs['maxlen']
         self.embedding_size = kwargs['embedding_size']
         self.keep_prob = kwargs['keep_prob']

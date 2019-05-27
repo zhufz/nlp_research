@@ -4,16 +4,18 @@ import numpy as np
 import pdb
 from common.layers import RNNLayer
 from encoder import Base
+import copy
 
 class RNN(Base):
-    def __init__(self, **args):
-        self.maxlen = args['maxlen']
-        self.num_hidden = args['num_hidden'] if 'num_hidden' in args else 256
-        self.num_layers = args['num_layers'] if 'num_layers' in args else 2
-        self.keep_prob = args['keep_prob']
-        self.batch_size = args['batch_size']
-        self.rnn_type = args['rnn_type']
-        self.num_output = args['num_output']
+    def __init__(self, **kwargs):
+        super(RNN, self).__init__(**kwargs)
+        self.maxlen = kwargs['maxlen']
+        self.num_hidden = kwargs['num_hidden'] if 'num_hidden' in kwargs else 256
+        self.num_layers = kwargs['num_layers'] if 'num_layers' in kwargs else 2
+        self.keep_prob = kwargs['keep_prob']
+        self.batch_size = kwargs['batch_size']
+        self.rnn_type = kwargs['rnn_type']
+        self.num_output = kwargs['num_output']
         self.rnn_layer = RNNLayer(self.rnn_type, 
                                   self.num_hidden,
                                   self.num_layers)
@@ -24,11 +26,11 @@ class RNN(Base):
         #middle_flag: if True return middle output for each time step
         #hidden_flag: if True return hidden state
         length_name = name + "_length" 
-        if features == None:
-            self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
-                                                    shape=[None], 
-                                                    name = length_name)
-        else:
+        self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
+                                                shape=[None], 
+                                                name = length_name)
+        if features != None:
+            self.features = copy.copy(self.placeholder)
             self.placeholder[length_name] = features[length_name]
 
         self.initial_state = None

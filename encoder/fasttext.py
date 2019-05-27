@@ -1,12 +1,14 @@
 import tensorflow as tf
 from encoder import Base
 import pdb
+import copy
 
 class FastText(Base):
     def __init__(self, **kwargs):
         """
         :param config:
         """
+        super(FastText, self).__init__(**kwargs)
         self.maxlen = kwargs['maxlen']
         self.embedding_dim = kwargs['embedding_size']
         self.keep_prob = kwargs['keep_prob']
@@ -16,9 +18,9 @@ class FastText(Base):
     def __call__(self, embed, name = 'encoder', features = None, reuse = tf.AUTO_REUSE, **kwargs):
         with tf.variable_scope("fast_text", reuse = reuse):
             #embed: [batch_size, self.maxlen, embedding_size]
-            if features == None:
-                length = tf.placeholder(tf.int32, name=name + '_length',shape=[])
-            else:
+            length = tf.placeholder(tf.int32, name=name + '_length',shape=[])
+            if features != None:
+                self.features = copy.copy(self.placeholder)
                 length = features[name + '_length']
             #pdb.set_trace()
             #mask:[batch_size, self.maxlen]

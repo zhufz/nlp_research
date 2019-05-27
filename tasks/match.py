@@ -20,7 +20,7 @@ from utils.recall import Annoy
 from common.layers import get_train_op
 from common.loss import get_loss
 from common.lr import cyclic_learning_rate
-from common.triplet_loss import batch_hard_triplet_loss, batch_all_triplet_loss
+from common.triplet import batch_hard_triplet_scores
 
 
 class Match(object):
@@ -37,7 +37,7 @@ class Match(object):
         self.text_list = list(csv['text'])
         self.label_list = list(csv['target'])
         self.num_class = len(set(self.label_list))
-        logging.info(f">>>>>>>>>>>>>>class num:{self.num_class}")
+        logging.info(f">>>>>>>>>>>> class num:{self.num_class} <<<<<<<<<<<<<<<")
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
                           self.text_list]
         self.conf.update({
@@ -76,18 +76,39 @@ class Match(object):
                         self.tfrecords_path, self.label_path)
 
     def cal_loss(self, pred, labels, pos_target, neg_target, batch_size, conf):
-        if self.loss_type == 'hinge_loss':
-            if self.sub_loss_type == 'all':
-                loss = batch_all_triplet_loss(labels, pred, conf['margin'])
+        if self.sim_mode == 'represent':
+            pos_scores, neg_scores = batch_hard_triplet_scores(labels, pred) # pos/neg scores
+            pos_scores = tf.squeeze(pos_scores, -1)
+            neg_scores = tf.squeeze(neg_scores, -1)
+            #for represent, 
+            #     pred is a batch of tensors which size >1
+            #     we can use triplet loss(hinge loss) or contrastive loss
+            #if use hinge loss, we don't need labels
+            #if use other loss(contrastive loss), we need define pos/neg target before
+            if self.loss_type == 'hinge_loss':
+                loss = get_loss(type = self.loss_type, 
+                                pos_logits = pos_scores,
+                                neg_logits = neg_scores,
+                                **conf)
             else:
-                loss = batch_hard_triplet_loss(labels, pred, conf['margin'])
-        else:
+                pos_loss = get_loss(type = self.loss_type, logits = pos_scores, labels =
+                                pos_target, **conf)
+                neg_loss = get_loss(type = self.loss_type, logits = neg_scores, labels =
+                                neg_target, **conf)
+                loss = pos_loss + neg_loss
+
+        elif self.sim_mode == 'cross':
+            #for cross:
+            #   pred is a batch of tensors which size == 1
             loss = get_loss(type = self.loss_type, logits = pred, labels =
                                 labels, **conf)
+        else:
+            raise ValueError('unknown sim mode, cross or represent?')
         return loss
 
     def create_model_fn(self):
         def model_fn(features, labels, mode, params):
+            ########### embedding #################
             if not self.use_language_model:
                 self.init_embedding()
                 if self.tfrecords_mode == 'class':
@@ -97,6 +118,7 @@ class Match(object):
                     self.embed_sample = self.embedding(features = features, name = 'x_sample')
             else:
                 self.embedding = None
+            #############  encoder  #################
             #model params
             self.encoder.keep_prob = params['keep_prob']
             self.encoder.is_training = params['is_training']
@@ -119,20 +141,23 @@ class Match(object):
             else:
                 raise ValueError('unknown sim mode')
 
-            pos_target = tf.ones(shape = [int(self.batch_size/2)], dtype = tf.float32)
-            neg_target = tf.zeros(shape = [int(self.batch_size/2)], dtype = tf.float32)
+            ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
                 predictions = {
                     'pred': pred,
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
+            ############### loss ##################
+            pos_target = tf.ones(shape = [int(self.batch_size)], dtype = tf.float32)
+            neg_target = tf.zeros(shape = [int(self.batch_size)], dtype = tf.float32)
             loss = self.cal_loss(pred,
                              labels,
                              pos_target,
                              neg_target,
                              self.batch_size,
                              self.conf)
+            ############### train ##################
             if mode == tf.estimator.ModeKeys.TRAIN:
                 if self.use_clr:
                     self.learning_rate = cyclic_learning_rate(global_step=global_step,
@@ -145,6 +170,7 @@ class Match(object):
                                          clip_grad = 5)
                 return tf.estimator.EstimatorSpec(mode, loss = loss,
                                                       train_op=optimizer)
+            ############### eval ##################
             if mode == tf.estimator.ModeKeys.EVAL:
                 eval_metric_ops = {}
                 #{"accuracy": tf.metrics.accuracy(
@@ -245,15 +271,18 @@ class Match(object):
                                            config = config,
                                            params = params)
         def serving_input_receiver_fn():
-            x_query = tf.placeholder(dtype=tf.int64, shape=[None, self.maxlen],
-                                   name='x_query')
-            length = tf.placeholder(dtype=tf.int64, shape=[None], name='x_query_length')
-            label = tf.placeholder(dtype=tf.int64, shape=[None], name='label')
+            features = {'x_query': tf.placeholder(dtype=tf.int64, 
+                                                  shape=[None, self.maxlen],
+                                                  name='x_query'),
+                        'x_query_length': tf.placeholder(dtype=tf.int64,
+                                                         shape=[None],
+                                                         name='x_query_length'),
+                        'label': tf.placeholder(dtype=tf.int64, 
+                                                shape=[None],
+                                                name='label')}
+            features.update(self.encoder.features)
+            return tf.estimator.export.ServingInputReceiver(features, features)
 
-            receiver_tensors = {'x_query': x_query, 'x_query_length': length, 'label': label}
-            features = {'x_query': x_query, 'x_query_length': length, 'label': label}
-            return tf.estimator.export.ServingInputReceiver(receiver_tensors,
-                                                            features)
         estimator.export_savedmodel(
             self.export_dir_path, # 目录
             serving_input_receiver_fn, # 返回ServingInputReceiver的函数

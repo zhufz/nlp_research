@@ -6,6 +6,7 @@ from encoder import Base
 class VDCNN(Base):
     def __init__(self, **args):
         #TODO: fix problem
+        super(VDCNN, self).__init__(**kwargs)
         self.embedding_size = args['embedding_size']
         self.is_training = args['is_training']
         self.keep_prob = args['keep_prob']

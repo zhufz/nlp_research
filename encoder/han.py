@@ -4,14 +4,15 @@ from encoder import Base
 
 
 class HAN(Base):
-    def __init__(self, **args):
-        self.seq_length = args['maxlen']
-        self.embedding_dim = args['embedding_size']
+    def __init__(self, **kwargs):
+        super(HAN, self).__init__(**kwargs)
+        self.seq_length = kwargs['maxlen']
+        self.embedding_dim = kwargs['embedding_size']
         self.num_sentences = 10
         self.hidden_dim = 128
         self.context_dim = 256
         self.rnn_type = "lstm"
-        self.keep_prob = args['keep_prob']
+        self.keep_prob = kwargs['keep_prob']
 
 
     def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):

@@ -4,12 +4,14 @@ from language_model.bert import optimization
 from language_model.bert import tokenization
 from encoder import Base
 import pdb
+import copy
 
 class Bert(Base):
     def __init__(self, **kwargs):
         """
         :param config:
         """
+        super(Bert, self).__init__(**kwargs)
         self.maxlen = kwargs['maxlen']
         self.embedding_dim = kwargs['embedding_size']
         self.keep_prob = kwargs['keep_prob']
@@ -21,17 +23,17 @@ class Bert(Base):
         self.placeholder = {}
 
     def __call__(self, name = 'encoder', features = None, reuse = tf.AUTO_REUSE, **kwargs):
-        if features == None:
-            self.placeholder[name+'_input_ids'] = tf.placeholder(tf.int32, 
-                                            shape=[None, self.maxlen], 
-                                            name = name+"_input_ids")
-            self.placeholder[name+'_input_mask'] = tf.placeholder(tf.int32, 
-                                            shape=[None, self.maxlen], 
-                                            name = name+"_input_mask")
-            self.placeholder[name+'_segment_ids'] = tf.placeholder(tf.int32, 
-                                            shape=[None, self.maxlen], 
-                                            name = name+"_segment_ids")
-        else:
+        self.placeholder[name+'_input_ids'] = tf.placeholder(tf.int32, 
+                                        shape=[None, self.maxlen], 
+                                        name = name+"_input_ids")
+        self.placeholder[name+'_input_mask'] = tf.placeholder(tf.int32, 
+                                        shape=[None, self.maxlen], 
+                                        name = name+"_input_mask")
+        self.placeholder[name+'_segment_ids'] = tf.placeholder(tf.int32, 
+                                        shape=[None, self.maxlen], 
+                                        name = name+"_segment_ids")
+        if features != None:
+            self.features = copy.copy(self.placeholder)
             self.placeholder[name+'_input_ids'] = features[name+'_input_ids']
             self.placeholder[name+'_input_mask'] = features[name+'_input_mask']
             self.placeholder[name+'_segment_ids'] = features[name+'_segment_ids']

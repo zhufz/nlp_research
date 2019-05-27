@@ -2,11 +2,12 @@ import tensorflow as tf
 from encoder import Base
 #simple CNN demo
 class CNN(Base):
-    def __init__(self, **args):
-        self.document_max_len = args['maxlen']
-        self.embedding_size = args['embedding_size']
-        self.keep_prob = args['keep_prob']
-        self.num_output = args['num_output']
+    def __init__(self, **kwargs):
+        super(DCNN, self).__init__(**kwargs)
+        self.document_max_len = kwargs['maxlen']
+        self.embedding_size = kwargs['embedding_size']
+        self.keep_prob = kwargs['keep_prob']
+        self.num_output = kwargs['num_output']
         self.filter_sizes = [3, 4, 5]
         self.num_filters = 100
 

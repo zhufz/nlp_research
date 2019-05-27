@@ -5,12 +5,13 @@ from encoder import Base
 
 
 class Transformer(Base):
-    def __init__(self, **args):
-        self.maxlen = args['maxlen']
-        self.d_model = args['embedding_size']
-        self.dropout_rate = 1 - args['keep_prob']
-        self.num_output = args['num_output']
-        self.training = args['is_training']
+    def __init__(self, **kwargs):
+        super(Transformer, self).__init__(**kwargs)
+        self.maxlen = kwargs['maxlen']
+        self.d_model = kwargs['embedding_size']
+        self.dropout_rate = 1 - kwargs['keep_prob']
+        self.num_output = kwargs['num_output']
+        self.training = kwargs['is_training']
         self.num_blocks = 3
         self.num_heads = 8
         self.d_ff = 512 #hidden size

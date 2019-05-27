@@ -3,15 +3,16 @@ from common.layers import get_initializer
 from encoder import Base
 
 class FastAttentionText(Base):
-    def __init__(self, **args):
+    def __init__(self, **kwargs):
         """
         :param config:
         """
-        self.seq_length = args['maxlen']
-        self.embedding_dim = args['embedding_size']
+        super(FastAttentionText, self).__init__(**kwargs)
+        self.seq_length = kwargs['maxlen']
+        self.embedding_dim = kwargs['embedding_size']
         self.hidden_num = 512
-        self.keep_prob = args['keep_prob']
-        self.num_output = args['num_output']
+        self.keep_prob = kwargs['keep_prob']
+        self.num_output = kwargs['num_output']
 
     def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE):
         with tf.variable_scope("fast_text", reuse = reuse):

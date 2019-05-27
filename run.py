@@ -109,11 +109,9 @@ if __name__ == '__main__':
             print(f'consume: {consume}')
     elif conf['mode'] == 'prepare':
         split = GenerateData(conf)
-        if task_type == 'match':
+        if task_type in ['match','classify']:
             cl = dl_tasks[task_type](conf)
             cl.prepare()
-        elif task_type == 'classify':
-            split.process()
         else:
             raise ValueError('unknown task type for prepare data step!')
     else:

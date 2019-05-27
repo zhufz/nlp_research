@@ -4,16 +4,18 @@ import numpy as np
 import pdb
 from common.layers import RNNLayer
 from encoder_base import Base
+import copy
 
 class AttentionRNN(object):
-    def __init__(self, **args):
-        self.maxlen = args['maxlen']
+    def __init__(self, **kwargs):
+        super(AttentionRNN, self).__init__(**kwargs)
+        self.maxlen = kwargs['maxlen']
         self.num_hidden = 256
         self.num_layers = 2
-        self.keep_prob = args['keep_prob']
-        self.batch_size = args['batch_size']
-        self.rnn_type = args['rnn_type']
-        self.num_output = args['num_output']
+        self.keep_prob = kwargs['keep_prob']
+        self.batch_size = kwargs['batch_size']
+        self.rnn_type = kwargs['rnn_type']
+        self.num_output = kwargs['num_output']
         self.rnn_layer = RNNLayer(self.rnn_type, 
                                   self.num_hidden,
                                   self.num_layers)
@@ -22,11 +24,11 @@ class AttentionRNN(object):
     def __call__(self, embed, name = 'encoder', features = None, 
                  reuse = tf.AUTO_REUSE, **kwargs):
         length_name = name + "_length" 
-        if features == None:
-            self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
-                                                    shape=[None], 
-                                                    name = length_name)
-        else:
+        self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
+                                                shape=[None], 
+                                                name = length_name)
+        if features != None:
+            self.features = copy.copy(self.placeholder)
             self.placeholder[length_name] = features[length_name]
 
         with tf.variable_scope("attention_rnn", reuse = reuse):

@@ -1,326 +1,287 @@
-import sys,os
-import yaml
-import logging
 import tensorflow as tf
-from sklearn.model_selection import train_test_split
+from tensorflow.contrib import predictor
+from pathlib import Path
+import pdb
+import traceback
+import pickle
+import logging
+import multiprocessing
+import os,sys
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
-from utils.preprocess import Preprocess
+
 from embedding import embedding
 from encoder import encoder
 from utils.data_utils import *
+from utils.preprocess import Preprocess
 from utils.tf_utils import load_pb,write_pb
-from tensorflow.python.platform import gfile
+from utils.recall import Annoy
+from common.layers import get_train_op
 from common.loss import get_loss
-from language_model.bert.modeling import get_assignment_map_from_checkpoint
+from common.lr import cyclic_learning_rate
+from common.triplet import batch_hard_triplet_scores
 
-import pdb
 
 class Classify(object):
     def __init__(self, conf):
-        self.conf = conf
         self.task_type = 'classify'
+        self.conf = conf
         for attr in conf:
             setattr(self, attr, conf[attr])
-
-        self.is_training = tf.placeholder(tf.bool, [], name="is_training")
-        self.global_step = tf.Variable(0, trainable=False)
-        self.keep_prob = tf.where(self.is_training, 0.5, 1.0)
-
+        self.graph = tf.get_default_graph()
         self.pre = Preprocess()
-        self.text_list, self.label_list = load_classify_data(self.train_path)
-        self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
+        self.model_loaded = False
+        self.zdy = {}
+        csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
+        self.text_list = list(csv['text'])
+        self.label_list = list(csv['target'])
+        self.num_class = len(set(self.label_list))
+        logging.info(f">>>>>>>>>>>> class num:{self.num_class} <<<<<<<<<<<<<<<")
+        self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
+                          self.text_list]
 
-        if not self.use_language_model:
-            #build vocabulary map using training data
-            self.vocab_dict = embedding[self.embedding_type].build_dict(dict_path = self.dict_path, 
-                                                                  text_list = self.text_list)
-
-            #define embedding object by embedding_type
-            self.embedding = embedding[self.embedding_type](text_list = self.text_list,
-                                                            vocab_dict = self.vocab_dict,
-                                                            dict_path = self.dict_path,
-                                                            random=self.rand_embedding,
-                                                            batch_size = self.batch_size,
-                                                            maxlen = self.maxlen,
-                                                            embedding_size = self.embedding_size,
-                                                            conf = self.conf)
-            self.embed = self.embedding(name = 'x')
-        self.y = tf.placeholder(tf.int32, [None], name="y")
-
-        #model params
-        params = conf
-        params.update({
-            "maxlen":self.maxlen,
-            "embedding_size":self.embedding_size,
-            "keep_prob":self.keep_prob,
+        self.conf.update({
+            "maxlen": self.maxlen,
+            "maxlen1": self.maxlen,
+            "maxlen2": self.maxlen,
+            "num_class": self.num_class,
+            "embedding_size": self.embedding_size,
             "batch_size": self.batch_size,
-            "num_output": self.num_class,
-            "is_training": self.is_training
+            "num_output": self.num_output,
+            "keep_prob": 1,
+            "is_training": False,
         })
-        self.encoder = encoder[self.encoder_type](**params)
+        self.encoder = encoder[self.encoder_type](**self.conf)
 
-        if not self.use_language_model:
-            self.out = self.encoder(self.embed)
-        else:
-            self.out = self.encoder()
-        self.output_nodes = self.out.name.split(':')[0]
-        self.loss(self.out)
+    def init_embedding(self):
+        self.vocab_dict = embedding[self.embedding_type].build_dict(\
+                                            dict_path = self.dict_path,
+                                            text_list = self.text_list,
+                                            mode = self.mode)
+        self.embedding = embedding[self.embedding_type](text_list = self.text_list,
+                                                        vocab_dict = self.vocab_dict,
+                                                        dict_path = self.dict_path,
+                                                        random=self.rand_embedding,
+                                                        maxlen = self.maxlen,
+                                                        batch_size = self.batch_size,
+                                                        embedding_size =
+                                                        self.embedding_size,
+                                                        conf = self.conf)
 
-        self.sess = tf.Session()
-        self.sess.run(tf.global_variables_initializer())
-        self.saver = tf.train.Saver(tf.global_variables())
-        if self.use_language_model:
-            tvars = tf.trainable_variables()
-            init_checkpoint = conf['init_checkpoint_path']
-            (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
-            tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
+    def prepare(self):
+        self.init_embedding()
+        self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
+        self.gt.process(self.text_list, self.label_list, self.embedding.text2id,
+                        self.encoder.encoder_fun, self.vocab_dict,
+                        self.tfrecords_path, self.label_path)
 
-    def load_data(self, mode = 'train'):
-        logging.info("Building dataset...")
+    def cal_loss(self, pred, labels, batch_size, conf):
+        loss = get_loss(type = self.loss_type, logits = pred, labels =
+                                labels, labels_sparse = True, **conf)
+        return loss
+
+    def create_model_fn(self):
+        def model_fn(features, labels, mode, params):
+            ########### embedding #################
+            if not self.use_language_model:
+                self.init_embedding()
+                self.embed_query = self.embedding(features = features, name = 'x_query')
+            else:
+                self.embedding = None
+            #############  encoder  #################
+            #model params
+            self.encoder.keep_prob = params['keep_prob']
+            self.encoder.is_training = params['is_training']
+            global_step = tf.train.get_or_create_global_step()
+            if not self.use_language_model:
+                pred = self.encoder(self.embed_query, 
+                                    name = 'x_query',
+                                    features = features)
+            else:
+                pred = self.encoder(features = features)
+            pred = tf.nn.softmax(pred)
+            ############### predict ##################
+            if mode == tf.estimator.ModeKeys.PREDICT:
+                predictions = {
+                    'pred': pred,
+                    'label': features['label']
+                }
+                return tf.estimator.EstimatorSpec(mode, predictions=predictions)
+            ############### loss ##################
+            loss = self.cal_loss(pred,
+                             labels,
+                             self.batch_size,
+                             self.conf)
+            ############### train ##################
+            if mode == tf.estimator.ModeKeys.TRAIN:
+                if self.use_clr:
+                    self.learning_rate = cyclic_learning_rate(global_step=global_step,
+                                                          learning_rate = self.learning_rate, 
+                                                          mode = self.clr_mode)
+                optimizer = get_train_op(global_step, 
+                                         self.optimizer_type, 
+                                         loss,
+                                         self.learning_rate, 
+                                         clip_grad = 5)
+                return tf.estimator.EstimatorSpec(mode, loss = loss,
+                                                      train_op=optimizer)
+            ############### eval ##################
+            if mode == tf.estimator.ModeKeys.EVAL:
+                eval_metric_ops = {}
+                #{"accuracy": tf.metrics.accuracy(
+                #    labels=labels, predictions=predictions["classes"])}
+                return tf.estimator.EstimatorSpec(
+                    mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+        return model_fn
+
+    def create_input_fn(self, mode):
+        n_cpu = multiprocessing.cpu_count()
+        def train_input_fn():
+            size = self.num_class
+            num_classes_per_batch = 16
+            num_sentences_per_class = self.batch_size // num_classes_per_batch
+
+            filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
+                             for i in range(size)]
+            logging.info("tfrecords train class num: {}".format(len(filenames)))
+            datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
+            datasets = [dataset.repeat() for dataset in datasets]
+            #assert self.batch_size == num_sentences_per_class* num_classes_per_batch
+            def generator():
+                while True:
+                    labels = np.random.choice(range(size),
+                                              num_classes_per_batch,
+                                              replace=False)
+                    for label in labels:
+                        for _ in range(num_sentences_per_class):
+                            yield label
+
+            choice_dataset = tf.data.Dataset.from_generator(generator, tf.int64)
+            dataset = tf.contrib.data.choose_from_datasets(datasets, choice_dataset)
+            gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
+            dataset = dataset.map(lambda record: gt.parse_record(record, self.encoder),
+                                  num_parallel_calls=n_cpu)
+            dataset = dataset.batch(self.batch_size)
+            dataset = dataset.prefetch(4*self.batch_size)
+            iterator = dataset.make_one_shot_iterator()
+            features, label = iterator.get_next()
+            #test
+            #sess = tf.Session()
+            #features,label = sess.run([features,label])
+            #features['x_query_pred'] = [item.decode('utf-8') for item in
+            #                           features['x_query_pred'][1]]
+            return features, label
+
+        def test_input_fn(mode):
+            filenames = ["{}/{}_class_{:04d}".format(self.tfrecords_path,mode,i) \
+                             for i in range(self.num_class)]
+            assert self.num_class == len(filenames), "the num of tfrecords file error!"
+            logging.info("tfrecords test class num: {}".format(len(filenames)))
+            dataset = tf.data.TFRecordDataset(filenames)
+            gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
+            dataset = dataset.map(lambda record: gt.parse_record(record, self.encoder),
+                                  num_parallel_calls=n_cpu)
+            dataset = dataset.batch(self.batch_size)
+            dataset = dataset.prefetch(1)
+            iterator = dataset.make_one_shot_iterator()
+            features, label = iterator.get_next()
+            return features, label
+
         if mode == 'train':
-            class_mp, class_mp_rev = generate_class_mp(self.label_list, self.classes_path)
-            y = [class_mp[item] for item in self.label_list]
-            train_x, valid_x, train_y, valid_y = \
-                train_test_split(self.text_list, y, test_size=0.05)
-            return zip(train_x, train_y), zip(valid_x, valid_y)
+            return train_input_fn
+        elif mode == 'test':
+            return lambda : test_input_fn("test")
         else:
-
-            class_mp, class_mp_rev = load_class_mp(self.classes_path)
-            text_list, label_list = load_classify_data(self.test_path)
-            y = [class_mp[item] for item in label_list]
-            return text_list, y
-
-    def loss(self, out):
-        with tf.name_scope("output"):
-            self.scores = tf.nn.softmax(out, axis=1, name="scores")
-            self.predictions = tf.argmax(self.scores, -1, output_type=tf.int32,
-                                         name = 'predictions')
-        with tf.name_scope("loss"):
-            #self.loss = tf.reduce_mean(
-            #    tf.nn.sparse_softmax_cross_entropy_with_logits(logits=out, labels=self.y))
-            self.loss = get_loss(type = self.loss_type, logits = out, labels =
-                                 self.y, labels_sparse = True, **self.conf)
-            self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
-
-        with tf.name_scope("accuracy"):
-            correct_predictions = tf.equal(self.predictions, self.y)
-            self.accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
+            raise ValueError("unknown input_fn type!")
 
     def train(self):
-        logging.info("---------start train---------")
-        self.train_data, self.valid_data = self.load_data(mode = 'train')
-        self.train_data = list(self.train_data)
-        self.valid_data = list(self.valid_data)
-        train_batches = batch_iter(self.train_data, self.batch_size, self.num_epochs)
-        num_batches_per_epoch = (len(self.train_data) - 1) // self.batch_size + 1
-        max_accuracy = -1
-        for batch in train_batches:
-            x_batch, y_batch = zip(*batch)
+        params = {
+            'is_training': True,
+            'keep_prob': 0.5
+        }
+        config = tf.estimator.RunConfig(tf_random_seed=230,
+                                        model_dir=self.checkpoint_path)
+        estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
+                                           config = config,
+                                           params = params)
+        estimator.train(input_fn = self.create_input_fn("train"), max_steps =
+                        self.max_steps)
+        self.save()
 
-            train_feed_dict = {
-                self.y: y_batch,
-                self.is_training: True
-            }
-            if not self.use_language_model:
-                _, x_batch, len_batch = self.embedding.text2id(
-                    x_batch, self.vocab_dict, need_preprocess = False)
-                train_feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
-                train_feed_dict.update(self.encoder.feed_dict(len = len_batch))
-            else:
-                train_feed_dict.update(self.encoder.feed_dict(x_batch))
-            _, step, loss = self.sess.run([self.optimizer, self.global_step, self.loss], feed_dict=train_feed_dict)
-            if step % (self.valid_step/10) == 0:
-                logging.info("step {0}: loss = {1}".format(step, loss))
-            if step % self.valid_step == 0:
-                # Test accuracy with validation data for each epoch.
-                valid_batches = batch_iter(self.valid_data, self.batch_size, 1, shuffle=False)
-                sum_accuracy, cnt = 0, 0
-                for valid_batch in valid_batches:
+    def save(self):
+        params = {
+            'is_training': False,
+            'keep_prob': 1
+        }
+        config = tf.estimator.RunConfig(tf_random_seed=230,
+                                        model_dir=self.checkpoint_path)
+        estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
+                                           config = config,
+                                           params = params)
+        def serving_input_receiver_fn():
+            features = {'x_query': tf.placeholder(dtype=tf.int64, 
+                                                  shape=[None, self.maxlen],
+                                                  name='x_query'),
+                        'x_query_length': tf.placeholder(dtype=tf.int64,
+                                                         shape=[None],
+                                                         name='x_query_length'),
+                        'label': tf.placeholder(dtype=tf.int64, 
+                                                shape=[None],
+                                                name='label')}
+            features.update(self.encoder.features)
+            return tf.estimator.export.ServingInputReceiver(features, features)
 
-                    valid_x_batch, valid_y_batch = zip(*valid_batch)
-
-                    valid_feed_dict = {
-                        self.y: valid_y_batch,
-                        self.is_training: False
-                    }
-                    if not self.use_language_model:
-                        _, valid_x_batch, len_batch = self.embedding.text2id(
-                            valid_x_batch, self.vocab_dict, need_preprocess = False)
-                        valid_feed_dict.update(self.embedding.feed_dict(valid_x_batch,'x'))
-                        valid_feed_dict.update(self.encoder.feed_dict(len = len_batch))
-                    else:
-                        valid_feed_dict.update(self.encoder.feed_dict(valid_x_batch))
-                    accuracy = self.sess.run(self.accuracy, feed_dict=valid_feed_dict)
-                    sum_accuracy += accuracy
-                    cnt += 1
-                valid_accuracy = sum_accuracy / cnt
-                logging.info("\nValidation Accuracy = {1}\n".format(step // num_batches_per_epoch, sum_accuracy / cnt))
-                # Save model
-                if valid_accuracy > max_accuracy:
-                    max_accuracy = valid_accuracy
-                    self.saver.save(self.sess,
-                                    "{0}/{1}.ckpt".format(self.checkpoint_path,
-                                                              self.task_type),
-                                    global_step=step)
-                    logging.info("Model is saved.\n")
-                else:
-                    self.save_pb()
-                    logging.info(f"train finished! accuracy: {max_accuracy}")
-                    sys.exit(0)
-
-    def save_pb(self):
-        write_pb(self.checkpoint_path,
-                 self.model_path,
-                 ['is_training','output/predictions','accuracy/accuracy',self.output_nodes])
+        estimator.export_savedmodel(
+            self.export_dir_path, # 目录
+            serving_input_receiver_fn, # 返回ServingInputReceiver的函数
+            assets_extra=None,
+            as_text=False,
+            checkpoint_path=None)
 
     def test(self):
-        if not os.path.exists(self.model_path):
-            self.save_pb()
-        graph = load_pb(self.model_path)
-        sess = tf.Session(graph=graph)
-
-        self.y = graph.get_operation_by_name("y").outputs[0]
-        self.is_training = graph.get_operation_by_name("is_training").outputs[0]
-        self.accuracy = graph.get_operation_by_name("accuracy/accuracy").outputs[0]
-
-        self.scores = graph.get_tensor_by_name("output/scores:0")
-        #self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
-        self.predictions = graph.get_tensor_by_name("output/predictions:0")
-
-        mp, mp_rev = load_class_mp(self.classes_path)
-
-        test_x, test_y = self.load_data("test")
-        pred_y = []
-        scores = []
-        batches = batch_iter(zip(test_x, test_y), self.batch_size, 1, shuffle=False)
-        sum_accuracy, cnt = 0, 0
-        right, all = 0, 0
-        vocab_dict = embedding[self.embedding_type].build_dict(self.dict_path,
-                                                      mode = 'test')
-        all_test_x = []
-        all_test_y = []
-        for batch in batches:
-            batch_x, batch_y = zip(*batch)
-
-            feed_dict = {
-                self.y: batch_y,
-                self.is_training: False
-            }
-            if not self.use_language_model:
-                preprocess_x, batch_x_id, len_batch = self.embedding.text2id(batch_x, vocab_dict, need_preprocess = True)
-                feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x_id, 'x'))
-                feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
-            else:
-                feed_dict.update(self.encoder.pb_feed_dict(graph, batch_x))
-            accuracy_out, predictions_out, scores_out = sess.run([self.accuracy,
-                                                                  self.predictions,
-                                                                  self.scores],
-                                                                 feed_dict=feed_dict)
-            max_scores = [scores_out[idx][predictions_out[idx]] \
-                          for idx in range(len(predictions_out))]
-            sum_accuracy += accuracy_out
-            cnt += 1
-            pred_y += list(predictions_out)
-            scores += list(max_scores)
-            all_test_x += list(batch_x)
-            all_test_y += list(batch_y)
-
-            for idx in range(len(predictions_out)):
-                if predictions_out[idx] == int(batch_y[idx]) and max_scores[idx]> self.thre_score:
-                    right += 1
-                all += 1
-        dt = pd.DataFrame({'text': all_test_x,
-                       'target': [mp_rev[int(item)] for item in
-                                 all_test_y] ,
-                       'pred': [mp_rev[item] for item in
-                                pred_y],
-                       'score': scores })
-        dt.to_csv(self.test_path+'.result.csv',index=False,sep=',')
-        logging.info("Test Accuracy : {0}".format(sum_accuracy / cnt))
-        logging.info("Test Thre Accuracy : {0}".format(right / all))
-
-    def predict(self):
-        predict_file = self.predict_path
-        if not os.path.exists(self.model_path):
-            self.save_pb()
-        graph = load_pb(self.model_path)
-        sess = tf.Session(graph=graph)
-
-        self.y = graph.get_operation_by_name("y").outputs[0]
-        self.is_training = graph.get_operation_by_name("is_training").outputs[0]
-
-        #self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
-        self.scores = graph.get_tensor_by_name("output/scores:0")
-        self.predictions = graph.get_tensor_by_name("output/predictions:0")
-
-        vocab_dict = embedding[self.embedding_type].build_dict(self.dict_path,mode = 'test')
-        mp, mp_rev = load_class_mp(self.classes_path) 
-        with open(predict_file) as f:
-            lines = [line.strip() for line in f.readlines()]
-            batches = batch_iter(lines, self.batch_size, 1, shuffle=False)
-            scores = []
-            predicts = []
-            for batch_x in batches:
-                feed_dict = {
-                    self.is_training: False
-                }
-                if not self.use_language_model:
-                    preprocess_x, batch_x, len_batch = self.embedding.text2id(batch_x, vocab_dict)
-                    feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
-                    feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
-                else:
-                    feed_dict.update(self.encoder.pb_feed_dict(graph, batch_x))
-                predictions_out, scores_out = sess.run([self.predictions,
-                                                            self.scores],
-                                                            feed_dict=feed_dict)
-                max_scores = [scores_out[idx][predictions_out[idx]] \
-                              for idx in range(len(predictions_out))]
-
-                predicts += list(predictions_out)
-                scores += list(max_scores)
-
-            predicts = [mp_rev[item] for item in predicts]
-
-            dt = pd.DataFrame({'text': lines,
-                               'pred': predicts,
-                               'score': scores })
-            dt.to_csv(self.predict_path+'.result.csv',index=False,sep=',')
+        params = {
+            'is_training': False,
+            'keep_prob': 1
+        }
+        config = tf.estimator.RunConfig(tf_random_seed=230,
+                                        model_dir=self.checkpoint_path)
+        estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
+                                           config = config,
+                                           params = params)
+        predictions = estimator.predict(input_fn=self.create_input_fn("test"))
+        predictions = list(predictions)
+        scores = [item['pred'] for item in predictions]
+        labels = [item['label'] for item in predictions]
+        max_scores = np.max(scores, axis = -1)
+        max_ids = np.argmax(scores, axis = -1)
+        res = np.equal(labels, max_ids)
+        right = len(list(filter(lambda x:x == True, res)))
+        sum = len(res)
+        print("Acc:{}".format(float(right)/sum))
 
     def test_unit(self, text):
-        if not os.path.exists(self.model_path):
-            self.save_pb()
-        graph = load_pb(self.model_path)
-        sess = tf.Session(graph=graph)
+        if self.model_loaded == False:
+            self.init_embedding()
+            subdirs = [x for x in Path(self.export_dir_path).iterdir()
+                    if x.is_dir() and 'temp' not in str(x)]
+            latest = str(sorted(subdirs)[-1])
+            self.predict_fn = predictor.from_saved_model(latest)
+            self.mp_label = pickle.load(open(self.label_path, 'rb'))
+            self.mp_label_rev = {self.mp_label[item]:item for item in self.mp_label}
+            self.model_loaded = True
+        text_list  = [text]
+        text_list_pred, x_query, x_query_length = self.embedding.text2id(text_list,
+                                                     self.vocab_dict,
+                                                     need_preprocess = True)
+        label = [0 for _ in range(len(text_list))]
 
-        self.y = graph.get_operation_by_name("y").outputs[0]
-        self.is_training = graph.get_operation_by_name("is_training").outputs[0]
+        predictions = self.predict_fn({'x_query': x_query, 
+                                  'x_query_length': x_query_length, 
+                                  'label': label})
+        scores = [item for item in predictions['pred']]
+        max_scores = np.max(scores, axis = -1)
+        max_ids = np.argmax(scores, axis = -1)
+        ret =  (max_ids[0], max_scores[0], self.mp_label_rev[max_ids[0]])
+        print(ret)
+        return ret
 
-        self.scores = graph.get_tensor_by_name("output/scores:0")
-        #self.scores = graph.get_tensor_by_name(self.output_nodes+":0")
-        self.predictions = graph.get_tensor_by_name("output/predictions:0")
-
-        vocab_dict = embedding[self.embedding_type].build_dict(self.dict_path,mode = 'test')
-        mp, mp_rev = load_class_mp(self.classes_path) 
-        batches = batch_iter([text], self.batch_size, 1, shuffle=False)
-        for batch_x in batches:
-            feed_dict = {
-                self.is_training: False
-            }
-            if not self.use_language_model:
-                preprocess_x, batch_x, len_batch = self.embedding.text2id(batch_x, vocab_dict)
-                feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
-                feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch))
-            else:
-                feed_dict.update(self.encoder.pb_feed_dict(graph, batch_x))
-            predictions_out, scores_out = sess.run([self.predictions,
-                                                        self.scores],
-                                                        feed_dict=feed_dict)
-            max_scores = [scores_out[idx][predictions_out[idx]] \
-                          for idx in range(len(predictions_out))]
-        logging.info("preprocess: {}".format(preprocess_x))
-        logging.info("class:{}, score:{}, class_id:{}".format(
-            mp_rev[predictions_out[0]],
-            max_scores[0],
-            predictions_out[0]))
-        return mp_rev[predictions_out[0]], max_scores[0]

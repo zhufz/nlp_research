@@ -3,6 +3,7 @@ import numpy as np
 import pdb
 from common.layers import get_initializer
 from encoder import Base
+import copy
 #refer:https://github.com/galsang/ABCNN/blob/master/ABCNN.py
 
 
@@ -15,6 +16,7 @@ class ABCNN(Base):
         :param num_output: The dimension of output.
         :param embedding_size: The size of embedding.
         """
+        super(ABCNN, self).__init__(**kwargs)
         self.keep_prob = kwargs['keep_prob']
         self.batch_size = kwargs['batch_size']
         self.num_output = kwargs['num_output']
@@ -26,6 +28,7 @@ class ABCNN(Base):
 
         self.di = 50
         self.num_layers = 2
+        self.placeholder = {}
 
 
 
@@ -181,8 +184,8 @@ class ABCNN(Base):
 
     def feed_dict(self, x_query, x_sample):
         feed_dict = {}
-        feed_dict[self.len1] = x_query
-        feed_dict[self.len2] = x_sample
+        feed_dict[self.placeholder['len1']] = x_query
+        feed_dict[self.placeholder['len2']] = x_sample
         return feed_dict
 
     def pb_feed_dict(self, graph, x_query, x_sample):
@@ -202,14 +205,14 @@ class ABCNN(Base):
         return:
             [batch_size, num_output]
         """
-        if features == None:
-            self.len1 = tf.placeholder(tf.float32, shape=[None],
-                                       name="x_query_length")
-            self.len2 = tf.placeholder(tf.float32, shape=[None],
-                                       name="x_sample_length")
-        else:
-            self.len1 = features["x_query_length"].astype(np.float32)
-            self.len2 = features["x_sample_length"].astype(np.float32)
+        self.placeholder['len1'] = tf.placeholder(tf.float32, shape=[None],
+                                   name="x_query_length")
+        self.placeholder['len2'] = tf.placeholder(tf.float32, shape=[None],
+                                   name="x_sample_length")
+        if features != None:
+            self.features = copy.copy(self.placeholder)
+            self.placeholder['len1'] = features["x_query_length"].astype(np.float32)
+            self.placeholder['len2'] = features["x_sample_length"].astype(np.float32)
 
         with tf.variable_scope('abcnn', reuse = reuse):
             x_query = tf.transpose(x_query, [0, 2, 1])
@@ -217,8 +220,8 @@ class ABCNN(Base):
             x1_expanded = tf.expand_dims(x_query, -1)
             x2_expanded = tf.expand_dims(x_sample, -1)
 
-            len1=tf.expand_dims(self.len1,axis=-1)
-            len2=tf.expand_dims(self.len2,axis=-1)
+            len1=tf.expand_dims(self.placeholder['len1'] ,axis=-1)
+            len2=tf.expand_dims(self.placeholder['len2'],axis=-1)
 
             features = tf.concat([len1, len2],axis=1)
 

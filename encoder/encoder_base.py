@@ -1,10 +1,11 @@
 #所有encoder的基类
+import copy
+
 class Base():
-    def __init__():
-        pass
+    def __init__(self, **kwargs):
+        self.features = {} #placeholder dict for export model
 
     def encoder_fun(self, **kwargs):
-        #用于计算encoder内部所需要的id值，如长度特征
         return {}
 
     def keys_to_features(self, **kwargs):

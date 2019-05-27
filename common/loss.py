@@ -18,23 +18,34 @@ def get_loss(logits = None, labels = None, neg_logits = None,
         alpha = get_default_value(kwargs, 'alpha', 0.25)
         epsilon = get_default_value(kwargs, 'epsilon', 1e-8)
         return focal_loss(logits, labels, gamma, alpha, epsilon)
+
     elif type == 'sigmoid_loss':
         return sigmoid_cross_entropy(logits, labels)
+
     elif type == 'softmax_loss':
         return softmax_cross_entropy(logits, labels)
+
+    elif type == 'am_softmax_loss':
+        m = get_default_value(kwargs, 'm', 0.35)
+        s = get_default_value(kwargs, 's', 5)
+        return am_softmax_loss(logits, labels, m ,s)
+
     elif type == 'margin_loss':
         return margin_loss(logits, labels)
+
     elif type == 'l1_loss':
         return l1_loss(logits, labels)
     elif type == 'l2_loss':
         return l2_loss(logits, labels)
+
     elif type == 'hinge_loss':
         margin = get_default_value(kwargs, 'margin', 1.0)
         return hinge_loss(neg_logits, pos_logits, margin)
+
     else:
         raise ValueError("unknown loss type")
 
-def focal_loss(logits, labels, gamma=2.0, alpha=0.25, epsilon=1e-8):
+def focal_loss(logits, labels, gamma, alpha, epsilon):
     logits = tf.nn.softmax(logits)
     logits = tf.cast(logits, tf.float32)
     model_out = tf.add(logits, epsilon)
@@ -54,6 +65,12 @@ def softmax_cross_entropy(logits, labels):
     loss = tf.reduce_mean(loss)
     return loss
 
+def am_softmax_loss(labels, logits, m, s):
+    logits = labels * (logits - m) + (1 - labels) * logits
+    logits *= s
+    loss = softmax_cross_entropy(logits, labels)
+    return loss
+
 def margin_loss(logits, labels):
     logits = tf.nn.softmax(logits)
     labels = tf.cast(labels,tf.float32)
@@ -68,6 +85,6 @@ def l1_loss(logits, labels):
 def l2_loss(logits, labels):
     return tf.reduce_mean(tf.square(logits - labels))
 
-def hinge_loss(neg, pos, margin):
-    loss = tf.reduce_mean(tf.maximum(margin + neg - pos, 0.0))
+def hinge_loss(neg_logits, pos_logits, margin):
+    loss = tf.reduce_mean(tf.maximum(margin + neg_logits - pos_logits, 0.0))
     return loss

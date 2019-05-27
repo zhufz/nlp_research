@@ -4,16 +4,18 @@ import numpy as np
 import pdb
 from common.layers import RNNLayer
 from encoder import Base
+import copy
 
 class Seq2seq(Base):
-    def __init__(self, **args):
-        self.maxlen = args['maxlen']
-        self.num_hidden = args['num_hidden'] if 'num_hidden' in args else 256
-        self.num_layers = args['num_layers'] if 'num_layers' in args else 2
-        self.keep_prob = args['keep_prob']
-        self.batch_size = args['batch_size']
-        self.num_output = args['num_output']
-        self.rnn_type = args['rnn_type']
+    def __init__(self, **kwargs):
+        super(Seq2seq, self).__init__(**kwargs)
+        self.maxlen = kwargs['maxlen']
+        self.num_hidden = kwargs['num_hidden'] if 'num_hidden' in kwargs else 256
+        self.num_layers = kwargs['num_layers'] if 'num_layers' in kwargs else 2
+        self.keep_prob = kwargs['keep_prob']
+        self.batch_size = kwargs['batch_size']
+        self.num_output = kwargs['num_output']
+        self.rnn_type = kwargs['rnn_type']
         self.rnn_encode_layer = RNNLayer(self.rnn_type, self.num_hidden, self.num_layers)
         self.rnn_decode_layer = RNNLayer(self.rnn_type, self.num_hidden, self.num_layers)
         self.placeholder = {}
@@ -23,14 +25,14 @@ class Seq2seq(Base):
         #def create_model(encode_seqs, decode_seqs, src_vocab_size, emb_dim, is_train=True, reuse=False):
         length_encode_name = name + "_encoder_length" 
         length_decode_name = name + "_decoder_length" 
-        if features == None:
-            self.placeholder[length_encode_name] = tf.placeholder(dtype=tf.int32, 
-                                                        shape=[None], 
-                                                        name = length_encode_name)
-            self.placeholder[length_decode_name] = tf.placeholder(dtype=tf.int32, 
-                                                        shape=[None], 
-                                                        name = length_decode_name)
-        else:
+        self.placeholder[length_encode_name] = tf.placeholder(dtype=tf.int32, 
+                                                    shape=[None], 
+                                                    name = length_encode_name)
+        self.placeholder[length_decode_name] = tf.placeholder(dtype=tf.int32, 
+                                                    shape=[None], 
+                                                    name = length_decode_name)
+        if features != None:
+            self.features = copy.copy(self.placeholder)
             self.placeholder[length_encode_name] = features[length_encode_name]
             self.placeholder[length_decode_name] = features[length_decode_name]
 

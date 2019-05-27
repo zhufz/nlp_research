@@ -8,24 +8,34 @@ classes_path: "{encoder_type}classes"
 dict_path: "{encoder_type}/dict.pkl"
 checkpoint_path: "{encoder_type}/checkpoint"
 model_path: "{encoder_type}/model.pb"
-use_language_model: False
+label_path: "{encoder_type}/label"
+tfrecords_mode: "class"
+tfrecords_path: "tfrecords"
+export_dir_path: "{encoder_type}/model"
 
-maxlen: 40
+maxlen: 20
 embedding_size: 128
 learning_rate: 0.001
+use_clr: True
+clr_mode: 'triangular'
+optimizer_type: "Adam"
+
 batch_size: 64
 num_epochs: 350
-num_class: 89
+num_class: 91
+num_output: 91
 valid_step: 1000 #valid one time every valid_step 
+max_steps: 3000
 thre_score: 0.3
 # embedding_type: char_embedding, word_embedding, subword_embedding
 embedding_type: 'char_embedding'
 #embedding_type: 'region_embedding'
 rand_embedding: True
+use_language_model: False
 # encoder_type: "text_cnn" #88.6
 # encoder_type: "cnn"  # 84.7
 loss_type: "softmax_loss"
-#loss_type: "margin_loss"
+loss_type: "am_softmax_loss"
 #loss_type: "focal_loss"
 
 config_type: 0

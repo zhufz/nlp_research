@@ -237,6 +237,7 @@ def vec_transformationByMat(poses, input_capsule_dim, input_capsule_num, output_
 
 class Capsule(Base):
     def __init__(self, **kwargs):
+        super(Capsule, self).__init__(**kwargs)
         self.seq_length = kwargs['maxlen']
         self.embedding_size = kwargs['embedding_size']
         self.keep_prob = kwargs['keep_prob']

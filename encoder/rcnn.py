@@ -3,13 +3,15 @@ from tensorflow.contrib import rnn
 from common.layers import get_initializer
 from encoder import Base
 import pdb
+import copy
 
 class RCNN(Base):
-    def __init__(self, **args):
-        self.keep_prob = args['keep_prob']
-        self.num_output = args['num_output']
+    def __init__(self, **kwargs):
+        super(RCNN, self).__init__(**kwargs)
+        self.keep_prob = kwargs['keep_prob']
+        self.num_output = kwargs['num_output']
         self.rnn_type = "bi_lstm"
-        self.embedding_size = args['embedding_size']
+        self.embedding_size = kwargs['embedding_size']
         self.num_hidden = 256
         self.num_layers = 2
         self.fc_num_hidden = 256
@@ -18,11 +20,11 @@ class RCNN(Base):
     def __call__(self, embed, name = 'encoder', features = None,
                  reuse = tf.AUTO_REUSE, **kwargs):
         length_name = name + "_length" 
-        if features == None:
-            self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
+        self.placeholder[length_name] = tf.placeholder(dtype=tf.int32, 
                                                     shape=[None], 
                                                     name = length_name)
-        else:
+        if features != None:
+            self.features = copy.copy(self.placeholder)
             self.placeholder[length_name] = features[length_name]
 
         with tf.variable_scope("birnn", reuse = reuse):
