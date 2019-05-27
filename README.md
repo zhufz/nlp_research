@@ -20,7 +20,7 @@ language model data:
     [依赖]
          pip3 install --user -r requirements.txt
     [分类]
-         生成语料：python3 run.py classify classify
+         生成语料：python3 run.py classify mode=prepare
          训练：python3 run.py classify 
          测试：python3 run.py classify model=test
          单个测试：python3 run.py classify model=test_one
