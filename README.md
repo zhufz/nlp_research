@@ -17,7 +17,7 @@ language model data:
 ## Quickly start
     [requirements]
          pip3 install --user -r requirements.txt
-    [classify task]
+    [classify]
          data prepare：python3 run.py classify mode=prepare
          train：python3 run.py classify 
          test：python3 run.py classify model=test
