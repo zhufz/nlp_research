@@ -130,11 +130,11 @@ class Translation(object):
             }
             if not self.use_language_model:
                 _, encode_batch, len_encode_batch = self.embedding.text2id(
-                    encode_batch, self.vocab_dict, need_preprocess = False)
+                    encode_batch, self.vocab_dict, self.maxlen, need_preprocess = False)
                 _, decode_batch, len_decode_batch = self.embedding.text2id(
-                    decode_batch, self.vocab_dict, need_preprocess = False)
+                    decode_batch, self.vocab_dict, self.maxlen, need_preprocess = False)
                 _, target_batch, len_target_batch = self.embedding.text2id(
-                    target_batch, self.vocab_dict, need_preprocess = False)
+                    target_batch, self.vocab_dict, self.maxlen, need_preprocess = False)
 
                 train_feed_dict.update(self.embedding.feed_dict(encode_batch,'encode_seq'))
                 train_feed_dict.update(self.embedding.feed_dict(decode_batch,'decode_seq'))
@@ -186,7 +186,9 @@ class Translation(object):
         feed_dict = {
             self.is_training: False
         }
-        preprocess_x, encode_batch, len_batch = self.embedding.text2id([text], vocab_dict)
+        preprocess_x, encode_batch, len_batch = self.embedding.text2id([text], 
+                                                                       vocab_dict,
+                                                                       self.maxlen)
         feed_dict.update(self.embedding.pb_feed_dict(graph, encode_batch, 'encode_seq'))
         feed_dict.update(self.encoder.pb_feed_dict(graph, len = (len_batch,None)))
         state = sess.run(self.final_state_encode, feed_dict=feed_dict)
@@ -212,7 +214,9 @@ class Translation(object):
         feed_dict = {
             self.is_training: False
         }
-        preprocess_x, batch_x, len_batch = self.embedding.text2id([inputs], vocab_dict)
+        preprocess_x, batch_x, len_batch = self.embedding.text2id([inputs],
+                                                                  vocab_dict,
+                                                                  self.maxlen)
         #feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'encode_seq'))
         feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'decode_seq'))
         #feed_dict.update(self.encoder.pb_feed_dict(graph, len = (len_batch, len_batch),

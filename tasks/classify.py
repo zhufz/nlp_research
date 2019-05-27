@@ -28,7 +28,6 @@ class Classify(object):
         self.conf = conf
         for attr in conf:
             setattr(self, attr, conf[attr])
-        self.graph = tf.get_default_graph()
         self.pre = Preprocess()
         self.model_loaded = False
         self.zdy = {}
@@ -36,6 +35,7 @@ class Classify(object):
         self.text_list = list(csv['text'])
         self.label_list = list(csv['target'])
         self.num_class = len(set(self.label_list))
+        self.num_output = self.num_class
         logging.info(f">>>>>>>>>>>> class num:{self.num_class} <<<<<<<<<<<<<<<")
         for idx,text in enumerate(self.text_list):
             self.text_list[idx] = self.pre.get_dl_input_by_text(text)
@@ -76,6 +76,7 @@ class Classify(object):
         self.gt.process(self.text_list, self.label_list, self.embedding.text2id,
                         self.encoder.encoder_fun, self.vocab_dict,
                         self.tfrecords_path, self.label_path, self.test_size)
+        logging.info("tfrecords generated!")
 
     def cal_loss(self, pred, labels, batch_size, conf):
         loss = get_loss(type = self.loss_type, logits = pred, labels =
@@ -101,11 +102,13 @@ class Classify(object):
                                     features = features)
             else:
                 out = self.encoder(features = features)
-            pred = tf.nn.softmax(tf.layers.dense(out, self.num_class))
+            #pred = tf.nn.softmax(tf.layers.dense(out, self.num_class))
+            pred = tf.nn.softmax(out)
 
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
                 predictions = {
+                    'encoded': out,
                     'pred': pred,
                     'label': features['label']
                 }
@@ -281,6 +284,7 @@ class Classify(object):
         text_list  = [text]
         text_list_pred, x_query, x_query_length = self.embedding.text2id(text_list,
                                                      self.vocab_dict,
+                                                     self.maxlen,
                                                      need_preprocess = True)
         label = [0 for _ in range(len(text_list))]
 

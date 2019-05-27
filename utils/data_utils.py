@@ -433,8 +433,10 @@ class GenerateTfrecords():
         pickle.dump(mp_label, open(label_path, 'wb'))
 
         mp_dataset = defaultdict(list)
-        text_pred_list, text_id_list, len_id_list = sen2id_fun(text_list, vocab_dict,
-                                       need_preprocess=False)
+        text_pred_list, text_id_list, len_id_list = sen2id_fun(text_list, 
+                                                               vocab_dict,
+                                                               self.maxlen, 
+                                                               need_preprocess=False)
 
         if self.mode == 'class':
 

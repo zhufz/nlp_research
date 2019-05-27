@@ -1,6 +1,6 @@
 path_root: "data/classify/"
-# ori_path: "intent.csv"
-ori_path: "review.csv"
+ori_path: "intent.csv"
+# ori_path: "review.csv"
 classes_path: "{encoder_type}classes"
 dict_path: "{encoder_type}/dict.pkl"
 checkpoint_path: "{encoder_type}/checkpoint"
@@ -10,35 +10,33 @@ tfrecords_mode: "class"
 tfrecords_path: "tfrecords"
 export_dir_path: "{encoder_type}/model"
 
-maxlen: 60
-embedding_size: 128
+maxlen: 20
 learning_rate: 0.001
 use_clr: False
 clr_mode: 'triangular'
 optimizer_type: "Adam"
 
 batch_size: 64
-num_class_per_batch: 2
-test_size: 300
+num_class_per_batch: 16
+test_size: 1
 num_epochs: 350
-num_output: 100
 valid_step: 1000 #valid one time every valid_step 
 max_steps: 3000
-thre_score: 0.3
 # embedding_type: char_embedding, word_embedding, subword_embedding
 embedding_type: 'char_embedding'
 #embedding_type: 'region_embedding'
+embedding_size: 128
 rand_embedding: True
 use_language_model: False
 # encoder_type: "text_cnn" #88.6
 # encoder_type: "cnn"  # 84.7
 loss_type: "softmax_loss"
-loss_type: "am_softmax_loss"
-#loss_type: "focal_loss"
+# loss_type: "am_softmax_loss"
+# loss_type: "focal_loss"
 
 config_type: 0
 config: 
-  0: {encoder_type: "fasttext", learning_rate: 0.001}
+  0: {encoder_type: "fasttext", learning_rate: 0.003}
   1: {encoder_type: "transformer", learning_rate: 0.0001}
   2: {encoder_type: "transformer", embedding_type: 'subword_embedding', learning_rate: 0.0001}
   3: {encoder_type: "rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}

@@ -125,9 +125,9 @@ class SeqGenerate(object):
             }
             if not self.use_language_model:
                 _, x_batch, len_batch = self.embedding.text2id(
-                    x_batch, self.vocab_dict, need_preprocess = False)
+                    x_batch, self.vocab_dict, self.maxlen, need_preprocess = False)
                 _, y_batch, len_batch = self.embedding.text2id(
-                    y_batch, self.vocab_dict, need_preprocess = False)
+                    y_batch, self.vocab_dict, self.maxlen, need_preprocess = False)
                 train_feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
                 train_feed_dict.update({self.y:y_batch})
                 train_feed_dict.update(self.encoder.feed_dict(len = len_batch))
@@ -191,7 +191,9 @@ class SeqGenerate(object):
         feed_dict = {
             self.is_training: False
         }
-        preprocess_x, batch_x, len_batch = self.embedding.text2id([inputs], vocab_dict)
+        preprocess_x, batch_x, len_batch = self.embedding.text2id([inputs],
+                                                                  vocab_dict,
+                                                                  self.maxlen)
         feed_dict.update(self.embedding.pb_feed_dict(graph, batch_x, 'x'))
         feed_dict.update(self.encoder.pb_feed_dict(graph, len = len_batch,
                                                    initial_state = state))

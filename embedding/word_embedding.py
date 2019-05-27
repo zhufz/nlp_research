@@ -81,7 +81,8 @@ class WordEmbedding():
 
         return vocab_dict
 
-    def text2id(self, text_list, vocab_dict,  need_preprocess = True):
+    @staticmethod
+    def text2id(text_list, vocab_dict, maxlen, need_preprocess = True):
         """
         文本id化
         """
@@ -91,8 +92,8 @@ class WordEmbedding():
         x = list(map(lambda d: word_tokenize(clean_str(d)), text_list))
         x_len = [len(text) for text in x]
         x = list(map(lambda d: list(map(lambda w: vocab_dict.get(w, vocab_dict["<unk>"]), d)), x))
-        x = list(map(lambda d: d[:self.maxlen], x))
-        x = list(map(lambda d: d + (self.maxlen - len(d)) * [vocab_dict["<pad>"]], x))
+        x = list(map(lambda d: d[:maxlen], x))
+        x = list(map(lambda d: d + (maxlen - len(d)) * [vocab_dict["<pad>"]], x))
         return text_list, x, x_len
 
     def _get_embedding(self, vocab_dict, add_embedding_word = True):

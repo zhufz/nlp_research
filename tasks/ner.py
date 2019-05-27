@@ -148,7 +148,10 @@ class NER(object):
             step_num = step + 1
 
             if not self.use_language_model:
-                _, x_batch, len_batch = self.embedding.text2id(x_batch, self.vocab_dict, need_preprocess = False)
+                _, x_batch, len_batch = self.embedding.text2id(x_batch, 
+                                                               self.vocab_dict, 
+                                                               self.maxlen,
+                                                               need_preprocess = False)
                 feed_dict = {self.sequence_lengths: len_batch}
                 feed_dict[self.labels],_ = self.embedding.pad_sequences(labels)
                 feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
@@ -230,7 +233,10 @@ class NER(object):
                  seq_len_list
         """
         if self.use_language_model:
-            _, x_batch, len_batch = self.embedding.text2id(seqs, self.vocab_dict, need_preprocess = False)
+            _, x_batch, len_batch = self.embedding.text2id(seqs, 
+                                                           self.vocab_dict, 
+                                                           self.maxlen,
+                                                           need_preprocess = False)
             feed_dict = {self.sequence_lengths: len_batch}
             feed_dict.update(self.embedding.feed_dict(x_batch,'x'))
             feed_dict.update(self.encoder.feed_dict(query = len_batch))

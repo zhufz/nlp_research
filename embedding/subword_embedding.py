@@ -101,6 +101,7 @@ class SubwordEmbedding():
 
         return vocab_dict
 
+    @staticmethod
     def words2indices(self, word_list, vocab_dict, index, maxlen):
         values_list = []
         indices_list = []
@@ -129,7 +130,8 @@ class SubwordEmbedding():
                 start_x += 1
         return values_list, indices_list, start_x
 
-    def text2id(self, text_list, vocab_dict,  need_preprocess = True):
+    @staticmethod
+    def text2id(text_list, vocab_dict, maxlen, need_preprocess = True):
         """
         文本id化
         """
@@ -142,9 +144,9 @@ class SubwordEmbedding():
 
         start_x = 0
         for idx in range(len(x)):
-            values, indices, start_x = self.words2indices(x[idx], vocab_dict,
+            values, indices, start_x = words2indices(x[idx], vocab_dict,
                                                              start_x,
-                                                             self.maxlen)
+                                                             maxlen)
             values_list += values
             indices_list += indices
         return text_list, zip(indices_list, values_list), x_len

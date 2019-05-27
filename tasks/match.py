@@ -29,7 +29,6 @@ class Match(object):
         self.conf = conf
         for attr in conf:
             setattr(self, attr, conf[attr])
-        self.graph = tf.get_default_graph()
         self.pre = Preprocess()
         self.model_loaded = False
         self.zdy = {}
@@ -390,6 +389,7 @@ class Match(object):
         #根据batches数据生成向量
         text_list_pred, x_query, x_query_length = self.embedding.text2id(text_list,
                                                      self.vocab_dict,
+                                                     self.maxlen,
                                                      need_preprocess)
         label = [0 for _ in range(len(text_list))]
 
