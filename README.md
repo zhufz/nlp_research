@@ -22,7 +22,7 @@ language model data:
             python3 run.py classify mode=prepare
             python3 run.py classify 
            or:
-            sh scripts/start.sh classify
+            sh scripts/restart.sh classify
          
          2.test：python3 run.py classify model=test
            test one：python3 run.py classify model=test_one
@@ -31,7 +31,7 @@ language model data:
              python3 run.py match mode=prepare
              python3 run.py match mode=train
             or:
-             sh scripts/start.sh match
+             sh scripts/restart.sh match
          2.test：python3 run.py match model=test
            test one：python3 run.py match model=test_one
 ## Task
