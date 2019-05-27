@@ -53,7 +53,7 @@ class Preprocess():
 
 
     def segment(self, text):
-        if text.strip() == '': return []
+        if type(text) != str or text.strip() == '': return []
         seg_list = jieba.cut(text, cut_all=False)
         return list(seg_list)
 

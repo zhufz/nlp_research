@@ -1,9 +1,6 @@
 path_root: "data/classify/"
-ori_path: "intent.csv"
-train_path: "train.csv"
-test_path: "test.csv"
-#test_path: "train.csv"
-predict_path: "test1.csv"
+# ori_path: "intent.csv"
+ori_path: "review.csv"
 classes_path: "{encoder_type}classes"
 dict_path: "{encoder_type}/dict.pkl"
 checkpoint_path: "{encoder_type}/checkpoint"
@@ -13,17 +10,18 @@ tfrecords_mode: "class"
 tfrecords_path: "tfrecords"
 export_dir_path: "{encoder_type}/model"
 
-maxlen: 20
+maxlen: 60
 embedding_size: 128
 learning_rate: 0.001
-use_clr: True
+use_clr: False
 clr_mode: 'triangular'
 optimizer_type: "Adam"
 
 batch_size: 64
+num_class_per_batch: 2
+test_size: 300
 num_epochs: 350
-num_class: 91
-num_output: 91
+num_output: 100
 valid_step: 1000 #valid one time every valid_step 
 max_steps: 3000
 thre_score: 0.3

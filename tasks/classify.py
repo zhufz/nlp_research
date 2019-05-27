@@ -37,8 +37,10 @@ class Classify(object):
         self.label_list = list(csv['target'])
         self.num_class = len(set(self.label_list))
         logging.info(f">>>>>>>>>>>> class num:{self.num_class} <<<<<<<<<<<<<<<")
-        self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
-                          self.text_list]
+        for idx,text in enumerate(self.text_list):
+            self.text_list[idx] = self.pre.get_dl_input_by_text(text)
+            if len(self.text_list[idx]) == 0:
+                logging.error(f"find blank lines in {idx}")
 
         self.conf.update({
             "maxlen": self.maxlen,
@@ -73,7 +75,7 @@ class Classify(object):
         self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
         self.gt.process(self.text_list, self.label_list, self.embedding.text2id,
                         self.encoder.encoder_fun, self.vocab_dict,
-                        self.tfrecords_path, self.label_path)
+                        self.tfrecords_path, self.label_path, self.test_size)
 
     def cal_loss(self, pred, labels, batch_size, conf):
         loss = get_loss(type = self.loss_type, logits = pred, labels =
@@ -94,12 +96,13 @@ class Classify(object):
             self.encoder.is_training = params['is_training']
             global_step = tf.train.get_or_create_global_step()
             if not self.use_language_model:
-                pred = self.encoder(self.embed_query, 
+                out = self.encoder(self.embed_query, 
                                     name = 'x_query',
                                     features = features)
             else:
-                pred = self.encoder(features = features)
-            pred = tf.nn.softmax(pred)
+                out = self.encoder(features = features)
+            pred = tf.nn.softmax(tf.layers.dense(out, self.num_class))
+
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
                 predictions = {
@@ -107,11 +110,13 @@ class Classify(object):
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
+
             ############### loss ##################
             loss = self.cal_loss(pred,
                              labels,
                              self.batch_size,
                              self.conf)
+
             ############### train ##################
             if mode == tf.estimator.ModeKeys.TRAIN:
                 if self.use_clr:
@@ -125,6 +130,7 @@ class Classify(object):
                                          clip_grad = 5)
                 return tf.estimator.EstimatorSpec(mode, loss = loss,
                                                       train_op=optimizer)
+
             ############### eval ##################
             if mode == tf.estimator.ModeKeys.EVAL:
                 eval_metric_ops = {}
@@ -132,13 +138,16 @@ class Classify(object):
                 #    labels=labels, predictions=predictions["classes"])}
                 return tf.estimator.EstimatorSpec(
                     mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+
         return model_fn
 
     def create_input_fn(self, mode):
         n_cpu = multiprocessing.cpu_count()
         def train_input_fn():
             size = self.num_class
-            num_classes_per_batch = 16
+            num_classes_per_batch = self.num_class_per_batch
+            assert num_classes_per_batch <= self.num_class, \
+                f"num_classes_per_batch is {num_classes_per_batch} > {self.num_class}"
             num_sentences_per_class = self.batch_size // num_classes_per_batch
 
             filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \

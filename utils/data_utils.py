@@ -420,7 +420,7 @@ class GenerateTfrecords():
             writer.write(item)
 
     def process(self, text_list, label_list, sen2id_fun, encoder_fun, vocab_dict, path,
-                label_path):
+                label_path, test_size = 1):
         """
         sen2id_fun: for sen2id in embedding
         encoder_fun: add features for encoder
@@ -453,14 +453,16 @@ class GenerateTfrecords():
                 mp_dataset[label].append(serialized)
 
             for label in mp_dataset:
-                dataset_train = mp_dataset[label][:-1]
-                dataset_test = [mp_dataset[label][-1]]
+                dataset_train = mp_dataset[label][:-test_size]
+                dataset_test = [mp_dataset[label][-test_size]]
                 self._output_tfrecords(dataset_train, mp_label[label], output_path,
                                        "train")
                 self._output_tfrecords(dataset_test, mp_label[label], output_path, 
                                        "test")
         else:
-            train_list, test_list = self.get_pair_id(text_id_list, label_list)
+            train_list, test_list = self.get_pair_id(text_id_list, 
+                                                     label_list,
+                                                     test_size)
             ###################################################
             for label, query_id, sample_id in train_list:
                 input_dict = {'x_query': text_id_list[query_id], 
@@ -505,7 +507,7 @@ class GenerateTfrecords():
             for idx,query_id in enumerate(mp_dataset):
                 self._output_tfrecords(mp_dataset[query_id], idx, output_path, "test")
 
-    def get_pair_id(self, text_id_list, label_list):
+    def get_pair_id(self, text_id_list, label_list, test_size = 1):
         #return:
         #train_list:[(1/0, 样本id, 正/负样本id),...]
         #test_list: (样本id, [(1/0, 正/负样本id),(1/0, 正/负样本id),...]
@@ -518,7 +520,6 @@ class GenerateTfrecords():
         train_list = []
         test_list = []
 
-        test_size = 1
         for label in mp_label:
             #choose positive sample
             pos_list = mp_label[label]
