@@ -18,13 +18,20 @@ language model data:
     [requirements]
          pip3 install --user -r requirements.txt
     [classify]
-         data prepare：python3 run.py classify mode=prepare
-         train：python3 run.py classify 
+         tfrecords prepare and train:
+            python3 run.py classify mode=prepare
+            python3 run.py classify 
+           or:
+            sh scripts/start.sh classify
+         
          test：python3 run.py classify model=test
          test one：python3 run.py classify model=test_one
     [match]
-         data prepare: python3 run.py match mode=prepare
-         train: python3 run.py match mode=train
+         tfrecords prepare and train:
+             python3 run.py match mode=prepare
+             python3 run.py match mode=train
+            or:
+             sh scripts/start.sh match
          test：python3 run.py match model=test
          test one：python3 run.py match model=test_one
 ## Task
