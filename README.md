@@ -20,14 +20,15 @@ language model data:
     [依赖]
          pip3 install --user -r requirements.txt
     [分类]
-         生成语料：python3 utils/generate_data.py classify
+         生成语料：python3 run.py classify classify
          训练：python3 run.py classify 
-              [格式：python3 run.py {task_type}, 对应到conf/model/{task_type}.yml]
          测试：python3 run.py classify model=test
          单个测试：python3 run.py classify model=test_one
     [匹配]
          生成tfrecords语料: python3 run.py match mode=prepare
          训练: python3 run.py match mode=train
+         测试：python3 run.py match model=test
+         单个测试：python3 run.py match model=test_one
 ## Task
 
     环境：python3+tensorflow 1.10
