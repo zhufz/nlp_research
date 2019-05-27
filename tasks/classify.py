@@ -271,30 +271,3 @@ class Classify(object):
         sum = len(res)
         print("Acc:{}".format(float(right)/sum))
 
-    def test_unit(self, text):
-        if self.model_loaded == False:
-            self.init_embedding()
-            subdirs = [x for x in Path(self.export_dir_path).iterdir()
-                    if x.is_dir() and 'temp' not in str(x)]
-            latest = str(sorted(subdirs)[-1])
-            self.predict_fn = predictor.from_saved_model(latest)
-            self.mp_label = pickle.load(open(self.label_path, 'rb'))
-            self.mp_label_rev = {self.mp_label[item]:item for item in self.mp_label}
-            self.model_loaded = True
-        text_list  = [text]
-        text_list_pred, x_query, x_query_length = self.embedding.text2id(text_list,
-                                                     self.vocab_dict,
-                                                     self.maxlen,
-                                                     need_preprocess = True)
-        label = [0 for _ in range(len(text_list))]
-
-        predictions = self.predict_fn({'x_query': x_query, 
-                                  'x_query_length': x_query_length, 
-                                  'label': label})
-        scores = [item for item in predictions['pred']]
-        max_scores = np.max(scores, axis = -1)
-        max_ids = np.argmax(scores, axis = -1)
-        ret =  (max_ids[0], max_scores[0], self.mp_label_rev[max_ids[0]])
-        print(ret)
-        return ret
-
