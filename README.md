@@ -3,45 +3,43 @@
 
 ## Introduction
   
-    nlp一些任务集成：classify，match，sequence tagging，translation...
+    Nlp tasks supported in this lab：classify，match，sequence tagging，translation...
 
 ## Data
 train datas:
 
-    数据统一放在data下，
-    对于分类和匹配任务，训练文件每行格式为"文本\t类别".
-    对于ner任务，参考示例数据
+    we use csv formats data as training data, and its head contains ['target','text']
 
 language model data:
 
-    如果需要使用bert预训练模型，请先下载预训练模型：sh scripts/prepare.sh
+    if you use bert model as pretrained model, run "sh scripts/prepare.sh" first
 
 ## Quickly start
-    [依赖]
+    [requirements]
          pip3 install --user -r requirements.txt
-    [分类]
-         生成语料：python3 run.py classify mode=prepare
-         训练：python3 run.py classify 
-         测试：python3 run.py classify model=test
-         单个测试：python3 run.py classify model=test_one
-    [匹配]
-         生成tfrecords语料: python3 run.py match mode=prepare
-         训练: python3 run.py match mode=train
-         测试：python3 run.py match model=test
-         单个测试：python3 run.py match model=test_one
+    [classify task]
+         data prepare：python3 run.py classify mode=prepare
+         train：python3 run.py classify 
+         test：python3 run.py classify model=test
+         test one：python3 run.py classify model=test_one
+    [match]
+         data prepare: python3 run.py match mode=prepare
+         train: python3 run.py match mode=train
+         test：python3 run.py match model=test
+         test one：python3 run.py match model=test_one
 ## Task
 
-    环境：python3+tensorflow 1.10
-    各类任务的参数分别定义在conf/model/的，以任务名命名的yml文件中！
-    目前已支持的常见任务如下：
-    1. classify 分类任务
-    2. match    匹配任务 
-    3. ner      标注任务
-    4. seq2seq  文本生成
+    Environments：python3+tensorflow 1.10
+    The parameters for each type of task are defined in the yml file named "conf/model/{task}.yml".
+    Common tasks currently supported are:
+    1. classify, used to train classify model
+    2. match   , used to train sentence match model
+    3. ner     , used to train sequence tagging model
+    4. seq2seq , used to train sentence generation model
 
 ## Module
 
-    1. encoder（存放编码器）
+    1. encoder
         cnn
         fasttext
         text_cnn
@@ -58,11 +56,11 @@ language model data:
         abcnn
         transformer
   
-    2. common（存放一些通用网络中间层）
+    2. common 
         loss
         attention
         lr
         ...
     
     3. utils
-        数据处理工具
+        data process
