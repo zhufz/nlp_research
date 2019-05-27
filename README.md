@@ -1,22 +1,22 @@
 # nlp_research
 
 
-## 介绍
+## Introduction
   
     nlp一些任务集成：classify，match，sequence tagging，translation...
 
-## 数据
-训练语料
+## Data
+train datas:
 
     数据统一放在data下，
     对于分类和匹配任务，训练文件每行格式为"文本\t类别".
     对于ner任务，参考示例数据
 
-语言模型
+language model data:
 
     如果需要使用bert预训练模型，请先下载预训练模型：sh scripts/prepare.sh
 
-## 快速开始
+## Quickly start
     [依赖]
          pip3 install --user -r requirements.txt
     [分类]
@@ -28,7 +28,7 @@
     [匹配]
          生成tfrecords语料: python3 run.py match mode=prepare
          训练: python3 run.py match mode=train
-## 任务
+## Task
 
     环境：python3+tensorflow 1.10
     各类任务的参数分别定义在conf/model/的，以任务名命名的yml文件中！
@@ -38,7 +38,7 @@
     3. ner      标注任务
     4. seq2seq  文本生成
 
-## 模块说明
+## Module
 
     1. encoder（存放编码器）
         cnn
