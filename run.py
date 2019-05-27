@@ -1,4 +1,5 @@
 from tasks import dl_tasks
+from tests.test_unit import Test
 import yaml
 import os,sys
 import pdb
@@ -98,8 +99,10 @@ if __name__ == '__main__':
     elif conf['mode'] == 'predict':
         cl = dl_tasks[task_type](conf)
         cl.predict()
-    elif conf['mode'] == 'test_one':
-        cl = dl_tasks[task_type](conf)
+    elif conf['mode'] in ['test_one','test_unit']:
+        #cl = dl_tasks[task_type](conf)
+        conf['task_type'] = task_type
+        cl = Test(conf)
         while True:
             a = input('input:')
             start = time.time()
