@@ -144,7 +144,7 @@ class Match(object):
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
                 predictions = {
-                    'pred': pred,
+                    'encode': pred,
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
@@ -302,13 +302,13 @@ class Match(object):
                                            params = params)
         predictions = estimator.predict(input_fn=self.create_input_fn("test"))
         predictions = list(predictions)
-        predictions_vec = [item['pred'] for item in predictions]
+        predictions_vec = [item['encode'] for item in predictions]
         predictions_label = [item['label'] for item in predictions]
         if self.tfrecords_mode == 'class':
             refers = estimator.predict(input_fn=self.create_input_fn("label"))
             refers = list(refers) 
 
-            refers_vec = [item['pred'] for item in refers]
+            refers_vec = [item['encode'] for item in refers]
             refers_label = [item['label'] for item in refers]
 
             right = 0

@@ -74,8 +74,9 @@ class Classify(object):
         self.init_embedding()
         self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
         self.gt.process(self.text_list, self.label_list, self.embedding.text2id,
-                        self.encoder.encoder_fun, self.vocab_dict,
-                        self.tfrecords_path, self.label_path, self.test_size)
+                        self.encoder.encoder_fun, 
+                        self.vocab_dict, self.tfrecords_path, 
+                        self.label_path, self.test_size)
         logging.info("tfrecords generated!")
 
     def cal_loss(self, pred, labels, batch_size, conf):
@@ -108,8 +109,8 @@ class Classify(object):
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
                 predictions = {
-                    'encoded': out,
-                    'pred': pred,
+                    'encode': out,
+                    'logit': pred,
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
@@ -262,7 +263,7 @@ class Classify(object):
                                            params = params)
         predictions = estimator.predict(input_fn=self.create_input_fn("test"))
         predictions = list(predictions)
-        scores = [item['pred'] for item in predictions]
+        scores = [item['logit'] for item in predictions]
         labels = [item['label'] for item in predictions]
         max_scores = np.max(scores, axis = -1)
         max_ids = np.argmax(scores, axis = -1)

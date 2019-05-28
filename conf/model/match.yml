@@ -43,7 +43,6 @@ clr_mode: 'triangular'
 #class/89   pair/2
 tfrecords_mode: "class"
 loss_type: "hinge_loss"
-loss_type: "am_softmax_loss"
 sub_loss_type: "hard"
 max_steps: 3000
 num_class: 91

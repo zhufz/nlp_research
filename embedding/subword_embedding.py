@@ -6,6 +6,7 @@ import numpy as np
 from itertools import chain
 import tensorflow as tf
 from utils.preprocess import *
+from embedding.embedding_base import Base
 from common.layers import get_initializer
 import collections
 import pickle
@@ -15,9 +16,10 @@ import pdb
 MAX_SUB_LEN = 8
 
 
-class SubwordEmbedding():
+class SubwordEmbedding(Base):
     def __init__(self, text_list, dict_path, vocab_dict, random = False,\
                  maxlen = 20, embedding_size = 128, **kwargs):
+        super(SubwordEmbedding, self).__init__(**kwargs)
         self.embedding_path = kwargs['conf']['subword_embedding_path']
         self.maxlen = maxlen
         self.dict_path = dict_path
@@ -33,13 +35,15 @@ class SubwordEmbedding():
 
 
     def __call__(self, features = None, name = "subword_embedding"):
-        """define placeholder"""
+
         if features == None:
+            """define placeholder"""
             self.indices[name] = tf.placeholder(dtype=tf.int64, shape=[None,2], name
                                                 = name+"_indices")
             self.values[name] = tf.placeholder(dtype=tf.int64, shape=[None], name
                                                 = name+"_values")
         else:
+            """ estimator based """
             self.indices[name] = features[name+"_indices"]
             self.values[name] = features[name+"_values"]
 
@@ -51,7 +55,6 @@ class SubwordEmbedding():
                                              sp_weights = None,
                                              combiner="mean")
         return tf.reshape(embed, [-1, self.maxlen, self.size])
-
 
     def feed_dict(self, input_x, name = 'subword_embedding'):
         feed_dict = {}
@@ -102,7 +105,7 @@ class SubwordEmbedding():
         return vocab_dict
 
     @staticmethod
-    def words2indices(self, word_list, vocab_dict, index, maxlen):
+    def words2indices(word_list, vocab_dict, index, maxlen):
         values_list = []
         indices_list = []
         start_x = index
@@ -144,12 +147,13 @@ class SubwordEmbedding():
 
         start_x = 0
         for idx in range(len(x)):
-            values, indices, start_x = words2indices(x[idx], vocab_dict,
-                                                             start_x,
-                                                             maxlen)
+            values, indices, start_x = SubwordEmbedding.words2indices(x[idx], 
+                                                                      vocab_dict,
+                                                                      start_x,
+                                                                      maxlen)
             values_list += values
             indices_list += indices
-        return text_list, zip(indices_list, values_list), x_len
+        return text_list, zip(indices_list, values_list),  x_len
 
 if __name__ == '__main__':
     embedding = SubwordEmbedding()

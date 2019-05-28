@@ -6,6 +6,7 @@ import numpy as np
 from itertools import chain
 import tensorflow as tf
 from utils.preprocess import *
+from embedding.embedding_base import Base
 from common.layers import get_initializer
 import pandas as pd
 import collections
@@ -13,9 +14,10 @@ import pickle
 import pdb
 
 
-class CharEmbedding():
+class CharEmbedding(Base):
     def __init__(self, text_list, dict_path, vocab_dict = None, random = False,
                  maxlen = 40, embedding_size = 128, **kwargs):
+        super(CharEmbedding, self).__init__(**kwargs)
         self.embedding_path = kwargs['conf']['char_embedding_path']
         self.dict_path = dict_path
         self.maxlen = maxlen

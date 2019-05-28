@@ -7,6 +7,7 @@ import numpy as np
 from itertools import chain
 import tensorflow as tf
 from utils.preprocess import *
+from embedding.embedding_base import Base
 from common.layers import get_initializer
 import pandas as pd
 import collections
@@ -289,9 +290,10 @@ class ContextWordRegionEmbeddingLayer(EmbeddingLayer):
         embedding = self._region_merge_fn(embedding, axis=2)
         return embedding
 
-class RegionEmbedding():
+class RegionEmbedding(Base):
     def __init__(self, text_list, dict_path, vocab_dict = None, random = False,
                  maxlen = 40, embedding_size = 128, region_size = 3, **kwargs):
+        super(RegionEmbedding, self).__init__(**kwargs)
         self.embedding_path = None
         self.dict_path = dict_path
         self.maxlen = maxlen
