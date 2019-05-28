@@ -344,7 +344,7 @@ class Match(object):
             #pdb.set_trace()
 
             #predictions
-            predicts = np.reshape(predicts,[self.num_class, -1])
+            predicts = np.reshape(scores,[self.num_class, -1])
             pred_max_ids = np.argmax(predicts, axis = -1)
             #label
             labels = np.reshape(labels,[self.num_class, -1])
