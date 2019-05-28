@@ -30,7 +30,6 @@ class RNN(Base):
                                                 shape=[None], 
                                                 name = length_name)
         if features != None:
-            self.features = copy.copy(self.placeholder)
             self.placeholder[length_name] = features[length_name]
 
         self.initial_state = None
@@ -79,3 +78,10 @@ class RNN(Base):
             feed_dict.update(self.rnn_layer.feed_dict(initial_state, graph))
         return feed_dict
 
+    def get_features(self, name = 'encoder'):
+        features = {}
+        length_name = name + "_length" 
+        features[length_name] = tf.placeholder(dtype=tf.int32, 
+                                                    shape=[None], 
+                                                    name = length_name)
+        return features

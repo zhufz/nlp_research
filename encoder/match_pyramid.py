@@ -19,7 +19,6 @@ class MatchPyramid(Base):
         self.placeholder['dpool_index'] = tf.placeholder(tf.int32, name='dpool_index',\
                                           shape=(None, self.maxlen1, self.maxlen2, 3))
         if features != None:
-            self.features = copy.copy(self.placeholder)
             self.placeholder['dpool_index'] = features['dpool_index']
         # batch_size * X1_maxlen * X2_maxlen
         self.cross = tf.einsum('abd,acd->abc', x_query, x_sample)
@@ -102,6 +101,12 @@ class MatchPyramid(Base):
                                       [self.maxlen1,self.maxlen1, self.psize1]), 
         }
         return ret
+
+    def get_features(self):
+        features = {}
+        features['dpool_index'] = tf.placeholder(tf.int32, name='dpool_index',\
+                                          shape=(None, self.maxlen1, self.maxlen2, 3))
+        return features
     ######################################
 
     def dynamic_pooling_index(self, len1, len2, compress_ratio1 = 1, compress_ratio2 = 1):

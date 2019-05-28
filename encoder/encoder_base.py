@@ -13,3 +13,7 @@ class Base():
 
     def parsed_to_features(self, **kwargs):
         return {}
+
+    def get_features(self, **kwargs):
+        features = {}
+        return features

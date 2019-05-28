@@ -125,33 +125,36 @@ class Match(object):
             global_step = tf.train.get_or_create_global_step()
             if self.sim_mode == 'cross':
                 if not self.use_language_model:
-                    pred = self.encoder(x_query = self.embed_query, 
+                    output = self.encoder(x_query = self.embed_query, 
                                         x_sample = self.embed_sample,
                                         features = features)
                 else:
-                    pred = self.encoder(features = features)
+                    output = self.encoder(features = features)
             elif self.sim_mode == 'represent':
                 if not self.use_language_model:
                     #features['x_query_length'] = features['length']
-                    pred = self.encoder(self.embed_query, 
+                    output = self.encoder(self.embed_query, 
                                                      name = 'x_query', 
                                                      features = features)
                 else:
-                    pred = self.encoder(features = features)
+                    output = self.encoder(features = features)
             else:
                 raise ValueError('unknown sim mode')
+
 
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
                 predictions = {
-                    'encode': pred,
+                    'encode': output,
+                    'pred': tf.cast(tf.greater(tf.nn.sigmoid(output), 0.5), tf.int32),
+                    'score': tf.nn.sigmoid(output),
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
             ############### loss ##################
             pos_target = tf.ones(shape = [int(self.batch_size)], dtype = tf.float32)
             neg_target = tf.zeros(shape = [int(self.batch_size)], dtype = tf.float32)
-            loss = self.cal_loss(pred,
+            loss = self.cal_loss(output,
                              labels,
                              pos_target,
                              neg_target,
@@ -280,14 +283,21 @@ class Match(object):
                         'label': tf.placeholder(dtype=tf.int64, 
                                                 shape=[None],
                                                 name='label')}
-            features.update(self.encoder.features)
+            if self.tfrecords_mode == 'pair':
+                features.update({'x_sample': tf.placeholder(dtype=tf.int64, 
+                                                      shape=[None, self.maxlen],
+                                                      name='x_sample'),
+                                'x_sample_length': tf.placeholder(dtype=tf.int64,
+                                                             shape=[None],
+                                                             name='x_sample_length')})
+            features.update(self.encoder.get_features())
             return tf.estimator.export.ServingInputReceiver(features, features)
 
         estimator.export_savedmodel(
             self.export_dir_path, # 目录
             serving_input_receiver_fn, # 返回ServingInputReceiver的函数
             assets_extra=None,
-            as_text=False,
+            as_text = False,
             checkpoint_path=None)
 
     def test(self):
@@ -302,13 +312,14 @@ class Match(object):
                                            params = params)
         predictions = estimator.predict(input_fn=self.create_input_fn("test"))
         predictions = list(predictions)
-        predictions_vec = [item['encode'] for item in predictions]
-        predictions_label = [item['label'] for item in predictions]
+
         if self.tfrecords_mode == 'class':
+            predictions_vec = [item['encode'] for item in predictions]
+            predictions_label = [item['label'] for item in predictions]
             refers = estimator.predict(input_fn=self.create_input_fn("label"))
             refers = list(refers) 
 
-            refers_vec = [item['encode'] for item in refers]
+            refers_vec = [item['pred'] for item in refers]
             refers_label = [item['label'] for item in refers]
 
             right = 0
@@ -326,8 +337,24 @@ class Match(object):
             print("Acc:{}".format(float(right)/sum))
             print("ThreAcc:{}".format(float(thre_right)/sum))
         else:
-            #TODO: 对于pair方式的评估
-            pdb.set_trace()
+            #对于pair方式的评估
+            predicts = [item['pred'] for item in predictions]
+            scores = [item['score'] for item in predictions]
+            labels = [item['label'] for item in predictions]
+            #pdb.set_trace()
+
+            #predictions
+            predicts = np.reshape(predicts,[self.num_class, -1])
+            pred_max_ids = np.argmax(predicts, axis = -1)
+            #label
+            labels = np.reshape(labels,[self.num_class, -1])
+            label = np.argmax(labels, axis = -1)
+            max_ids = np.argmax(labels, axis = -1)
+            right = len(list(filter(lambda x: x == True, np.equal(pred_max_ids,
+                                                                  max_ids))))
+            sum = len(max_ids)
+            print("Acc:{}".format(float(right)/sum))
+
 
     def knn(self, scores, predictions_label, refers_label, k = 4):
         sorted_id = np.argsort(-scores, axis = -1)

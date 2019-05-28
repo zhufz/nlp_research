@@ -43,16 +43,15 @@ clr_mode: 'triangular'
 #class/89   pair/2
 tfrecords_mode: "class"
 loss_type: "hinge_loss"
-sub_loss_type: "hard"
-max_steps: 3000
+max_steps: 100
 num_class: 91
 batch_size: 64
-
 test_size: 1
-batch_mode: "random"  #(random/supervised)
+
+# batch_mode: "random"  #(random/supervised)
 # batch_mode: "supervised"
-margin: 0.5
-semi_hard: True
+margin: 1
+# semi_hard: True
 score_thre: 0.8
 config_type: 10
 config: 

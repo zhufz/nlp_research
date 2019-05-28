@@ -24,7 +24,6 @@ class RCNN(Base):
                                                     shape=[None], 
                                                     name = length_name)
         if features != None:
-            self.features = copy.copy(self.placeholder)
             self.placeholder[length_name] = features[length_name]
 
         with tf.variable_scope("birnn", reuse = reuse):
@@ -74,3 +73,10 @@ class RCNN(Base):
             feed_dict[key_node] = kwargs[key]
         return feed_dict
 
+    def get_features(self, name = 'encoder'):
+        features = {}
+        length_name = name + "_length" 
+        features[length_name] = tf.placeholder(dtype=tf.int32, 
+                                                    shape=[None], 
+                                                    name = length_name)
+        return features

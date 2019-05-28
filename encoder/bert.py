@@ -33,7 +33,6 @@ class Bert(Base):
                                         shape=[None, self.maxlen], 
                                         name = name+"_segment_ids")
         if features != None:
-            self.features = copy.copy(self.placeholder)
             self.placeholder[name+'_input_ids'] = features[name+'_input_ids']
             self.placeholder[name+'_input_mask'] = features[name+'_input_mask']
             self.placeholder[name+'_segment_ids'] = features[name+'_segment_ids']
@@ -188,3 +187,16 @@ class Bert(Base):
             name+"_segment_ids": tf.reshape(parsed[name + "_input_ids"], [self.maxlen])
         }
         return ret
+
+    def get_features(self, name = 'encoder'):
+        features = {}
+        features[name+'_input_ids'] = tf.placeholder(tf.int32, 
+                                        shape=[None, self.maxlen], 
+                                        name = name+"_input_ids")
+        features[name+'_input_mask'] = tf.placeholder(tf.int32, 
+                                        shape=[None, self.maxlen], 
+                                        name = name+"_input_mask")
+        features[name+'_segment_ids'] = tf.placeholder(tf.int32, 
+                                        shape=[None, self.maxlen], 
+                                        name = name+"_segment_ids")
+        return features

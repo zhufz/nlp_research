@@ -20,7 +20,6 @@ class FastText(Base):
             #embed: [batch_size, self.maxlen, embedding_size]
             length = tf.placeholder(tf.int32, name=name + '_length',shape=[])
             if features != None:
-                self.features = copy.copy(self.placeholder)
                 length = features[name + '_length']
             #pdb.set_trace()
             #mask:[batch_size, self.maxlen]
@@ -49,3 +48,9 @@ class FastText(Base):
             key_node = graph.get_operation_by_name(length_name).outputs[0]
             feed_dict[key_node] = kwargs[key]
         return feed_dict
+
+    def get_features(self, name = 'encoder'):
+        features = {}
+        length_name = name+'_length'
+        features[length_name] = tf.placeholder(tf.int32, name=name + '_length',shape=[])
+        return features
