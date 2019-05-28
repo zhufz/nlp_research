@@ -116,6 +116,6 @@ if __name__ == '__main__':
             cl = dl_tasks[task_type](conf)
             cl.prepare()
         else:
-            raise ValueError('unknown task type for prepare data step!')
+            logging.warn('unknown task type for prepare data step!')
     else:
-        raise ValueError('unknown mode!')
+        logging.error('unknown mode!')
