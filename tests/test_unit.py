@@ -124,7 +124,7 @@ class Test(object):
         predictions = predict_fn({'x_query': x_query, 
                                   'x_query_length': x_query_length, 
                                   'label': label})
-        return predictions['pred']
+        return predictions['encode']
 
 
 

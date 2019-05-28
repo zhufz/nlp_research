@@ -319,7 +319,7 @@ class Match(object):
             refers = estimator.predict(input_fn=self.create_input_fn("label"))
             refers = list(refers) 
 
-            refers_vec = [item['pred'] for item in refers]
+            refers_vec = [item['encode'] for item in refers]
             refers_label = [item['label'] for item in refers]
 
             right = 0
