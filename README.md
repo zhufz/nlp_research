@@ -1,50 +1,50 @@
 # nlp_research
 
 
-## Introduction
+## 介绍
   
-    Nlp tasks supported in this lab：classify，match，sequence tagging，translation...
+    本框架支持的NLP任务包括 分类、匹配、序列标注、文本生成等
 
-## Data
-train datas:
+## 数据
 
-    we use csv formats data as training data, and its head contains ['target','text']
+    训练数据:
+    对于分类和匹配任务的数据使用csv格式，csv头部包括列名‘target’和‘text’。
 
-language model data:
+    预训练数据:
+    如果使用到bert作为预训练，请提前运行"sh scripts/prepare.sh"
 
-    if you use bert model as pretrained model, run "sh scripts/prepare.sh" first
+## 快速开始
 
-## Quickly start
-    [requirements]
+    [依赖]
          pip3 install --user -r requirements.txt
-    [classify]
-         1.tfrecords prepare and train:
+    [分类]
+         1.生成tfrecords数据，训练:
             python3 run.py classify mode=prepare
             python3 run.py classify 
-           or:
+           或者直接使用脚本:
             sh scripts/restart.sh classify
          
-         2.test：python3 run.py classify model=test
-           test one：python3 run.py classify model=test_one
-    [match]
-         1.tfrecords prepare and train:
+         2.测试：python3 run.py classify model=test
+           单个测试：python3 run.py classify model=test_one
+    [匹配]
+         1.生成tfrecords数据，训练:
              python3 run.py match mode=prepare
              python3 run.py match mode=train
-            or:
+           或者直接使用脚本:
              sh scripts/restart.sh match
-         2.test：python3 run.py match model=test
-           test one：python3 run.py match model=test_one
-## Task
+         2.测试：python3 run.py match model=test
+           单个测试：python3 run.py match model=test_one
+## 任务
 
-    Environments：python3+tensorflow 1.10
-    The parameters for each type of task are defined in the yml file named "conf/model/{task}.yml".
-    Common tasks currently supported are:
-    1. classify, used to train classify model
-    2. match   , used to train sentence match model
-    3. ner     , used to train sequence tagging model
-    4. seq2seq , used to train sentence generation model
+    环境：python3+tensorflow 1.10
+    各类任务的参数分别定义在conf/model/的，以任务名命名的yml文件中"conf/model/{task}.yml"
+    目前已支持的常见任务如下：
+    1. classify, 训练
+    2. match   , 匹配
+    3. ner     , 序列标注
+    4. seq2seq , 翻译任务
 
-## Module
+## 模块
 
     1. encoder
         cnn
@@ -71,8 +71,8 @@ language model data:
     
     3. utils
         data process
-## Contact
+## 联系
 
-    if you have any problems, you can send email to zfz1015@outlook.com
+    如果有任何问题，欢迎发邮件到zfz1015@outlook.com
     
   
