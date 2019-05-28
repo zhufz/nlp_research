@@ -18,7 +18,7 @@ from utils.recall import Annoy
 
 
 class Test(object):
-    def __init__(self, conf):
+    def __init__(self, conf, **kwargs):
         self.conf = conf
         for attr in conf:
             setattr(self, attr, conf[attr])
@@ -28,8 +28,6 @@ class Test(object):
         csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
         self.text_list = list(csv['text'])
         self.label_list = list(csv['target'])
-
-
     def init_embedding(self):
         self.vocab_dict = embedding[self.embedding_type].build_dict(\
                                             dict_path = self.dict_path,
@@ -39,15 +37,11 @@ class Test(object):
                                maxlen = self.maxlen,
                                need_preprocess = True)
 
-    def test_unit(self,text):
-        if self.task_type == 'classify':
-            self.test_classify(text)
-        elif self.task_type == 'match':
-            self.test_match(text)
-        else:
-            raise ValueError('unknown task type!')
+class TestClassify(Test):
+    def __init__(self, conf, **kwargs):
+        super(TestClassify, self).__init__(conf, **kwargs)
 
-    def test_classify(self, text):
+    def __call__(self, text):
         if self.model_loaded == False:
             self.init_embedding()
             subdirs = [x for x in Path(self.export_dir_path).iterdir()
@@ -68,11 +62,13 @@ class Test(object):
         max_scores = np.max(scores, axis = -1)
         max_ids = np.argmax(scores, axis = -1)
         ret =  (max_ids[0], max_scores[0], self.mp_label_rev[max_ids[0]])
-        print(ret)
         return ret
 
-    def test_match(self, text):
-        #######################init#########################
+class TestMatch(Test):
+    def __init__(self, conf, **kwargs):
+        super(TestMatch, self).__init__(conf, **kwargs)
+
+    def __call__(self, text):
         if self.model_loaded == False:
             #添加不参与训练样本
             if os.path.exists(self.no_train_path):
@@ -86,9 +82,6 @@ class Test(object):
             self.init_embedding()
             self.model_loaded = True
             self.vec_list = self._get_vecs(self.predict_fn, self.text_list, True)
-            #self.set_zdy_labels(['睡觉','我回家了','晚安','娃娃了','周杰伦','自然语言处理'],
-            #                    ['打开情景模式','打开情景模式','打开情景模式',
-            #                     '打开情景模式','打开情景模式','打开情景模式'])
         text_list = self.text_list
         vec_list = self.vec_list
         label_list = self.label_list

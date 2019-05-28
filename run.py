@@ -1,5 +1,5 @@
 from tasks import dl_tasks
-from tests.test_unit import Test
+from tests import tests
 import yaml
 import os,sys
 import pdb
@@ -102,11 +102,13 @@ if __name__ == '__main__':
     elif conf['mode'] in ['test_one','test_unit']:
         #cl = dl_tasks[task_type](conf)
         conf['task_type'] = task_type
-        cl = Test(conf)
+        ts = tests[task_type](conf)
+
         while True:
             a = input('input:')
             start = time.time()
-            cl.test_unit(a)
+            ret = ts(a)
+            print(ret)
             end = time.time()
             consume = end-start
             print(f'consume: {consume}')
