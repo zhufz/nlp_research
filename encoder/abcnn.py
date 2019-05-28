@@ -194,8 +194,13 @@ class ABCNN(Base):
         feed_dict[graph.get_operation_by_name("x_sample_length").outputs[0]] = x_sample
         return feed_dict
 
-    def update_features(self, features):
-        pass
+    def get_features(self):
+        features = {}
+        features['len1'] = tf.placeholder(tf.float32, shape=[None],
+                                   name="x_query_length")
+        features['len2'] = tf.placeholder(tf.float32, shape=[None],
+                                   name="x_sample_length")
+        return features
 
     def __call__(self, x_query, x_sample, name = 'encoder', 
                  features = None, reuse = tf.AUTO_REUSE, **kwargs):
@@ -210,9 +215,8 @@ class ABCNN(Base):
         self.placeholder['len2'] = tf.placeholder(tf.float32, shape=[None],
                                    name="x_sample_length")
         if features != None:
-            self.features = copy.copy(self.placeholder)
-            self.placeholder['len1'] = features["x_query_length"].astype(np.float32)
-            self.placeholder['len2'] = features["x_sample_length"].astype(np.float32)
+            self.placeholder['len1'] = tf.cast(features["x_query_length"],tf.float32)
+            self.placeholder['len2'] = tf.cast(features["x_sample_length"],tf.float32)
 
         with tf.variable_scope('abcnn', reuse = reuse):
             x_query = tf.transpose(x_query, [0, 2, 1])
