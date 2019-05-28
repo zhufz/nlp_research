@@ -122,7 +122,7 @@ class TestMatch(Test):
 
 
     def _get_label(self, query_list, sample_list, need_preprocess = False):
-        #根据batches数据生成向量
+        #计算query_list 与 sample_list的匹配分数
         _, x_query, x_query_length = self.text2id(query_list)
         _, x_sample, x_sample_length = self.text2id(sample_list)
         label = [0 for _ in range(len(sample_list))]
