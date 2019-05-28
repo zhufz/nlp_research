@@ -16,7 +16,9 @@ language model data:
 
 ## Quickly start
     [requirements]
+         Environments：python3+tensorflow 1.10
          pip3 install --user -r requirements.txt
+         
     [classify]
          1.tfrecords prepare and train:
             python3 run.py classify mode=prepare
@@ -34,9 +36,15 @@ language model data:
              sh scripts/restart.sh match
          2.test：python3 run.py match model=test
            test one：python3 run.py match model=test_one
+    [sequence tagging]
+        ...
+        sh scripts/restart.sh ner
+    [translation]    
+        ...
+        sh scripts/restart.sh translation
+        
 ## Task
-
-    Environments：python3+tensorflow 1.10
+    
     The parameters for each type of task are defined in the yml file named "conf/model/{task}.yml".
     Common tasks currently supported are:
     1. classify, used to train classify model
