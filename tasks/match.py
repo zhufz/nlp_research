@@ -52,68 +52,75 @@ class Match(object):
         })
         self.encoder = encoder[self.encoder_type](**self.conf)
 
-    def init_embedding(self):
-        self.vocab_dict = embedding[self.embedding_type].build_dict(\
+    def prepare(self):
+        vocab_dict = embedding[self.embedding_type].build_dict(\
                                             dict_path = self.dict_path,
                                             text_list = self.text_list,
                                             mode = self.mode)
-        self.embedding = embedding[self.embedding_type](text_list = self.text_list,
-                                                        vocab_dict = self.vocab_dict,
-                                                        dict_path = self.dict_path,
-                                                        random=self.rand_embedding,
-                                                        maxlen = self.maxlen,
-                                                        batch_size = self.batch_size,
-                                                        embedding_size =
-                                                        self.embedding_size,
-                                                        conf = self.conf)
-
-    def prepare(self):
-        self.init_embedding()
+        text2id = embedding[self.embedding_type].text2id
         self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
-        self.gt.process(self.text_list, self.label_list, self.embedding.text2id,
-                        self.encoder.encoder_fun, self.vocab_dict,
+        self.gt.process(self.text_list, self.label_list, text2id,
+                        self.encoder.encoder_fun, vocab_dict,
                         self.tfrecords_path, self.label_path, self.test_size)
         logging.info("tfrecords generated!")
 
-    def cal_loss(self, pred, labels, batch_size, conf):
-        if self.sim_mode == 'represent':
-            pos_scores, neg_scores = batch_hard_triplet_scores(labels, pred) # pos/neg scores
-            pos_scores = tf.squeeze(pos_scores, -1)
-            neg_scores = tf.squeeze(neg_scores, -1)
-            #for represent, 
-            #     pred is a batch of tensors which size >1
-            #     we can use triplet loss(hinge loss) or contrastive loss
-            #if use hinge loss, we don't need labels
-            #if use other loss(contrastive loss), we need define pos/neg target before
-            if self.loss_type == 'hinge_loss':
-                loss = get_loss(type = self.loss_type, 
-                                pos_logits = pos_scores,
-                                neg_logits = neg_scores,
-                                **conf)
-            else:
-                pos_target = tf.ones(shape = [int(self.batch_size)/2], dtype = tf.float32)
-                neg_target = tf.zeros(shape = [int(self.batch_size)/2], dtype = tf.float32)
-
-                pos_loss = get_loss(type = self.loss_type, logits = pos_scores, labels =
-                                pos_target, **conf)
-                neg_loss = get_loss(type = self.loss_type, logits = neg_scores, labels =
-                                neg_target, **conf)
-                loss = pos_loss + neg_loss
-
-        elif self.sim_mode == 'cross':
-            #for cross:
-            #   pred is a batch of tensors which size == 1
-            loss = get_loss(type = self.loss_type, logits = pred, labels =
-                                labels, **conf)
-        else:
-            raise ValueError('unknown sim mode, cross or represent?')
-        return loss
-
     def create_model_fn(self):
+        def init_embedding():
+            vocab_dict = embedding[self.embedding_type].build_dict(\
+                                                dict_path = self.dict_path,
+                                                text_list = self.text_list,
+                                                mode = self.mode)
+            return  embedding[self.embedding_type](text_list = self.text_list,
+                                                            vocab_dict = vocab_dict,
+                                                            dict_path = self.dict_path,
+                                                            random=self.rand_embedding,
+                                                            maxlen = self.maxlen,
+                                                            batch_size = self.batch_size,
+                                                            embedding_size =
+                                                            self.embedding_size,
+                                                            conf = self.conf)
+
+        def cal_loss(pred, labels, batch_size, conf):
+            if self.sim_mode == 'represent':
+                pos_scores, neg_scores = batch_hard_triplet_scores(labels, pred) # pos/neg scores
+                pos_scores = tf.squeeze(pos_scores, -1)
+                neg_scores = tf.squeeze(neg_scores, -1)
+                #for represent, 
+                #     pred is a batch of tensors which size >1
+                #     we can use triplet loss(hinge loss) or contrastive loss
+                #if use hinge loss, we don't need labels
+                #if use other loss(contrastive loss), we need define pos/neg target before
+                if self.loss_type == 'hinge_loss':
+                    #pair wise
+                    loss = get_loss(type = self.loss_type, 
+                                    pos_logits = pos_scores,
+                                    neg_logits = neg_scores,
+                                    **conf)
+                else:
+                    #point wise
+                    pos_target = tf.ones(shape = [int(self.batch_size)/2], dtype = tf.float32)
+                    neg_target = tf.zeros(shape = [int(self.batch_size)/2], dtype = tf.float32)
+
+                    pos_loss = get_loss(type = self.loss_type, logits = pos_scores, labels =
+                                    pos_target, **conf)
+                    neg_loss = get_loss(type = self.loss_type, logits = neg_scores, labels =
+                                    neg_target, **conf)
+                    loss = pos_loss + neg_loss
+
+            elif self.sim_mode == 'cross':
+                #for cross:
+                #   pred is a batch of tensors which size == 1
+                labels = tf.concat([labels, 1-labels], axis = -1)
+                loss = get_loss(type = self.loss_type, logits = pred, labels =
+                                    labels, **conf)
+            else:
+                raise ValueError('unknown sim mode, cross or represent?')
+            return loss
+
         def model_fn(features, labels, mode, params):
             ########### embedding #################
             if not self.use_language_model:
-                self.init_embedding()
+                self.embedding = init_embedding()
                 if self.tfrecords_mode == 'class':
                     self.embed_query = self.embedding(features = features, name = 'x_query')
                 else:
@@ -155,10 +162,7 @@ class Match(object):
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
             ############### loss ##################
-            loss = self.cal_loss(output,
-                             labels,
-                             self.batch_size,
-                             self.conf)
+            loss = cal_loss(output, labels, self.batch_size, self.conf)
             ############### train ##################
             if mode == tf.estimator.ModeKeys.TRAIN:
                 if self.use_clr:

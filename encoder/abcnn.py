@@ -254,7 +254,7 @@ class ABCNN(Base):
                                      self.num_output,
                                      kernel_regularizer=tf.contrib.layers.l2_regularizer(0.001),
                                      name='fc')
-                out = tf.squeeze(out, -1)
+                #out = tf.squeeze(out, -1)
                 #out = tf.sigmoid(out)
                 #out = tf.contrib.layers.fully_connected(
                 #    inputs=output_features,

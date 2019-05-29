@@ -86,6 +86,6 @@ class ESIM(Base):
         #tf.nn.dropout使用keep_prob
         #output = Dense(units=self.num_output, activation='sigmoid')(output)
         #output = Dense(units=self.num_output, activation=None)(output)
-        output = tf.squeeze(output, -1)
+        #output = tf.squeeze(output, -1)
         return output
 

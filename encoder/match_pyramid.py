@@ -63,7 +63,7 @@ class MatchPyramid(Base):
                                                            [-1, self.psize1 * self.psize2 * 8]
                                                            ), 20))
         self.pred = tf.layers.dense(self.fc1, 1, name = 'scores')
-        out = tf.squeeze(self.pred, -1)
+        #out = tf.squeeze(self.pred, -1)
         #self.pred = tf.contrib.layers.linear(self.fc1, 1)
         return out
     #######################################
