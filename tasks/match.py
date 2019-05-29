@@ -155,10 +155,11 @@ class Match(object):
 
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
+                pdb.set_trace()
                 predictions = {
                     'encode': output,
-                    'pred': tf.cast(tf.greater(tf.nn.sigmoid(output), 0.5), tf.int32),
-                    'score': tf.nn.sigmoid(output),
+                    'pred': tf.cast(tf.greater(tf.nn.softmax(output)[:,0], 0.5), tf.int32),
+                    'score': tf.nn.softmax(output)[:,0],
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
@@ -345,14 +346,13 @@ class Match(object):
             print("ThreAcc:{}".format(float(thre_right)/sum))
         else:
             #对于pair方式的评估
-            predicts = [item['pred'] for item in predictions]
             scores = [item['score'] for item in predictions]
             labels = [item['label'] for item in predictions]
             #pdb.set_trace()
 
             #predictions
-            predicts = np.reshape(scores,[self.num_class*self.test_size, -1])
-            pred_max_ids = np.argmax(predicts, axis = -1)
+            scores = np.reshape(scores,[self.num_class*self.test_size, -1])
+            pred_max_ids = np.argmax(scores, axis = -1)
             #label
             labels = np.reshape(labels,[self.num_class, -1])
             label = np.argmax(labels, axis = -1)
