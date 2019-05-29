@@ -110,7 +110,8 @@ class Match(object):
             elif self.sim_mode == 'cross':
                 #for cross:
                 #   pred is a batch of tensors which size == 1
-                labels = tf.concat([labels, 1-labels], axis = -1)
+                #pdb.set_trace()
+                labels = tf.stack([labels, 1-labels], axis = -1)
                 loss = get_loss(type = self.loss_type, logits = pred, labels =
                                     labels, **conf)
             else:
