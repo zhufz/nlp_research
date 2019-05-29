@@ -44,7 +44,7 @@ clr_mode: 'triangular'
 tfrecords_mode: "class"
 loss_type: "hinge_loss"
 max_steps: 3000
-num_class: 91
+# num_class: 91
 batch_size: 64
 test_size: 1
 
@@ -53,7 +53,7 @@ test_size: 1
 margin: 1
 # semi_hard: True
 score_thre: 0.8
-config_type: 10
+config_type: 1
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1, 
     tfrecords_mode: "pair", num_pair: 2, loss_type: "sigmoid_loss"}

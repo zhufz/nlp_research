@@ -75,7 +75,7 @@ class Match(object):
                         self.tfrecords_path, self.label_path, self.test_size)
         logging.info("tfrecords generated!")
 
-    def cal_loss(self, pred, labels, pos_target, neg_target, batch_size, conf):
+    def cal_loss(self, pred, labels, batch_size, conf):
         if self.sim_mode == 'represent':
             pos_scores, neg_scores = batch_hard_triplet_scores(labels, pred) # pos/neg scores
             pos_scores = tf.squeeze(pos_scores, -1)
@@ -91,6 +91,9 @@ class Match(object):
                                 neg_logits = neg_scores,
                                 **conf)
             else:
+                pos_target = tf.ones(shape = [int(self.batch_size)/2], dtype = tf.float32)
+                neg_target = tf.zeros(shape = [int(self.batch_size)/2], dtype = tf.float32)
+
                 pos_loss = get_loss(type = self.loss_type, logits = pos_scores, labels =
                                 pos_target, **conf)
                 neg_loss = get_loss(type = self.loss_type, logits = neg_scores, labels =
@@ -152,12 +155,8 @@ class Match(object):
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
             ############### loss ##################
-            pos_target = tf.ones(shape = [int(self.batch_size)], dtype = tf.float32)
-            neg_target = tf.zeros(shape = [int(self.batch_size)], dtype = tf.float32)
             loss = self.cal_loss(output,
                              labels,
-                             pos_target,
-                             neg_target,
                              self.batch_size,
                              self.conf)
             ############### train ##################
@@ -187,7 +186,7 @@ class Match(object):
         def train_input_fn():
             if self.tfrecords_mode == 'pair':
                 size = self.num_pair
-                num_classes_per_batch = 2
+                num_classes_per_batch = size
                 num_sentences_per_class = self.batch_size // num_classes_per_batch
             else:
                 size = self.num_class
@@ -199,7 +198,7 @@ class Match(object):
             logging.info("tfrecords train class num: {}".format(len(filenames)))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
-            #assert self.batch_size == num_sentences_per_class* num_classes_per_batch
+            datasets = [dataset.shuffle(buffer_size=1000) for dataset in datasets]
             def generator():
                 while True:
                     labels = np.random.choice(range(size),
@@ -219,10 +218,13 @@ class Match(object):
             iterator = dataset.make_one_shot_iterator()
             features, label = iterator.get_next()
             #test
+            #pdb.set_trace()
             #sess = tf.Session()
             #features,label = sess.run([features,label])
             #features['x_query_pred'] = [item.decode('utf-8') for item in
             #                           features['x_query_pred'][1]]
+            #features['x_sample_pred'] = [item.decode('utf-8') for item in
+            #                           features['x_sample_pred'][1]]
             return features, label
 
         def test_input_fn(mode):
@@ -344,7 +346,7 @@ class Match(object):
             #pdb.set_trace()
 
             #predictions
-            predicts = np.reshape(scores,[self.num_class, -1])
+            predicts = np.reshape(scores,[self.num_class*self.test_size, -1])
             pred_max_ids = np.argmax(predicts, axis = -1)
             #label
             labels = np.reshape(labels,[self.num_class, -1])

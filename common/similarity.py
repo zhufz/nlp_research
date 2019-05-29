@@ -19,6 +19,8 @@ from sklearn.metrics.pairwise import manhattan_distances
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.metrics import jaccard_similarity_score
 
+#pip3 install python_Levenshtein,支持hamming, edit distance
+
 class Similarity():
     def __init__(self, corpus = None):
         self.corpus = corpus

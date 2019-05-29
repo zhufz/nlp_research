@@ -453,7 +453,6 @@ class GenerateTfrecords():
                 del input_dict['x_query_raw']
                 serialized = self._serialized_example(**input_dict)
                 mp_dataset[label].append(serialized)
-
             for label in mp_dataset:
                 dataset_train = mp_dataset[label][:-test_size]
                 dataset_test = [mp_dataset[label][-test_size]]
@@ -461,6 +460,9 @@ class GenerateTfrecords():
                                        "train")
                 self._output_tfrecords(dataset_test, mp_label[label], output_path, 
                                        "test")
+            logging.info('training class num: {}'.format(len(mp_dataset)))
+            logging.info('testing num in each class: {}'.format(test_size))
+
         else:
             train_list, test_list = self.get_pair_id(text_id_list, 
                                                      label_list,
@@ -483,6 +485,7 @@ class GenerateTfrecords():
                 del input_dict['x_sample_raw']
                 serialized = self._serialized_example(**input_dict)
                 mp_dataset[label].append(serialized)
+            logging.info('training pair: {}'.format(len(train_list)))
 
             for label in mp_dataset:
                 self._output_tfrecords(mp_dataset[label], label, output_path, "train")
@@ -506,8 +509,10 @@ class GenerateTfrecords():
                     del input_dict['x_sample_raw']
                     serialized = self._serialized_example(**input_dict)
                     mp_dataset[query_id].append(serialized)
+
             for idx,query_id in enumerate(mp_dataset):
                 self._output_tfrecords(mp_dataset[query_id], idx, output_path, "test")
+            logging.info('testing query num:{}'.format(len(test_list)))
 
     def get_pair_id(self, text_id_list, label_list, test_size = 1):
         #return:

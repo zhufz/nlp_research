@@ -81,8 +81,8 @@ class TestMatch(Test):
                 text_list = self.zdy['text_list'] + text_list
                 label_list = self.zdy['label_list'] + label_list
             pred,score = self._get_label([text], self.text_list, need_preprocess = True)
-            max_id = np.argmax(score[0])
-            max_score = np.max(score[0])
+            max_id = np.argmax(score)
+            max_score = np.max(score)
         elif self.sim_mode == 'represent':
             text_list = self.text_list
             vec_list = self.vec_list
