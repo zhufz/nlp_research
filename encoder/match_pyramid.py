@@ -9,6 +9,7 @@ import copy
 class MatchPyramid(Base):
     def __init__(self, **kwargs):
         super(MatchPyramid, self).__init__(**kwargs)
+        self.num_output = kwargs['num_output']
         self.maxlen1 = kwargs['maxlen1']
         self.maxlen2 = kwargs['maxlen2']
         self.psize1 = 3
@@ -62,7 +63,7 @@ class MatchPyramid(Base):
             self.fc1 = tf.nn.relu(tf.layers.dense(tf.reshape(self.pool1, 
                                                            [-1, self.psize1 * self.psize2 * 8]
                                                            ), 20))
-        self.pred = tf.layers.dense(self.fc1, 1, name = 'scores')
+        out = tf.layers.dense(self.fc1, self.num_output, name = 'scores')
         #out = tf.squeeze(self.pred, -1)
         #self.pred = tf.contrib.layers.linear(self.fc1, 1)
         return out
