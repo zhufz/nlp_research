@@ -46,7 +46,6 @@ def get_loss(logits = None, labels = None, neg_logits = None,
         raise ValueError("unknown loss type")
 
 def focal_loss(logits, labels, gamma, alpha, epsilon):
-    # logits = tf.nn.softmax(logits)
     logits = tf.cast(logits, tf.float32)
     model_out = tf.add(logits, epsilon)
     ce = tf.multiply(tf.cast(labels, tf.float32), -tf.log(model_out))
@@ -86,5 +85,5 @@ def l2_loss(logits, labels):
     return tf.reduce_mean(tf.square(logits - labels))
 
 def hinge_loss(neg_logits, pos_logits, margin):
-    loss = tf.reduce_mean(tf.maximum(margin + neg_logits - pos_logits, 0.0))
+    loss = tf.reduce_mean(tf.maximum(margin + pos_logits - neg_logits, 0.0))
     return loss

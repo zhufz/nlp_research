@@ -155,7 +155,7 @@ class Match(object):
 
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
-                pdb.set_trace()
+                #pdb.set_trace()
                 predictions = {
                     'encode': output,
                     'pred': tf.cast(tf.greater(tf.nn.softmax(output)[:,0], 0.5), tf.int32),
@@ -333,8 +333,8 @@ class Match(object):
             right = 0
             thre_right = 0
             sum = 0
-            scores = cosine_similarity(predictions_vec, refers_vec)
-            max_id = np.argmax(scores, axis=-1)
+            scores = euclidean_distances(predictions_vec, refers_vec)
+            max_id = np.argmin(scores, axis=-1)
             #max_id = self.knn(scores, predictions_label, refers_label)
             for idx, item in enumerate(max_id):
                 if refers_label[item] == predictions_label[idx]:

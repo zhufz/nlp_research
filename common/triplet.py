@@ -6,12 +6,6 @@
 
 import tensorflow as tf
 
-def _cosine_similarity(q, a):
-    pooled_len_1 = tf.sqrt(tf.reduce_sum(q * q, 1))
-    pooled_len_2 = tf.sqrt(tf.reduce_sum(a * a, 1))
-    pooled_mul_12 = tf.reduce_sum(q * a, 1)
-    score = tf.div(pooled_mul_12, pooled_len_1 * pooled_len_2 +1e-8, name="scores")
-    return score
 
 def _pairwise_distances(embeddings, squared=False):
     """Compute the 2D matrix of distances between all the embeddings.
@@ -24,22 +18,22 @@ def _pairwise_distances(embeddings, squared=False):
     Returns:
         pairwise_distances: tensor of shape (batch_size, batch_size)
     """
-    #cosine similarity
-    #embeddings: [batch, embed_size]
-    #embeddings_trans: [embed_size, batch]
-    embeddings_trans = tf.transpose(embeddings)
+    #      #cosine similarity
+    #      #embeddings: [batch, embed_size]
+    #      #embeddings_trans: [embed_size, batch]
+    #      embeddings_trans = tf.transpose(embeddings)
 
-    #[batch, batch]
-    dot_product = tf.matmul(embeddings, embeddings_trans)  
+    #      #[batch, batch]
+    #      dot_product = tf.matmul(embeddings, embeddings_trans)  
 
-    #len: [batch, 1]
-    len = tf.expand_dims(tf.sqrt(tf.reduce_sum(embeddings* embeddings, axis =
-                                               -1)),-1)
-    #len_trans: [1, batch]
-    len_trans = tf.transpose(len)
+    #      #len: [batch, 1]
+    #      len = tf.expand_dims(tf.sqrt(tf.reduce_sum(embeddings* embeddings, axis =
+    #                                                 -1)),-1)
+    #      #len_trans: [1, batch]
+    #      len_trans = tf.transpose(len)
 
-    scores = tf.div(dot_product, tf.matmul(len, len_trans)+1e-8)
-    return 1 - scores
+    #      scores = tf.div(dot_product, tf.matmul(len, len_trans)+1e-8)
+    #      return 1 - scores
 
     # Get the dot product between all embeddings
     # shape (batch_size, batch_size)
@@ -146,57 +140,57 @@ def _get_triplet_mask(labels):
     return mask
 
 
-#def batch_all_triplet_loss(labels, embeddings, margin, squared=False):
-#    """Build the triplet loss over a batch of embeddings.
-#
-#    We generate all the valid triplets and average the loss over the positive ones.
-#
-#    Args:
-#        labels: labels of the batch, of size (batch_size,)
-#        embeddings: tensor of shape (batch_size, embed_dim)
-#        margin: margin for triplet loss
-#        squared: Boolean. If true, output is the pairwise squared euclidean distance matrix.
-#                 If false, output is the pairwise euclidean distance matrix.
-#
-#    Returns:
-#        triplet_loss: scalar tensor containing the triplet loss
-#    """
-#    # Get the pairwise distance matrix
-#    pairwise_dist = _pairwise_distances(embeddings, squared=squared)
-#
-#    # shape (batch_size, batch_size, 1)
-#    anchor_positive_dist = tf.expand_dims(pairwise_dist, 2)
-#    assert anchor_positive_dist.shape[2] == 1, "{}".format(anchor_positive_dist.shape)
-#    # shape (batch_size, 1, batch_size)
-#    anchor_negative_dist = tf.expand_dims(pairwise_dist, 1)
-#    assert anchor_negative_dist.shape[1] == 1, "{}".format(anchor_negative_dist.shape)
-#
-#    # Compute a 3D tensor of size (batch_size, batch_size, batch_size)
-#    # triplet_loss[i, j, k] will contain the triplet loss of anchor=i, positive=j, negative=k
-#    # Uses broadcasting where the 1st argument has shape (batch_size, batch_size, 1)
-#    # and the 2nd (batch_size, 1, batch_size)
-#    triplet_loss = anchor_positive_dist - anchor_negative_dist + margin
-#
-#    # Put to zero the invalid triplets
-#    # (where label(a) != label(p) or label(n) == label(a) or a == p)
-#    mask = _get_triplet_mask(labels)
-#    mask = tf.to_float(mask)
-#    triplet_loss = tf.multiply(mask, triplet_loss)
-#
-#    # Remove negative losses (i.e. the easy triplets)
-#    triplet_loss = tf.maximum(triplet_loss, 0.0)
-#
-#    # Count number of positive triplets (where triplet_loss > 0)
-#    valid_triplets = tf.to_float(tf.greater(triplet_loss, 1e-16))
-#    num_positive_triplets = tf.reduce_sum(valid_triplets)
-#    num_valid_triplets = tf.reduce_sum(mask)
-#    fraction_positive_triplets = num_positive_triplets / (num_valid_triplets + 1e-16)
-#
-#    # Get final mean triplet loss over the positive valid triplets
-#    triplet_loss = tf.reduce_sum(triplet_loss) / (num_positive_triplets + 1e-16)
-#
-#
-#    return triplet_loss, fraction_positive_triplets
+def batch_all_triplet_loss(labels, embeddings, margin, squared=False):
+    """Build the triplet loss over a batch of embeddings.
+
+    We generate all the valid triplets and average the loss over the positive ones.
+
+    Args:
+        labels: labels of the batch, of size (batch_size,)
+        embeddings: tensor of shape (batch_size, embed_dim)
+        margin: margin for triplet loss
+        squared: Boolean. If true, output is the pairwise squared euclidean distance matrix.
+                 If false, output is the pairwise euclidean distance matrix.
+
+    Returns:
+        triplet_loss: scalar tensor containing the triplet loss
+    """
+    # Get the pairwise distance matrix
+    pairwise_dist = _pairwise_distances(embeddings, squared=squared)
+
+    # shape (batch_size, batch_size, 1)
+    anchor_positive_dist = tf.expand_dims(pairwise_dist, 2)
+    assert anchor_positive_dist.shape[2] == 1, "{}".format(anchor_positive_dist.shape)
+    # shape (batch_size, 1, batch_size)
+    anchor_negative_dist = tf.expand_dims(pairwise_dist, 1)
+    assert anchor_negative_dist.shape[1] == 1, "{}".format(anchor_negative_dist.shape)
+
+    # Compute a 3D tensor of size (batch_size, batch_size, batch_size)
+    # triplet_loss[i, j, k] will contain the triplet loss of anchor=i, positive=j, negative=k
+    # Uses broadcasting where the 1st argument has shape (batch_size, batch_size, 1)
+    # and the 2nd (batch_size, 1, batch_size)
+    triplet_loss = anchor_positive_dist - anchor_negative_dist + margin
+
+    # Put to zero the invalid triplets
+    # (where label(a) != label(p) or label(n) == label(a) or a == p)
+    mask = _get_triplet_mask(labels)
+    mask = tf.to_float(mask)
+    triplet_loss = tf.multiply(mask, triplet_loss)
+
+    # Remove negative losses (i.e. the easy triplets)
+    triplet_loss = tf.maximum(triplet_loss, 0.0)
+
+    # Count number of positive triplets (where triplet_loss > 0)
+    valid_triplets = tf.to_float(tf.greater(triplet_loss, 1e-16))
+    num_positive_triplets = tf.reduce_sum(valid_triplets)
+    num_valid_triplets = tf.reduce_sum(mask)
+    fraction_positive_triplets = num_positive_triplets / (num_valid_triplets + 1e-16)
+
+    # Get final mean triplet loss over the positive valid triplets
+    triplet_loss = tf.reduce_sum(triplet_loss) / (num_positive_triplets + 1e-16)
+
+
+    return triplet_loss, fraction_positive_triplets
 
 
 
@@ -242,7 +236,7 @@ def batch_hard_triplet_scores(labels, embeddings, squared=False):
     # shape (batch_size,)
     hardest_negative_dist = tf.reduce_min(anchor_negative_dist, axis=1, keepdims=True)
     #tf.summary.scalar("hardest_negative_dist", tf.reduce_mean(hardest_negative_dist))
-    return 1 - hardest_positive_dist, 1- hardest_negative_dist 
+    return hardest_positive_dist, hardest_negative_dist 
 
     ## Combine biggest d(a, p) and smallest d(a, n) into final triplet loss
     #triplet_loss = tf.maximum(hardest_positive_dist - hardest_negative_dist + margin, 0.0)
