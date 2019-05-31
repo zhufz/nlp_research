@@ -533,7 +533,7 @@ class GenerateTfrecords():
                     del input_dict['x_sample_pred']
                     del input_dict['x_sample_raw']
                     serialized = self._serialized_example(**input_dict)
-                serial_list.append(serialized)
+                    serial_list.append(serialized)
                 self._output_tfrecords(serial_list, idx, output_path, "test")
 
     def get_pair_id(self, text_id_list, label_list, test_size = 1):

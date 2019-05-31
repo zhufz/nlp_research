@@ -95,6 +95,7 @@ class Match(object):
                     loss = get_loss(type = self.loss_type, 
                                     pos_logits = pos_scores,
                                     neg_logits = neg_scores,
+                                    is_distance = True,
                                     **conf)
                 else:
                     #pointwise
@@ -118,6 +119,7 @@ class Match(object):
                     loss = get_loss(type = self.loss_type, 
                                     pos_logits = pos_scores,
                                     neg_logits = neg_scores,
+                                    is_distance = False,
                                     **conf)
                 else:
                     #pointwise
@@ -216,6 +218,7 @@ class Match(object):
             logging.info("tfrecords train class num: {}".format(len(filenames)))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
+            #datasets = [dataset.shuffle(buffer_size=1000) for dataset in datasets]
             def generator():
                 while True:
                     labels = np.random.choice(range(size),
@@ -345,9 +348,8 @@ class Match(object):
             thre_right = 0
             sum = 0
             scores = euclidean_distances(predictions_vec, refers_vec)
-            max_id = np.argmin(scores, axis=-1)
-            #max_id = self.knn(scores, predictions_label, refers_label)
-            for idx, item in enumerate(max_id):
+            selected_ids = np.argmin(scores, axis=-1)
+            for idx, item in enumerate(selected_ids):
                 if refers_label[item] == predictions_label[idx]:
                     if scores[idx][item] > self.score_thre:
                         thre_right += 1

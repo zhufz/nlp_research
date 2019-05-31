@@ -40,7 +40,8 @@ def get_loss(logits = None, labels = None, neg_logits = None,
 
     elif type == 'hinge_loss':
         margin = get_default_value(kwargs, 'margin', 1.0)
-        return hinge_loss(neg_logits, pos_logits, margin)
+        is_distance = get_default_value(kwargs, 'is_distance', False)
+        return hinge_loss(neg_logits, pos_logits, margin, is_distance)
 
     else:
         raise ValueError("unknown loss type")
@@ -84,6 +85,9 @@ def l1_loss(logits, labels):
 def l2_loss(logits, labels):
     return tf.reduce_mean(tf.square(logits - labels))
 
-def hinge_loss(neg_logits, pos_logits, margin):
-    loss = tf.reduce_mean(tf.maximum(margin + pos_logits - neg_logits, 0.0))
+def hinge_loss(neg_logits, pos_logits, margin, is_distance):
+    if is_distance:
+        loss = tf.reduce_mean(tf.maximum(margin + pos_logits - neg_logits, 0.0))
+    else:
+        loss = tf.reduce_mean(tf.maximum(margin - pos_logits + neg_logits, 0.0))
     return loss

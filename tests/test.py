@@ -81,6 +81,7 @@ class TestMatch(Test):
                 text_list = self.zdy['text_list'] + text_list
                 label_list = self.zdy['label_list'] + label_list
             pred,score = self._get_label([text], self.text_list, need_preprocess = True)
+            pdb.set_trace()
             selected_id = np.argmax(score)
             out_score = score[selected_id]
         elif self.sim_mode == 'represent':
