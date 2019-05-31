@@ -165,7 +165,7 @@ class Bert(Base):
         feed_dict[segment_ids_node ] = segment_ids_list
         return feed_dict
 
-    def encoder_fun(self, raw, name = 'encoder', **kwargs):
+    def encoder_fun(self, x_query_raw, name = 'encoder', **kwargs):
         input_ids, input_mask, segment_ids = \
             self.build_ids(x_query_raw, None)
         return {name+"_input_ids": input_ids, 
