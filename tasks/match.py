@@ -118,6 +118,7 @@ class Match(object):
                         pred = tf.nn.sigmoid(pred)
                     elif self.num_output == 2:
                         pred = tf.nn.softmax(pred)[:,0]
+                        pred = tf.expand_dims(pred,-1)
                     else:
                         raise ValueError('unsupported num_output, 1(sigmoid) or 2(softmax)?')
                     pos_scores = tf.strided_slice(pred, [0], [batch_size], [2])
@@ -377,11 +378,12 @@ class Match(object):
             pred_max_ids = np.argmax(scores, axis = -1)
             #label
             labels = np.reshape(labels,[self.num_class, -1])
-            label = np.argmax(labels, axis = -1)
-            max_ids = np.argmax(labels, axis = -1)
-            right = len(list(filter(lambda x: x == True, np.equal(pred_max_ids,
-                                                                  max_ids))))
-            sum = len(max_ids)
+
+            right = 0
+            for idx,max_id in enumerate(pred_max_ids):
+                if labels[idx][max_id] == 1:
+                    right += 1
+            sum = len(pred_max_ids)
             print("Acc:{}".format(float(right)/sum))
 
 
