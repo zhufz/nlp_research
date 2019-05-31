@@ -81,8 +81,8 @@ class TestMatch(Test):
                 text_list = self.zdy['text_list'] + text_list
                 label_list = self.zdy['label_list'] + label_list
             pred,score = self._get_label([text], self.text_list, need_preprocess = True)
-            max_id = np.argmax(score)
-            max_score = np.max(score)
+            selected_id = np.argmax(score)
+            out_score = score[selected_id]
         elif self.sim_mode == 'represent':
             text_list = self.text_list
             vec_list = self.vec_list
@@ -92,13 +92,12 @@ class TestMatch(Test):
                 vec_list = np.concatenate([self.zdy['vec_list'], self.vec_list], axis = 0)
                 label_list = self.zdy['label_list'] + label_list
             vec = self._get_vecs([text], need_preprocess = True)
-            scores = cosine_similarity(vec, vec_list)[0]
-            max_id = np.argmax(scores)
-            max_score = scores[max_id]
+            scores = euclidean_distances(vec, vec_list)[0]
+            selected_id = np.argmin(scores)
+            out_score = scores[selected_id]
         else:
             raise ValueError('unknown sim mode, represent or cross?')
-        max_similar = text_list[max_id]
-        ret = (label_list[max_id], max_score, max_id)
+        ret = (label_list[selected_id], out_score, selected_id, self.text_list[max_id])
         return ret
 
     def set_zdy_labels(self, text_list, label_list):

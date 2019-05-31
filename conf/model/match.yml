@@ -59,7 +59,7 @@ config:
     tfrecords_mode: "pair", num_pair: 2, loss_type: "hinge_loss"}
   1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 2, learning_rate: 0.0005, 
     tfrecords_mode: "pair", num_pair: 2, loss_type: "hinge_loss"}
-  2: {encoder_type: "esim", sim_mode: "cross", loss_type: 'l2_loss', num_output: 2, learning_rate: 0.001, 
+  2: {encoder_type: "esim", sim_mode: "cross", num_output: 2, learning_rate: 0.001, 
     tfrecords_mode: "pair", num_pair: 2, loss_type: "hinge_loss"}
 
   10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}

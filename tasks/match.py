@@ -216,7 +216,6 @@ class Match(object):
             logging.info("tfrecords train class num: {}".format(len(filenames)))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
-            datasets = [dataset.shuffle(buffer_size=1000) for dataset in datasets]
             def generator():
                 while True:
                     labels = np.random.choice(range(size),
