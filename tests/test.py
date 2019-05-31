@@ -81,7 +81,6 @@ class TestMatch(Test):
                 text_list = self.zdy['text_list'] + text_list
                 label_list = self.zdy['label_list'] + label_list
             pred,score = self._get_label([text], self.text_list, need_preprocess = True)
-            pdb.set_trace()
             selected_id = np.argmax(score)
             out_score = score[selected_id]
         elif self.sim_mode == 'represent':
@@ -98,7 +97,8 @@ class TestMatch(Test):
             out_score = scores[selected_id]
         else:
             raise ValueError('unknown sim mode, represent or cross?')
-        ret = (label_list[selected_id], out_score, selected_id, self.text_list[max_id])
+        ret = (label_list[selected_id], out_score, selected_id, \
+               self.text_list[selected_id])
         return ret
 
     def set_zdy_labels(self, text_list, label_list):

@@ -163,9 +163,7 @@ class Preprocess():
             a = seg_list[idx]
             b = seg_list[idx+1]
             if a > b:
-                t = a
-                a = b
-                b = t
+                b, a = a, b
             bi_list.append(a+"_"+b)
         return bi_list
 
@@ -177,9 +175,7 @@ class Preprocess():
                 a = seg_list[idx]
                 b = seg_list[idy]
                 if a > b:
-                    t = a
-                    a = b
-                    b = t
+                    b, a = a, b
                 skip_list.append(a+"|"+b)
         return skip_list
 

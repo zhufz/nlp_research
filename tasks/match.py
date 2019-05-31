@@ -170,8 +170,9 @@ class Match(object):
                 #pdb.set_trace()
                 predictions = {
                     'encode': output,
-                    'pred': tf.cast(tf.greater(tf.nn.softmax(output)[:,0], 0.5), tf.int32),
-                    'score': tf.nn.softmax(output)[:,0],
+                    #'pred': tf.cast(tf.greater(tf.nn.softmax(output)[:,0], 0.5), tf.int32),
+                    'pred': tf.cast(tf.greater(tf.nn.sidmoid(output), 0.5), tf.int32),
+                    'score': tf.nn.sigmoid(output),
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
@@ -203,7 +204,7 @@ class Match(object):
         n_cpu = multiprocessing.cpu_count()
         def train_input_fn():
             if self.tfrecords_mode == 'pair':
-                num_sentences_per_class = 2
+                num_sentences_per_class = 4
                 num_classes_per_batch = self.batch_size // num_sentences_per_class
             else:
                 #size = self.num_class
@@ -215,7 +216,7 @@ class Match(object):
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
                          os.listdir(self.tfrecords_path) if item.startswith('train')]
             size = len(filenames)
-            logging.info("tfrecords train class num: {}".format(len(filenames)))
+            logging.info("tfrecords train class num: {}".format(size))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
             #datasets = [dataset.shuffle(buffer_size=1000) for dataset in datasets]
@@ -237,19 +238,17 @@ class Match(object):
             dataset = dataset.prefetch(4*self.batch_size)
             iterator = dataset.make_one_shot_iterator()
             features, label = iterator.get_next()
-            #test
+            ##test
             #pdb.set_trace()
             #sess = tf.Session()
-            #features,label = sess.run([features,label])
-            #features['x_query_pred'] = [item.decode('utf-8') for item in
-            #                           features['x_query_pred'][1]]
-            #features['x_sample_pred'] = [item.decode('utf-8') for item in
-            #                           features['x_sample_pred'][1]]
+            #features1,label1 = sess.run([features,label])
+            #features1['x_query_pred'] = [item.decode('utf-8') for item in features1['x_query_pred'][1]]
+            #features1['x_sample_pred'] = [item.decode('utf-8') for item in features1['x_sample_pred'][1]]
             return features, label
 
         def test_input_fn(mode):
             filenames = ["{}/{}_class_{:04d}".format(self.tfrecords_path,mode,i) \
-                             for i in range(self.num_class)]
+                             for i in range(self.num_class * self.test_size)]
             assert self.num_class == len(filenames), "the num of tfrecords file error!"
             logging.info("tfrecords test class num: {}".format(len(filenames)))
             dataset = tf.data.TFRecordDataset(filenames)

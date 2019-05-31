@@ -343,9 +343,9 @@ class GenerateTfrecords():
     def __init__(self, mode, maxlen):
         #class mode: label: class id 
         #pair mode: label: 1/0, whether come from same class 
-        self.mode = mode
+        self.tfrecords_mode = mode
         self.maxlen = maxlen
-        assert mode in ['pair','class']
+        assert self.tfrecords_mode in ['pair','class']
 
     def _serialized_example(self, **kwargs):
         def get_feature(kwargs):
@@ -367,7 +367,7 @@ class GenerateTfrecords():
 
     def parse_record(self, record, encoder):
         #pdb.set_trace()
-        if self.mode == 'class':
+        if self.tfrecords_mode == 'class':
             keys_to_features = {
                 "x_query": tf.FixedLenFeature([self.maxlen], tf.int64),
                 #"x_query_pred": tf.VarLenFeature(tf.string),
@@ -386,7 +386,7 @@ class GenerateTfrecords():
                     'label': label[0]}
             ret.update(encoder.parsed_to_features(parsed = parsed))
             return ret, label[0]
-        else:
+        elif self.tfrecords_mode == 'pair':
             keys_to_features = {
                 "x_query": tf.FixedLenFeature([self.maxlen], tf.int64),
                 "x_sample": tf.FixedLenFeature([self.maxlen], tf.int64),
@@ -414,6 +414,8 @@ class GenerateTfrecords():
                     } 
             ret.update(encoder.parsed_to_features(parsed = parsed))
             return ret, label[0]
+        else:
+            raise ValueError('unknown tfrecords mode')
 
     def _output_tfrecords(self, dataset, idx, path, mode):
         file_name = os.path.join(path, "{}_class_{:04d}".format(mode, idx))
@@ -439,7 +441,7 @@ class GenerateTfrecords():
                                                                vocab_dict,
                                                                self.maxlen, 
                                                                need_preprocess=False)
-        if self.mode == 'class':
+        if self.tfrecords_mode == 'class':
             mp_dataset = defaultdict(list)
             for idx,text_id in enumerate(text_id_list):
                 label = label_list[idx]
@@ -454,6 +456,7 @@ class GenerateTfrecords():
                 del input_dict['x_query_raw']
                 serialized = self._serialized_example(**input_dict)
                 mp_dataset[label].append(serialized)
+            ##################################################
             for label in mp_dataset:
                 dataset_train = mp_dataset[label][:-test_size]
                 dataset_test = [mp_dataset[label][-test_size]]
@@ -464,8 +467,7 @@ class GenerateTfrecords():
             logging.info('training class num: {}'.format(len(mp_dataset)))
             logging.info('testing num in each class: {}'.format(test_size))
 
-        else:
-            ###################################################
+        elif self.tfrecords_mode == 'pair':
             def _generate_input_dict(text_id_list, text_pred_list, len_id_list,
                                     encoder_fun, query_id, sample_id, label):
                 input_dict = {'x_query': text_id_list[query_id], 
@@ -477,11 +479,11 @@ class GenerateTfrecords():
                               'x_query_length': [len_id_list[query_id]],
                               'x_sample_length': [len_id_list[sample_id]],
                               'label': [label]}
+                input_dict.update(encoder_fun(**input_dict))
                 del input_dict['x_query_pred']
                 del input_dict['x_query_raw']
                 del input_dict['x_sample_pred']
                 del input_dict['x_sample_raw']
-                input_dict.update(encoder_fun(**input_dict))
                 return input_dict
             input_dict_fun = partial(_generate_input_dict, 
                                      text_id_list, 
@@ -491,8 +493,7 @@ class GenerateTfrecords():
             train_list, test_list = self.get_pair_id(text_id_list, 
                                                      label_list,
                                                      test_size)
-            #mp_dataset = defaultdict(list)
-            logging.info('generating train tfrecords...')
+            logging.info('generating tfrecords for training ...')
             for qid,query_id in enumerate(tqdm(train_list, ncols=70)):
                 serial_list = []
                 pos_list = train_list[query_id][1]
@@ -507,13 +508,9 @@ class GenerateTfrecords():
                         #append continuous pos and neg serialized sample
                         serial_list.append(serialized_pos)
                         serial_list.append(serialized_neg)
-                        #mp_dataset[query_id].append(serialized_pos)
-                        #mp_dataset[query_id].append(serialized_neg)
                 self._output_tfrecords(serial_list, qid, output_path, "train")
-            #for idx,query_id in enumerate(mp_dataset):
-            #    self._output_tfrecords(mp_dataset[query_id], idx, output_path, "train")
             ##################################################
-            logging.info('generating test tfrecords...')
+            logging.info('generating tfrecords for testing ...')
             mp_dataset = defaultdict(list)
             for idx, (query_id, item_list) in enumerate(tqdm(test_list, ncols = 70)):
                 serial_list = []
@@ -535,10 +532,12 @@ class GenerateTfrecords():
                     serialized = self._serialized_example(**input_dict)
                     serial_list.append(serialized)
                 self._output_tfrecords(serial_list, idx, output_path, "test")
+        else:
+            raise ValueError('unknown tfrecords mode')
 
     def get_pair_id(self, text_id_list, label_list, test_size = 1):
         #return:
-        #train_list:[(1/0, 样本id, 正/负样本id),...]
+        #train_list:{样本id:{1:[正样本列表],0:[负样本列表]},...}
         #test_list: (样本id, [(1/0, 正/负样本id),(1/0, 正/负样本id),...]
         mp_label = defaultdict(list)
         for idx in range(len(text_id_list)):
@@ -549,6 +548,7 @@ class GenerateTfrecords():
         train_list = defaultdict(dict)
         test_list = []
 
+        #1667+91=1758
         for label in mp_label:
             #choose positive sample
             pos_list = mp_label[label]
@@ -567,7 +567,8 @@ class GenerateTfrecords():
                         train_list[pos_list[idx]][0] = []
                     train_list[pos_list[idx]][0].append(item)
             #test: the last sample fot each label 
-            test_list.append((pos_list[-1], \
+            for item in pos_list[-test_size:]:
+                test_list.append((item, \
                                    self.get_pos_neg(mp_label, label,
                                                      label_set, test_size)))
         return train_list, test_list
