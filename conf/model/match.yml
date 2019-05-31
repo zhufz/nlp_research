@@ -43,7 +43,7 @@ clr_mode: 'triangular'
 #class/89   pair/2
 tfrecords_mode: "class"
 loss_type: "hinge_loss"
-max_steps: 8000
+max_steps: 3000
 # num_class: 91
 batch_size: 64
 test_size: 1
@@ -55,12 +55,12 @@ margin: 1
 score_thre: 0.8
 config_type: 1
 config: 
-  0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 2, 
-    tfrecords_mode: "pair", num_pair: 1, loss_type: "hinge_loss"}
-  1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 2, learning_rate: 0.0001, 
-    tfrecords_mode: "pair", num_pair: 1, loss_type: "hinge_loss"}
-  2: {encoder_type: "esim", sim_mode: "cross", num_output: 2, learning_rate: 0.001, 
-    tfrecords_mode: "pair", num_pair: 1, loss_type: "hinge_loss"}
+  0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 1, 
+    tfrecords_mode: "pair", num_pair: 2, loss_type: "hinge_loss"}
+  1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, learning_rate: 0.0001, 
+    tfrecords_mode: "pair", num_pair: 2, loss_type: "hinge_loss"}
+  2: {encoder_type: "esim", sim_mode: "cross", num_output: 1, learning_rate: 0.001, 
+    tfrecords_mode: "pair", num_pair: 2, loss_type: "hinge_loss"}
 
   10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
   11: {encoder_type: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}
