@@ -153,6 +153,8 @@ class Match(object):
                                         features = features)
                 else:
                     output = self.encoder(features = features)
+                if self.num_output == 1:
+                    output = tf.nn.sigmoid(output)
             elif self.sim_mode == 'represent':
                 if not self.use_language_model:
                     #features['x_query_length'] = features['length']
@@ -171,8 +173,8 @@ class Match(object):
                 predictions = {
                     'encode': output,
                     #'pred': tf.cast(tf.greater(tf.nn.softmax(output)[:,0], 0.5), tf.int32),
-                    'pred': tf.cast(tf.greater(tf.nn.sidmoid(output), 0.5), tf.int32),
-                    'score': tf.nn.sigmoid(output),
+                    'pred': tf.cast(tf.greater(output, 0.5), tf.int32),
+                    'score': output,
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
