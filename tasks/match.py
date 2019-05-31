@@ -114,6 +114,12 @@ class Match(object):
                 #pdb.set_trace()
                 if self.loss_type == 'hinge_loss':
                     #pairwise
+                    if self.num_output == 1:
+                        pred = tf.nn.sigmoid(pred)
+                    elif self.num_output == 2:
+                        pred = tf.nn.softmax(pred)[:,0]
+                    else:
+                        raise ValueError('unsupported num_output, 1(sigmoid) or 2(softmax)?')
                     pos_scores = tf.strided_slice(pred, [0], [batch_size], [2])
                     neg_scores = tf.strided_slice(pred, [1], [batch_size], [2])
                     loss = get_loss(type = self.loss_type, 
@@ -121,17 +127,19 @@ class Match(object):
                                     neg_logits = neg_scores,
                                     is_distance = False,
                                     **conf)
-                else:
+                elif self.loss_type in ['sigmoid_loss']:
                     #pointwise
-                    labels = tf.stack([labels, 1-labels], axis = -1)
+                    #labels = tf.stack([labels, 1-labels], axis = -1)
                     loss = get_loss(type = self.loss_type, logits = pred, labels =
                                     labels, **conf)
+                else:
+                    raise ValueError('unsupported loss for cross match')
             else:
                 raise ValueError('unknown sim mode, cross or represent?')
             return loss
 
         def model_fn(features, labels, mode, params):
-            ########### embedding #################
+            ############# embedding #################
             if not self.use_language_model:
                 self.embedding = init_embedding()
                 if self.tfrecords_mode == 'class':
@@ -153,8 +161,7 @@ class Match(object):
                                         features = features)
                 else:
                     output = self.encoder(features = features)
-                if self.num_output == 1:
-                    output = tf.nn.sigmoid(output)
+
             elif self.sim_mode == 'represent':
                 if not self.use_language_model:
                     #features['x_query_length'] = features['length']
@@ -172,9 +179,10 @@ class Match(object):
                 #pdb.set_trace()
                 predictions = {
                     'encode': output,
-                    #'pred': tf.cast(tf.greater(tf.nn.softmax(output)[:,0], 0.5), tf.int32),
-                    'pred': tf.cast(tf.greater(output, 0.5), tf.int32),
-                    'score': output,
+                    'pred': tf.cast(tf.greater(tf.nn.softmax(output)[:,0], 0.5),
+                                    tf.int32) if self.num_output == 2 else 
+                            tf.cast(tf.greater(tf.nn.sigmoid(output), 0.5), tf.int32),
+                    'score': tf.nn.softmax(output)[:,0] if self.num_output == 2 else tf.nn.sigmoid(output),
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
