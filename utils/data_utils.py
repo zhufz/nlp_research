@@ -5,7 +5,9 @@ import os
 import pickle
 import random
 import logging
+from tqdm import tqdm
 import pdb
+from functools import partial
 from collections import defaultdict
 from gensim import corpora,models,similarities
 import tensorflow as tf
@@ -432,14 +434,13 @@ class GenerateTfrecords():
         mp_label = {item:idx for idx,item in enumerate(list(set(label_list)))}
         pickle.dump(mp_label, open(label_path, 'wb'))
 
-        mp_dataset = defaultdict(list)
+
         text_pred_list, text_id_list, len_id_list = sen2id_fun(text_list, 
                                                                vocab_dict,
                                                                self.maxlen, 
                                                                need_preprocess=False)
-
         if self.mode == 'class':
-
+            mp_dataset = defaultdict(list)
             for idx,text_id in enumerate(text_id_list):
                 label = label_list[idx]
                 input_dict = {'x_query': text_id, 
@@ -464,11 +465,9 @@ class GenerateTfrecords():
             logging.info('testing num in each class: {}'.format(test_size))
 
         else:
-            train_list, test_list = self.get_pair_id(text_id_list, 
-                                                     label_list,
-                                                     test_size)
             ###################################################
-            for label, query_id, sample_id in train_list:
+            def _generate_input_dict(text_id_list, text_pred_list, len_id_list,
+                                    encoder_fun, query_id, sample_id, label):
                 input_dict = {'x_query': text_id_list[query_id], 
                               'x_sample': text_id_list[sample_id], 
                               'x_query_pred': text_pred_list[query_id],
@@ -478,20 +477,46 @@ class GenerateTfrecords():
                               'x_query_length': [len_id_list[query_id]],
                               'x_sample_length': [len_id_list[sample_id]],
                               'label': [label]}
-                input_dict.update(encoder_fun(**input_dict))
                 del input_dict['x_query_pred']
                 del input_dict['x_query_raw']
                 del input_dict['x_sample_pred']
                 del input_dict['x_sample_raw']
-                serialized = self._serialized_example(**input_dict)
-                mp_dataset[label].append(serialized)
-            logging.info('training pair: {}'.format(len(train_list)))
-
-            for label in mp_dataset:
-                self._output_tfrecords(mp_dataset[label], label, output_path, "train")
+                input_dict.update(encoder_fun(**input_dict))
+                return input_dict
+            input_dict_fun = partial(_generate_input_dict, 
+                                     text_id_list, 
+                                     text_pred_list, 
+                                     len_id_list, 
+                                     encoder_fun)
+            train_list, test_list = self.get_pair_id(text_id_list, 
+                                                     label_list,
+                                                     test_size)
+            #mp_dataset = defaultdict(list)
+            logging.info('generating train tfrecords...')
+            for qid,query_id in enumerate(tqdm(train_list, ncols=70)):
+                serial_list = []
+                pos_list = train_list[query_id][1]
+                neg_list = train_list[query_id][0]
+                for idx in pos_list:
+                    for idy in neg_list:
+                        #generate <query,pos> and <query,neg> pairs
+                        input_dict = input_dict_fun(query_id, idx, 1)
+                        serialized_pos = self._serialized_example(**input_dict)
+                        input_dict = input_dict_fun(query_id, idy, 1)
+                        serialized_neg = self._serialized_example(**input_dict)
+                        #append continuous pos and neg serialized sample
+                        serial_list.append(serialized_pos)
+                        serial_list.append(serialized_neg)
+                        #mp_dataset[query_id].append(serialized_pos)
+                        #mp_dataset[query_id].append(serialized_neg)
+                self._output_tfrecords(serial_list, qid, output_path, "train")
+            #for idx,query_id in enumerate(mp_dataset):
+            #    self._output_tfrecords(mp_dataset[query_id], idx, output_path, "train")
             ##################################################
+            logging.info('generating test tfrecords...')
             mp_dataset = defaultdict(list)
-            for query_id, item_list in test_list:
+            for idx, (query_id, item_list) in enumerate(tqdm(test_list, ncols = 70)):
+                serial_list = []
                 for label, sample_id in item_list:
                     input_dict = {'x_query': text_id_list[query_id], 
                                   'x_sample': text_id_list[sample_id], 
@@ -508,11 +533,8 @@ class GenerateTfrecords():
                     del input_dict['x_sample_pred']
                     del input_dict['x_sample_raw']
                     serialized = self._serialized_example(**input_dict)
-                    mp_dataset[query_id].append(serialized)
-
-            for idx,query_id in enumerate(mp_dataset):
-                self._output_tfrecords(mp_dataset[query_id], idx, output_path, "test")
-            logging.info('testing query num:{}'.format(len(test_list)))
+                serial_list.append(serialized)
+                self._output_tfrecords(serial_list, idx, output_path, "test")
 
     def get_pair_id(self, text_id_list, label_list, test_size = 1):
         #return:
@@ -524,7 +546,7 @@ class GenerateTfrecords():
 
         label_set = set(mp_label) # all labels set
         #label d1 d2
-        train_list = []
+        train_list = defaultdict(dict)
         test_list = []
 
         for label in mp_label:
@@ -534,11 +556,16 @@ class GenerateTfrecords():
                 #if len(pos_list)-1 == 1:pdb.set_trace()
                 tmp_pos_list = self.get_pos(pos_list, idx, len(pos_list)-test_size)
                 for item in tmp_pos_list:
-                    train_list.append((1, pos_list[idx], item))
-
+                    #train_list.append((1, pos_list[idx], item))
+                    if 1 not in train_list[pos_list[idx]]:
+                        train_list[pos_list[idx]][1] = []
+                    train_list[pos_list[idx]][1].append(item)
                 tmp_neg_list = self.get_neg(mp_label, label, label_set)
                 for item in tmp_neg_list:
-                    train_list.append((0, pos_list[idx], item))
+                    #train_list.append((0, pos_list[idx], item))
+                    if 0 not in train_list[pos_list[idx]]:
+                        train_list[pos_list[idx]][0] = []
+                    train_list[pos_list[idx]][0].append(item)
             #test: the last sample fot each label 
             test_list.append((pos_list[-1], \
                                    self.get_pos_neg(mp_label, label,

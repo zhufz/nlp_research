@@ -91,13 +91,13 @@ class Match(object):
                 #if use hinge loss, we don't need labels
                 #if use other loss(contrastive loss), we need define pos/neg target before
                 if self.loss_type == 'hinge_loss':
-                    #pair wise
+                    #pairwise
                     loss = get_loss(type = self.loss_type, 
                                     pos_logits = pos_scores,
                                     neg_logits = neg_scores,
                                     **conf)
                 else:
-                    #point wise
+                    #pointwise
                     pos_target = tf.ones(shape = [int(self.batch_size)/2], dtype = tf.float32)
                     neg_target = tf.zeros(shape = [int(self.batch_size)/2], dtype = tf.float32)
 
@@ -111,8 +111,18 @@ class Match(object):
                 #for cross:
                 #   pred is a batch of tensors which size == 1
                 #pdb.set_trace()
-                labels = tf.stack([labels, 1-labels], axis = -1)
-                loss = get_loss(type = self.loss_type, logits = pred, labels =
+                if self.loss_type == 'hinge_loss':
+                    #pairwise
+                    pos_scores = tf.strided_slice(pred, [0], [batch_size], [2])
+                    neg_scores = tf.strided_slice(pred, [1], [batch_size], [2])
+                    loss = get_loss(type = self.loss_type, 
+                                    pos_logits = pos_scores,
+                                    neg_logits = neg_scores,
+                                    **conf)
+                else:
+                    #pointwise
+                    labels = tf.stack([labels, 1-labels], axis = -1)
+                    loss = get_loss(type = self.loss_type, logits = pred, labels =
                                     labels, **conf)
             else:
                 raise ValueError('unknown sim mode, cross or represent?')
@@ -191,16 +201,18 @@ class Match(object):
         n_cpu = multiprocessing.cpu_count()
         def train_input_fn():
             if self.tfrecords_mode == 'pair':
-                size = self.num_pair
-                num_classes_per_batch = size
-                num_sentences_per_class = self.batch_size // num_classes_per_batch
+                num_sentences_per_class = 2
+                num_classes_per_batch = self.batch_size // num_sentences_per_class
             else:
-                size = self.num_class
+                #size = self.num_class
                 num_classes_per_batch = 16
                 num_sentences_per_class = self.batch_size // num_classes_per_batch
 
-            filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
-                             for i in range(size)]
+            #filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
+            #                 for i in range(size)]
+            filenames = [os.path.join(self.tfrecords_path,item) for item in 
+                         os.listdir(self.tfrecords_path) if item.startswith('train')]
+            size = len(filenames)
             logging.info("tfrecords train class num: {}".format(len(filenames)))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
