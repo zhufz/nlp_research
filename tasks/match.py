@@ -174,7 +174,6 @@ class Match(object):
             else:
                 raise ValueError('unknown sim mode')
 
-
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
                 #pdb.set_trace()

@@ -10,7 +10,7 @@ checkpoint_path: "{encoder_type}/checkpoint"
 model_path: "{encoder_type}/model.pb"
 label_path: "{encoder_type}/label"
 cache_vec_path: "{encoder_type}/cache.vec.pkl"
-tfrecords_path: "tfrecords"
+tfrecords_path: "{encoder_type}/tfrecords"
 export_dir_path: "{encoder_type}/model"
 
 
@@ -38,29 +38,29 @@ use_language_model: False
 
 optimizer_type: "Adam"
 use_clr: False
-clr_mode: 'triangular'
+clr_mode: 'triangular2'
 
 #class/89   pair/2
 tfrecords_mode: "class"
 loss_type: "hinge_loss"
 max_steps: 3000
 # num_class: 91
-batch_size: 64
+batch_size: 256
 test_size: 1
 
 # batch_mode: "random"  #(random/supervised)
 # batch_mode: "supervised"
-margin: 1
+margin: 0.8
 # semi_hard: True
 score_thre: 0.8
-config_type: 1
+config_type: 0
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 2, 
-    tfrecords_mode: "pair", loss_type: "hinge_loss"}
+    learning_rate: 0.0005, tfrecords_mode: "pair", loss_type: "hinge_loss"}
   1: {encoder_type: "abcnn", sim_mode: "cross", num_output: 2, 
-    learning_rate: 0.0001, tfrecords_mode: "pair", loss_type: "hinge_loss"}
+    learning_rate: 0.0005, tfrecords_mode: "pair", loss_type: "hinge_loss"}
   2: {encoder_type: "esim", sim_mode: "cross", num_output: 2, 
-    learning_rate: 0.001, tfrecords_mode: "pair", loss_type: "hinge_loss"}
+    learning_rate: 0.0001, tfrecords_mode: "pair", loss_type: "hinge_loss"}
 
   10: {encoder_type: "fasttext", sim_mode: "represent", num_output: 256, learning_rate: 0.00001}
   11: {encoder_type: "rnn", rnn_type: "gru", sim_mode: "represent", num_output: 256, learning_rate: 0.001}

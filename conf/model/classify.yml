@@ -7,7 +7,7 @@ checkpoint_path: "{encoder_type}/checkpoint"
 model_path: "{encoder_type}/model.pb"
 label_path: "{encoder_type}/label"
 tfrecords_mode: "class"
-tfrecords_path: "tfrecords"
+tfrecords_path: "{encoder_type}/tfrecords"
 export_dir_path: "{encoder_type}/model"
 
 maxlen: 20
