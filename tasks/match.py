@@ -12,6 +12,7 @@ ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 
 from embedding import embedding
+from language_model.bert.modeling import get_assignment_map_from_checkpoint
 from encoder import encoder
 from utils.data_utils import *
 from utils.preprocess import Preprocess
@@ -51,6 +52,9 @@ class Match(object):
             "is_training": False,
         })
         self.encoder = encoder[self.encoder_type](**self.conf)
+
+
+
 
     def prepare(self):
         vocab_dict = embedding[self.embedding_type].build_dict(\
@@ -226,6 +230,8 @@ class Match(object):
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
                          os.listdir(self.tfrecords_path) if item.startswith('train')]
             size = len(filenames)
+            if size == 0:
+                logging.error('no processed tfrecords data finded!')
             logging.info("tfrecords train class num: {}".format(size))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
@@ -287,9 +293,19 @@ class Match(object):
         }
         config = tf.estimator.RunConfig(tf_random_seed=230,
                                         model_dir=self.checkpoint_path)
+        if self.use_language_model:
+            tvars = tf.trainable_variables()
+            init_checkpoint = self.init_checkpoint_path
+            (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
+            ws = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=self.init_checkpoint_path,
+                        vars_to_warm_start=list(initialized_variable_names.keys()))
+            #tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
+        else:
+            ws = None
         estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
                                            config = config,
-                                           params = params)
+                                           params = params,
+                                           warm_start_from = ws)
         estimator.train(input_fn = self.create_input_fn("train"), max_steps =
                         self.max_steps)
         self.save()
