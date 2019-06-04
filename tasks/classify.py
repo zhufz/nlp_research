@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.contrib import predictor
 from pathlib import Path
 import pdb
+import re
 import traceback
 import pickle
 import logging
@@ -127,14 +128,35 @@ class Classify(object):
                     self.learning_rate = cyclic_learning_rate(global_step=global_step,
                                                           learning_rate = self.learning_rate, 
                                                           mode = self.clr_mode)
-                optimizer = get_train_op(global_step, 
-                                         self.optimizer_type, 
-                                         loss,
-                                         self.learning_rate, 
-                                         clip_grad = 5)
+                optim_func = partial(get_train_op,
+                                     global_step, 
+                                     self.optimizer_type, 
+                                     loss,
+                                     clip_grad =5)
+
+                if 'base_var' in params:
+                    #if contains base model variable list
+                    tvars = tf.trainable_variables()
+                    now_var_list = []
+                    sub_base_var_list = []
+                    for var in tvars:
+                        name = var.name
+                        m = re.match("^(.*):\\d+$", name)
+                        if m is not None: 
+                            name = m.group(1)
+                        if name in params['base_var']: 
+                            sub_base_var_list.append(var)
+                            continue
+                        now_var_list.append(var)
+                    optimizer_base = optim_func(learning_rate = self.base_learning_rate,
+                                                var_list = sub_base_var_list)
+                    optimizer_now = optim_func(learning_rate = self.learning_rate,
+                                               var_list = now_var_list)
+                    optimizer = tf.group(optimizer_base, optimizer_now)
+                else:
+                    optimizer = optim_func(learning_rate = self.learning_rate)
                 return tf.estimator.EstimatorSpec(mode, loss = loss,
                                                       train_op=optimizer)
-
             ############### eval ##################
             if mode == tf.estimator.ModeKeys.EVAL:
                 eval_metric_ops = {}
@@ -154,8 +176,10 @@ class Classify(object):
                 f"num_classes_per_batch is {num_classes_per_batch} > {self.num_class}"
             num_sentences_per_class = self.batch_size // num_classes_per_batch
 
-            filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
-                             for i in range(size)]
+            #filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
+            #                 for i in range(size)]
+            filenames = [os.path.join(self.tfrecords_path,item) for item in 
+                         os.listdir(self.tfrecords_path) if item.startswith('train')]
             logging.info("tfrecords train class num: {}".format(len(filenames)))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
@@ -214,9 +238,21 @@ class Classify(object):
         }
         config = tf.estimator.RunConfig(tf_random_seed=230,
                                         model_dir=self.checkpoint_path)
+        if self.use_language_model:
+            init_vars = tf.train.list_variables(self.init_checkpoint_path)
+            init_vars_name = []
+            for x in list(init_vars):
+                (name, var) = (x[0], x[1])
+                init_vars_name.append(name)
+            ws = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=self.init_checkpoint_path,
+                        vars_to_warm_start=init_vars_name)
+            params.update({'base_var':init_vars_name})
+        else:
+            ws = None
         estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
                                            config = config,
-                                           params = params)
+                                           params = params,
+                                           warm_start_from = ws)
         estimator.train(input_fn = self.create_input_fn("train"), max_steps =
                         self.max_steps)
         self.save()

@@ -27,13 +27,14 @@ embedding_type: 'char_embedding'
 embedding_size: 128
 rand_embedding: True
 use_language_model: False
+base_learning_rate: 0.0000001
 # encoder_type: "text_cnn" #88.6
 # encoder_type: "cnn"  # 84.7
 # loss_type: "softmax_loss"
 loss_type: "am_softmax_loss"
 # loss_type: "focal_loss"
 
-config_type: 9
+config_type: 8
 config: 
   0: {encoder_type: "fasttext", learning_rate: 0.003}
   1: {encoder_type: "transformer", learning_rate: 0.0001}
@@ -44,7 +45,7 @@ config:
   6: {encoder_type: "rcnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}
   7: {encoder_type: "capsule", caps_type: "A", embedding_type: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
   8: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
-  9: {encoder_type: "leaf", learning_rate: 0.003}
+  # 9: {encoder_type: "leaf", learning_rate: 0.003}
 
 mode: "train"  #train\test\test_one
 #mode: "test"  #train\test\test_one

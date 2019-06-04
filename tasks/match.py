@@ -226,7 +226,7 @@ class Match(object):
                                                var_list = now_var_list)
                     optimizer = tf.group(optimizer_base, optimizer_now)
                 else:
-                    optimizer = optim_func()
+                    optimizer = optim_func(learning_rate = self.learning_rate)
                 return tf.estimator.EstimatorSpec(mode, loss = loss,
                                                       train_op=optimizer)
             ############### eval ##################

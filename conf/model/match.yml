@@ -1,4 +1,4 @@
-# path_root: "/content/data/match/"
+path_root: "/content/data/match/"
 path_root: "data/match/"
 ori_path: "intent.csv"
 no_train_path: "no_train.csv"
