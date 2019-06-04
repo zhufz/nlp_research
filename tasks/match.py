@@ -3,11 +3,13 @@ from tensorflow.contrib import predictor
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from pathlib import Path
 import pdb
+import re
 import traceback
 import pickle
 import logging
 import multiprocessing
 import os,sys
+from functools import partial
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 
@@ -198,11 +200,33 @@ class Match(object):
                     self.learning_rate = cyclic_learning_rate(global_step=global_step,
                                                           learning_rate = self.learning_rate, 
                                                           mode = self.clr_mode)
-                optimizer = get_train_op(global_step, 
-                                         self.optimizer_type, 
-                                         loss,
-                                         self.learning_rate, 
-                                         clip_grad = 5)
+                optim_func = partial(get_train_op,
+                                     global_step, 
+                                     self.optimizer_type, 
+                                     loss,
+                                     clip_grad =5)
+
+                if 'base_var' in params:
+                    #if contains base model variable list
+                    tvars = tf.trainable_variables()
+                    now_var_list = []
+                    sub_base_var_list = []
+                    for var in tvars:
+                        name = var.name
+                        m = re.match("^(.*):\\d+$", name)
+                        if m is not None: 
+                            name = m.group(1)
+                        if name in params['base_var']: 
+                            sub_base_var_list.append(var)
+                            continue
+                        now_var_list.append(var)
+                    optimizer_base = optim_func(learning_rate = self.base_learning_rate,
+                                                var_list = sub_base_var_list)
+                    optimizer_now = optim_func(learning_rate = self.learning_rate,
+                                               var_list = now_var_list)
+                    optimizer = tf.group(optimizer_base, optimizer_now)
+                else:
+                    optimizer = optim_func()
                 return tf.estimator.EstimatorSpec(mode, loss = loss,
                                                       train_op=optimizer)
             ############### eval ##################
@@ -289,17 +313,20 @@ class Match(object):
     def train(self):
         params = {
             'is_training': True,
-            'keep_prob': 0.5
+            'keep_prob': 0.5,
         }
         config = tf.estimator.RunConfig(tf_random_seed=230,
                                         model_dir=self.checkpoint_path)
         if self.use_language_model:
-            tvars = tf.trainable_variables()
-            init_checkpoint = self.init_checkpoint_path
-            (assignment_map, initialized_variable_names) = get_assignment_map_from_checkpoint(tvars, init_checkpoint)
+            init_vars = tf.train.list_variables(self.init_checkpoint_path)
+            init_vars_name = []
+            for x in list(init_vars):
+                (name, var) = (x[0], x[1])
+                init_vars_name.append(name)
             ws = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=self.init_checkpoint_path,
-                        vars_to_warm_start=list(initialized_variable_names.keys()))
-            #tf.train.init_from_checkpoint(init_checkpoint,assignment_map)
+                        vars_to_warm_start=init_vars_name)
+
+            params.update({'base_var':init_vars_name})
         else:
             ws = None
         estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),

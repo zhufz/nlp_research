@@ -37,31 +37,31 @@ class Bert(Base):
             self.placeholder[name+'_input_mask'] = features[name+'_input_mask']
             self.placeholder[name+'_segment_ids'] = features[name+'_segment_ids']
 
-        with tf.variable_scope("bert", reuse = reuse):
+        #with tf.variable_scope("bert", reuse = reuse):
 
-            model = modeling.BertModel(
-                config=self.bert_config,
-                is_training=self.is_training,#True,
-                input_ids=self.placeholder[name+"_input_ids"],
-                input_mask=self.placeholder[name+'_input_mask'],
-                token_type_ids=self.placeholder[name+'_segment_ids'],
-                use_one_hot_embeddings=False)
+        model = modeling.BertModel(
+            config=self.bert_config,
+            is_training=self.is_training,#True,
+            input_ids=self.placeholder[name+"_input_ids"],
+            input_mask=self.placeholder[name+'_input_mask'],
+            token_type_ids=self.placeholder[name+'_segment_ids'],
+            use_one_hot_embeddings=False)
 
-            output_layer = model.get_pooled_output()
+        output_layer = model.get_pooled_output()
 
-            hidden_size = output_layer.shape[-1].value
+        hidden_size = output_layer.shape[-1].value
 
-            output_weights = tf.get_variable(
-                "output_weights", [self.num_output, hidden_size],
-                initializer=tf.truncated_normal_initializer(stddev=0.02))
-            output_bias = tf.get_variable(
-                "output_bias", [self.num_output], initializer=tf.zeros_initializer())
+        output_weights = tf.get_variable(
+            "output_weights", [self.num_output, hidden_size],
+            initializer=tf.truncated_normal_initializer(stddev=0.02))
+        output_bias = tf.get_variable(
+            "output_bias", [self.num_output], initializer=tf.zeros_initializer())
 
-            with tf.variable_scope("loss"):
-                output_layer = tf.nn.dropout(output_layer, keep_prob=self.keep_prob)
-                logits = tf.matmul(output_layer, output_weights, transpose_b=True)
-                logits = tf.nn.bias_add(logits, output_bias)
-                return logits
+        with tf.variable_scope("loss"):
+            output_layer = tf.nn.dropout(output_layer, keep_prob=self.keep_prob)
+            logits = tf.matmul(output_layer, output_weights, transpose_b=True)
+            logits = tf.nn.bias_add(logits, output_bias)
+            return logits
 
     def _truncate_seq_pair(self, tokens_a, tokens_b, max_length):
         """Truncates a sequence pair in place to the maximum length."""
