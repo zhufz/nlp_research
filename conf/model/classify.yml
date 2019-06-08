@@ -1,6 +1,6 @@
 ############### path ############
-path_root: "/content/data/classify/"
-# path_root: "data/classify/"
+# path_root: "/content/data/classify/"
+path_root: "data/classify/"
 ori_path: "intent.csv"
 # ori_path: "review.csv"
 classes_path: "{encoder_type}classes"
