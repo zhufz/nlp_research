@@ -223,7 +223,8 @@ class BasicTokenizer(object):
       if self.do_lower_case:
         token = token.lower()
         token = self._run_strip_accents(token)
-      split_tokens.extend(self._run_split_on_punc(token))
+      #split_tokens.extend(self._run_split_on_punc(token))
+      split_tokens.append(token)
 
     output_tokens = whitespace_tokenize(" ".join(split_tokens))
     return output_tokens
@@ -346,6 +347,9 @@ class WordpieceTokenizer(object):
 
     output_tokens = []
     for token in whitespace_tokenize(text):
+      if token[0] == '<' and token[-1] == '>':
+        output_tokens.append(token)
+        continue
       chars = list(token)
       if len(chars) > self.max_input_chars_per_word:
         output_tokens.append(self.unk_token)

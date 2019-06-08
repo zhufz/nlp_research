@@ -60,9 +60,9 @@ class Match(object):
 
     def prepare(self):
         vocab_dict = embedding[self.embedding_type].build_dict(\
-                                            dict_path = self.dict_path,
-                                            text_list = self.text_list,
-                                            mode = self.mode)
+                                                               dict_path = self.dict_path,
+                                                               text_list = self.text_list,
+                                                               mode = self.mode)
         text2id = embedding[self.embedding_type].text2id
         self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
         self.gt.process(self.text_list, self.label_list, text2id,
@@ -73,22 +73,22 @@ class Match(object):
     def create_model_fn(self):
         def init_embedding():
             vocab_dict = embedding[self.embedding_type].build_dict(\
-                                                dict_path = self.dict_path,
-                                                text_list = self.text_list,
-                                                mode = self.mode)
+                                                                   dict_path = self.dict_path,
+                                                                   text_list = self.text_list,
+                                                                   mode = self.mode)
             return  embedding[self.embedding_type](text_list = self.text_list,
-                                                            vocab_dict = vocab_dict,
-                                                            dict_path = self.dict_path,
-                                                            random=self.rand_embedding,
-                                                            maxlen = self.maxlen,
-                                                            batch_size = self.batch_size,
-                                                            embedding_size =
-                                                            self.embedding_size,
-                                                            conf = self.conf)
+                                                   vocab_dict = vocab_dict,
+                                                   dict_path = self.dict_path,
+                                                   random=self.rand_embedding,
+                                                   maxlen = self.maxlen,
+                                                   batch_size = self.batch_size,
+                                                   embedding_size =
+                                                   self.embedding_size,
+                                                   conf = self.conf)
 
         def cal_loss(pred, labels, batch_size, conf):
             if self.sim_mode == 'represent':
-                pos_scores, neg_scores = batch_hard_triplet_scores(labels, pred) # pos/neg scores
+                pos_scores, neg_scores = batch_hard_triplet_scores(labels, pred, is_distance = self.is_distance) # pos/neg scores
                 pos_scores = tf.squeeze(pos_scores, -1)
                 neg_scores = tf.squeeze(neg_scores, -1)
                 #for represent, 
@@ -96,17 +96,16 @@ class Match(object):
                 #     we can use triplet loss(hinge loss) or contrastive loss
                 #if use hinge loss, we don't need labels
                 #if use other loss(contrastive loss), we need define pos/neg target before
-                if self.loss_type == 'hinge_loss':
+                if self.loss_type in ['hinge_loss','improved_triplet_loss']:
                     #pairwise
                     loss = get_loss(type = self.loss_type, 
                                     pos_logits = pos_scores,
                                     neg_logits = neg_scores,
-                                    is_distance = True,
                                     **conf)
                 else:
                     #pointwise
-                    pos_target = tf.ones(shape = [int(self.batch_size)/2], dtype = tf.float32)
-                    neg_target = tf.zeros(shape = [int(self.batch_size)/2], dtype = tf.float32)
+                    pos_target = tf.ones(shape = [int(self.batch_size)], dtype = tf.float32)
+                    neg_target = tf.zeros(shape = [int(self.batch_size)], dtype = tf.float32)
 
                     pos_loss = get_loss(type = self.loss_type, logits = pos_scores, labels =
                                     pos_target, **conf)
@@ -118,7 +117,7 @@ class Match(object):
                 #for cross:
                 #   pred is a batch of tensors which size == 1
                 #pdb.set_trace()
-                if self.loss_type == 'hinge_loss':
+                if self.loss_type in ['hinge_loss','improved_triplet_loss']:
                     #pairwise
                     if self.num_output == 1:
                         pred = tf.nn.sigmoid(pred)
@@ -132,7 +131,6 @@ class Match(object):
                     loss = get_loss(type = self.loss_type, 
                                     pos_logits = pos_scores,
                                     neg_logits = neg_scores,
-                                    is_distance = False,
                                     **conf)
                 elif self.loss_type in ['sigmoid_loss']:
                     #pointwise
@@ -164,8 +162,8 @@ class Match(object):
             if self.sim_mode == 'cross':
                 if not self.use_language_model:
                     output = self.encoder(x_query = self.embed_query, 
-                                        x_sample = self.embed_sample,
-                                        features = features)
+                                          x_sample = self.embed_sample,
+                                          features = features)
                 else:
                     output = self.encoder(features = features)
 
@@ -173,12 +171,14 @@ class Match(object):
                 if not self.use_language_model:
                     #features['x_query_length'] = features['length']
                     output = self.encoder(self.embed_query, 
-                                                     name = 'x_query', 
-                                                     features = features)
+                                          name = 'x_query', 
+                                          features = features)
                 else:
                     output = self.encoder(features = features)
             else:
                 raise ValueError('unknown sim mode')
+
+            output = tf.nn.l2_normalize(output, -1)
 
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
@@ -198,8 +198,10 @@ class Match(object):
             if mode == tf.estimator.ModeKeys.TRAIN:
                 if self.use_clr:
                     self.learning_rate = cyclic_learning_rate(global_step=global_step,
-                                                          learning_rate = self.learning_rate, 
-                                                          mode = self.clr_mode)
+                                                              learning_rate = self.learning_rate, 
+                                                              max_lr = self.max_learning_rate,
+                                                              step_size = self.step_size,
+                                                              mode = self.clr_mode)
                 optim_func = partial(get_train_op,
                                      global_step, 
                                      self.optimizer_type, 
@@ -209,22 +211,29 @@ class Match(object):
                 if 'base_var' in params:
                     #if contains base model variable list
                     tvars = tf.trainable_variables()
-                    now_var_list = []
-                    sub_base_var_list = []
+                    new_var_list = []
+                    base_var_list = []
                     for var in tvars:
                         name = var.name
                         m = re.match("^(.*):\\d+$", name)
                         if m is not None: 
                             name = m.group(1)
                         if name in params['base_var']: 
-                            sub_base_var_list.append(var)
+                            base_var_list.append(var)
                             continue
-                        now_var_list.append(var)
+                        new_var_list.append(var)
                     optimizer_base = optim_func(learning_rate = self.base_learning_rate,
-                                                var_list = sub_base_var_list)
+                                                var_list = base_var_list)
                     optimizer_now = optim_func(learning_rate = self.learning_rate,
-                                               var_list = now_var_list)
-                    optimizer = tf.group(optimizer_base, optimizer_now)
+                                               var_list = new_var_list)
+                    if self.learning_rate == 0:
+                        raise ValueError('learning_rate can not be zero')
+                    if self.base_learning_rate == 0:
+                        # if base_learning_rate is set to be zero, than only
+                        # the downstream net parameters will be trained
+                        optimizer = optimizer_now
+                    else:
+                        optimizer = tf.group(optimizer_base, optimizer_now)
                 else:
                     optimizer = optim_func(learning_rate = self.learning_rate)
                 return tf.estimator.EstimatorSpec(mode, loss = loss,
@@ -246,7 +255,7 @@ class Match(object):
                 num_classes_per_batch = self.batch_size // num_sentences_per_class
             else:
                 #size = self.num_class
-                num_classes_per_batch = 16
+                num_classes_per_batch = 32
                 num_sentences_per_class = self.batch_size // num_classes_per_batch
 
             #filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
@@ -313,7 +322,7 @@ class Match(object):
     def train(self):
         params = {
             'is_training': True,
-            'keep_prob': 0.5,
+            'keep_prob': 0.7,
         }
         config = tf.estimator.RunConfig(tf_random_seed=230,
                                         model_dir=self.checkpoint_path)
@@ -399,12 +408,21 @@ class Match(object):
             right = 0
             thre_right = 0
             sum = 0
-            scores = euclidean_distances(predictions_vec, refers_vec)
-            selected_ids = np.argmin(scores, axis=-1)
+
+            if self.is_distance:
+                scores = euclidean_distances(predictions_vec, refers_vec)
+                selected_ids = np.argmin(scores, axis=-1)
+            else:
+                scores = cosine_similarity(predictions_vec, refers_vec)
+                selected_ids = np.argmax(scores, axis=-1)
             for idx, item in enumerate(selected_ids):
                 if refers_label[item] == predictions_label[idx]:
-                    if scores[idx][item] > self.score_thre:
-                        thre_right += 1
+                    if self.is_distance:
+                        if 1 - scores[idx][item] > self.score_thre:
+                            thre_right += 1
+                    else:
+                        if scores[idx][item] > self.score_thre:
+                            thre_right += 1
                     right += 1
                 sum += 1
             print("Acc:{}".format(float(right)/sum))

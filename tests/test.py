@@ -13,6 +13,7 @@ ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 
 from embedding import embedding
+from encoder import encoder
 from utils.data_utils import *
 from utils.recall import Annoy
 
@@ -47,6 +48,11 @@ class Test(object):
 class TestClassify(Test):
     def __init__(self, conf, **kwargs):
         super(TestClassify, self).__init__(conf, **kwargs)
+        conf.update({
+            "keep_prob": 1,
+            "is_training": False
+        })
+        self.encoder = encoder[conf['encoder_type']](**conf)
         self.mp_label = pickle.load(open(self.label_path, 'rb'))
         self.mp_label_rev = {self.mp_label[item]:item for item in self.mp_label}
 
@@ -55,9 +61,11 @@ class TestClassify(Test):
         text_list_pred, x_query, x_query_length = self.text2id(text_list)
         label = [0 for _ in range(len(text_list))]
 
-        predictions = self.predict_fn({'x_query': x_query, 
-                                  'x_query_length': x_query_length, 
-                                  'label': label})
+        input_dict = {'x_query': x_query, 
+                      'x_query_length': x_query_length, 
+                      'label': label}
+        input_dict.update(self.encoder.encoder_fun(**input_dict))
+        predictions = self.predict_fn(input_dict)
         scores = [item for item in predictions['pred']]
         max_scores = np.max(scores, axis = -1)
         max_ids = np.argmax(scores, axis = -1)
@@ -67,7 +75,12 @@ class TestClassify(Test):
 class TestMatch(Test):
     def __init__(self, conf, **kwargs):
         super(TestMatch, self).__init__(conf, **kwargs)
-        if self.mode == 'represent':
+        conf.update({
+            "keep_prob": 1,
+            "is_training": False
+        })
+        self.encoder = encoder[conf['encoder_type']](**conf)
+        if self.sim_mode == 'represent':
             #represent模式，预先缓存所有训练语料的encode结果
             self.vec_list = self._get_vecs(self.text_list, True)
 
@@ -92,9 +105,14 @@ class TestMatch(Test):
                 vec_list = np.concatenate([self.zdy['vec_list'], self.vec_list], axis = 0)
                 label_list = self.zdy['label_list'] + label_list
             vec = self._get_vecs([text], need_preprocess = True)
-            scores = euclidean_distances(vec, vec_list)[0]
-            selected_id = np.argmin(scores)
-            out_score = scores[selected_id]
+            if self.is_distance:
+                scores = euclidean_distances(vec, vec_list)[0]
+                selected_id = np.argmin(scores)
+                out_score = 1 - scores[selected_id]
+            else:
+                scores = cosine_similarity(vec, vec_list)[0]
+                selected_id = np.argmax(scores)
+                out_score = scores[selected_id]
         else:
             raise ValueError('unknown sim mode, represent or cross?')
         ret = (label_list[selected_id], out_score, selected_id, \
@@ -114,12 +132,14 @@ class TestMatch(Test):
         #根据batches数据生成向量
         text_list_pred, x_query, x_query_length = self.text2id(text_list)
         label = [0 for _ in range(len(text_list))]
-
-        predictions = self.predict_fn({'x_query': x_query, 
-                                  'x_query_length': x_query_length, 
-                                  'label': label})
+        input_dict = {'x_query': x_query, 
+                      'x_query_raw': text_list_pred,
+                      'x_query_length': x_query_length, 
+                      'label': label}
+        input_dict.update(self.encoder.encoder_fun(**input_dict))
+        del input_dict['x_query_raw']
+        predictions = self.predict_fn(input_dict)
         return predictions['encode']
-
 
     def _get_label(self, query_list, sample_list, need_preprocess = False):
         #计算query_list 与 sample_list的匹配分数
@@ -128,11 +148,13 @@ class TestMatch(Test):
         label = [0 for _ in range(len(sample_list))]
         x_query = np.tile(x_query[0],(len(x_sample),1))
         x_query_length = np.tile(x_query_length[0],(len(x_sample),))
-        predictions = self.predict_fn({'x_query': x_query, 
-                                  'x_query_length': x_query_length, 
-                                  'x_sample': x_sample,
-                                  'x_sample_length': x_sample_length, 
-                                  'label': label})
+        input_dict = {'x_query': x_query, 
+                     'x_query_length': x_query_length, 
+                     'x_sample': x_sample,
+                     'x_sample_length': x_sample_length, 
+                     'label': label}
+        input_dict.update(self.encoder.encoder_fun(**input_dict))
+        predictions = self.predict_fn(input_dict)
         return predictions['pred'], predictions['score']
 
 

@@ -57,8 +57,8 @@ class Bert(Base):
         output_bias = tf.get_variable(
             "output_bias", [self.num_output], initializer=tf.zeros_initializer())
 
-        with tf.variable_scope("loss"):
-            output_layer = tf.nn.dropout(output_layer, keep_prob=self.keep_prob)
+        with tf.variable_scope("dense"):
+            #output_layer = tf.nn.dropout(output_layer, keep_prob=self.keep_prob)
             logits = tf.matmul(output_layer, output_weights, transpose_b=True)
             logits = tf.nn.bias_add(logits, output_bias)
             return logits
@@ -96,6 +96,7 @@ class Bert(Base):
           if len(tokens_a) > self.maxlen - 2:
             tokens_a = tokens_a[0:(self.maxlen - 2)]
 
+
         tokens = []
         segment_ids = []
         tokens.append("[CLS]")
@@ -124,8 +125,6 @@ class Bert(Base):
             input_ids.append(0)
             input_mask.append(0)
             segment_ids.append(0)
-
-        #pdb.set_trace()
 
         assert len(input_ids) == self.maxlen
         assert len(input_mask) == self.maxlen
@@ -166,8 +165,28 @@ class Bert(Base):
         return feed_dict
 
     def encoder_fun(self, x_query_raw, x_sample_raw = None, name = 'encoder', **kwargs):
-        input_ids, input_mask, segment_ids = \
-            self.build_ids(x_query_raw, x_sample_raw)
+        flag = True
+        if type(x_query_raw) != list:
+            flag = False
+            x_query_raw = [x_query_raw]
+            if x_sample_raw != None:
+                x_sample_raw = [x_sample_raw]
+
+        input_ids, input_mask, segment_ids = [],[],[]
+        for idx, item in enumerate(x_query_raw):
+            if x_sample_raw != None:
+                x_sample_raw_item = x_sample_raw[idx]
+            else:
+                x_sample_raw_item = None
+            tmp_input_ids, tmp_input_mask, tmp_segment_ids = \
+                self.build_ids(x_query_raw[idx], x_sample_raw_item)
+            input_ids.append(tmp_input_ids)
+            input_mask.append(tmp_input_mask)
+            segment_ids.append(tmp_segment_ids)
+        if flag == False:
+            input_ids = input_ids[0]
+            input_mask = input_mask[0]
+            segment_ids = segment_ids[0]
         return {name+"_input_ids": input_ids, 
                 name+"_input_mask": input_mask, 
                 name+"_segment_ids": segment_ids}
@@ -183,8 +202,8 @@ class Bert(Base):
     def parsed_to_features(self, parsed, name = 'encoder'):
         ret = {
             name + "_input_ids": tf.reshape(parsed[name+ "_input_ids"], [self.maxlen]), 
-            name + "_input_mask": tf.reshape(parsed[name + "_input_ids"], [self.maxlen]),
-            name+"_segment_ids": tf.reshape(parsed[name + "_input_ids"], [self.maxlen])
+            name + "_input_mask": tf.reshape(parsed[name + "_input_mask"], [self.maxlen]),
+            name+"_segment_ids": tf.reshape(parsed[name + "_segment_ids"], [self.maxlen])
         }
         return ret
 

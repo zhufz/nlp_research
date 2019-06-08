@@ -39,10 +39,16 @@ def get_loss(logits = None, labels = None, neg_logits = None,
         return l2_loss(logits, labels)
 
     elif type == 'hinge_loss':
-        margin = get_default_value(kwargs, 'margin', 1.0)
-        is_distance = get_default_value(kwargs, 'is_distance', False)
+        margin = get_default_value(kwargs, 'margin', 0.8)
+        is_distance = get_default_value(kwargs, 'is_distance', True)
         return hinge_loss(neg_logits, pos_logits, margin, is_distance)
 
+    elif type == 'improved_triplet_loss':
+        margin = get_default_value(kwargs, 'margin', 0.8)
+        margin_pos = get_default_value(kwargs, 'margin_pos', 0.01)
+        is_distance = get_default_value(kwargs, 'is_distance', True)
+        return improved_triplet_loss(neg_logits, pos_logits, margin, 
+                                     margin_pos, is_distance)
     else:
         raise ValueError("unknown loss type")
 
@@ -90,4 +96,15 @@ def hinge_loss(neg_logits, pos_logits, margin, is_distance):
         loss = tf.reduce_mean(tf.maximum(margin + pos_logits - neg_logits, 0.0))
     else:
         loss = tf.reduce_mean(tf.maximum(margin - pos_logits + neg_logits, 0.0))
+    return loss
+
+def improved_triplet_loss(neg_logits, pos_logits, margin, margin_pos, is_distance):
+    if is_distance:
+        loss = tf.reduce_mean(tf.maximum(margin + pos_logits - neg_logits, 0.0) +
+                              tf.square(1 - neg_logits))
+                              #tf.square(pos_logits))
+    else:
+        loss = tf.reduce_mean(tf.maximum(margin - pos_logits + neg_logits, 0.0) + 
+                              tf.square(neg_logits))
+                              #tf.square(1 - pos_logits))
     return loss

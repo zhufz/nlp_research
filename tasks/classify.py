@@ -137,22 +137,29 @@ class Classify(object):
                 if 'base_var' in params:
                     #if contains base model variable list
                     tvars = tf.trainable_variables()
-                    now_var_list = []
-                    sub_base_var_list = []
+                    new_var_list = []
+                    base_var_list = []
                     for var in tvars:
                         name = var.name
                         m = re.match("^(.*):\\d+$", name)
                         if m is not None: 
                             name = m.group(1)
                         if name in params['base_var']: 
-                            sub_base_var_list.append(var)
+                            base_var_list.append(var)
                             continue
-                        now_var_list.append(var)
+                        new_var_list.append(var)
                     optimizer_base = optim_func(learning_rate = self.base_learning_rate,
-                                                var_list = sub_base_var_list)
+                                                var_list = base_var_list)
                     optimizer_now = optim_func(learning_rate = self.learning_rate,
-                                               var_list = now_var_list)
-                    optimizer = tf.group(optimizer_base, optimizer_now)
+                                               var_list = new_var_list)
+                    if self.learning_rate == 0:
+                        raise ValueError('learning_rate can not be zero')
+                    if self.base_learning_rate == 0:
+                        # if base_learning_rate is set to be zero, than only
+                        # the downstream net parameters will be trained
+                        optimizer = optimizer_now
+                    else:
+                        optimizer = tf.group(optimizer_base, optimizer_now)
                 else:
                     optimizer = optim_func(learning_rate = self.learning_rate)
                 return tf.estimator.EstimatorSpec(mode, loss = loss,
@@ -234,7 +241,7 @@ class Classify(object):
     def train(self):
         params = {
             'is_training': True,
-            'keep_prob': 0.5
+            'keep_prob': 0.7
         }
         config = tf.estimator.RunConfig(tf_random_seed=230,
                                         model_dir=self.checkpoint_path)

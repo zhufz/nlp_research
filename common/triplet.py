@@ -7,7 +7,7 @@
 import tensorflow as tf
 
 
-def _pairwise_distances(embeddings, squared=False):
+def _pairwise_distances(embeddings, squared=False, is_distance=True):
     """Compute the 2D matrix of distances between all the embeddings.
 
     Args:
@@ -18,22 +18,23 @@ def _pairwise_distances(embeddings, squared=False):
     Returns:
         pairwise_distances: tensor of shape (batch_size, batch_size)
     """
-    #      #cosine similarity
-    #      #embeddings: [batch, embed_size]
-    #      #embeddings_trans: [embed_size, batch]
-    #      embeddings_trans = tf.transpose(embeddings)
+    if not is_distance:
+        #cosine similarity
+        #embeddings: [batch, embed_size]
+        #embeddings_trans: [embed_size, batch]
+        embeddings_trans = tf.transpose(embeddings)
 
-    #      #[batch, batch]
-    #      dot_product = tf.matmul(embeddings, embeddings_trans)  
+        #[batch, batch]
+        dot_product = tf.matmul(embeddings, embeddings_trans)  
 
-    #      #len: [batch, 1]
-    #      len = tf.expand_dims(tf.sqrt(tf.reduce_sum(embeddings* embeddings, axis =
-    #                                                 -1)),-1)
-    #      #len_trans: [1, batch]
-    #      len_trans = tf.transpose(len)
+        #len: [batch, 1]
+        len = tf.expand_dims(tf.sqrt(tf.reduce_sum(embeddings* embeddings, axis =
+                                                   -1)),-1)
+        #len_trans: [1, batch]
+        len_trans = tf.transpose(len)
 
-    #      scores = tf.div(dot_product, tf.matmul(len, len_trans)+1e-8)
-    #      return 1 - scores
+        scores = tf.div(dot_product, tf.matmul(len, len_trans)+1e-8)
+        return scores
 
     # Get the dot product between all embeddings
     # shape (batch_size, batch_size)
@@ -194,7 +195,7 @@ def batch_all_triplet_loss(labels, embeddings, margin, squared=False):
 
 
 
-def batch_hard_triplet_scores(labels, embeddings, squared=False):
+def batch_hard_triplet_scores(labels, embeddings, squared=False, is_distance = True):
     """Build the triplet loss over a batch of embeddings.
 
     For each anchor, we get the hardest positive and hardest negative to form a triplet.
@@ -209,36 +210,33 @@ def batch_hard_triplet_scores(labels, embeddings, squared=False):
     Returns:
         triplet_loss: scalar tensor containing the triplet loss
     """
-    # Get the pairwise distance matrix
-    pairwise_dist = _pairwise_distances(embeddings, squared=squared)
+    pairwise_dist = _pairwise_distances(embeddings, squared, is_distance)
 
-    # For each anchor, get the hardest positive
-    # First, we need to get a mask for every valid positive (they should have same label)
-    mask_anchor_positive = _get_anchor_positive_triplet_mask(labels)
-    mask_anchor_positive = tf.to_float(mask_anchor_positive)
+    if is_distance:
+        mask_anchor_positive = _get_anchor_positive_triplet_mask(labels)
+        mask_anchor_positive = tf.to_float(mask_anchor_positive)
+        anchor_positive_dist = tf.multiply(mask_anchor_positive, pairwise_dist)
+        hardest_positive_dist = tf.reduce_max(anchor_positive_dist, axis=1, keepdims=True)
 
-    # We put to 0 any element where (a, p) is not valid (valid if a != p and label(a) == label(p))
-    anchor_positive_dist = tf.multiply(mask_anchor_positive, pairwise_dist)
+        mask_anchor_negative = _get_anchor_negative_triplet_mask(labels)
+        mask_anchor_negative = tf.to_float(mask_anchor_negative)
+        max_anchor_negative_dist = tf.reduce_max(pairwise_dist, axis=1, keepdims=True)
+        anchor_negative_dist = pairwise_dist + max_anchor_negative_dist * (1.0 - mask_anchor_negative)
+        hardest_negative_dist = tf.reduce_min(anchor_negative_dist, axis=1, keepdims=True)
+    else:
+        mask_anchor_negative = _get_anchor_negative_triplet_mask(labels)
+        mask_anchor_negative = tf.to_float(mask_anchor_negative)
+        anchor_negative_dist = tf.multiply(mask_anchor_negative, pairwise_dist)
+        hardest_negative_dist = tf.reduce_max(anchor_negative_dist, axis=1, keepdims=True)
 
-    # shape (batch_size, 1)
-    hardest_positive_dist = tf.reduce_max(anchor_positive_dist, axis=1, keepdims=True)
-    #tf.summary.scalar("hardest_positive_dist", tf.reduce_mean(hardest_positive_dist))
+        mask_anchor_positive = _get_anchor_positive_triplet_mask(labels)
+        mask_anchor_positive = tf.to_float(mask_anchor_positive)
+        max_anchor_positive_dist = tf.reduce_max(pairwise_dist, axis=1, keepdims=True)
+        anchor_positive_dist = pairwise_dist + max_anchor_positive_dist * (1.0 - mask_anchor_positive)
+        hardest_positive_dist = tf.reduce_min(anchor_positive_dist, axis=1, keepdims=True)
 
-    # For each anchor, get the hardest negative
-    # First, we need to get a mask for every valid negative (they should have different labels)
-    mask_anchor_negative = _get_anchor_negative_triplet_mask(labels)
-    mask_anchor_negative = tf.to_float(mask_anchor_negative)
-
-    # We add the maximum value in each row to the invalid negatives (label(a) == label(n))
-    max_anchor_negative_dist = tf.reduce_max(pairwise_dist, axis=1, keepdims=True)
-    anchor_negative_dist = pairwise_dist + max_anchor_negative_dist * (1.0 - mask_anchor_negative)
-
-    # shape (batch_size,)
-    hardest_negative_dist = tf.reduce_min(anchor_negative_dist, axis=1, keepdims=True)
-    #tf.summary.scalar("hardest_negative_dist", tf.reduce_mean(hardest_negative_dist))
     return hardest_positive_dist, hardest_negative_dist 
 
-    ## Combine biggest d(a, p) and smallest d(a, n) into final triplet loss
     #triplet_loss = tf.maximum(hardest_positive_dist - hardest_negative_dist + margin, 0.0)
 
     ## Get final mean triplet loss
