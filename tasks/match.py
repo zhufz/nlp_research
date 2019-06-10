@@ -35,9 +35,25 @@ class Match(object):
         self.pre = Preprocess()
         self.model_loaded = False
         self.zdy = {}
-        csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
-        self.text_list = list(csv['text'])
-        self.label_list = list(csv['target'])
+        csv = pd.read_csv(self.ori_path, header = 0, sep="\t", error_bad_lines=False)
+
+        if 'text' in csv.keys() and 'target' in csv.keys():
+            #format: text \t target
+            #for this format, the size for each class should be larger than 2 
+            self.text_list = list(csv['text'])
+            self.label_list = list(csv['target'])
+            self.data_type = 'column_2'
+        elif 'text_a' in csv.keys() and 'text_b' in csv.keys() and'target' in csv.keys():
+            #format: text_a \t text_b \t target
+            #for this format, target value can only be choosen from 0 or 1
+            self.text_a_list = list(csv['text_a'])
+            self.text_b_list = list(csv['text_b'])
+            self.text_list = self.text_a_list + self.text_b_list
+            self.label_list = list(csv['target'])
+            self.data_type = 'column_3'
+        else:
+            raise ValueError('error format for train file')
+
         self.num_class = len(set(self.label_list))
         logging.info(f">>>>>>>>>>>> class num:{self.num_class} <<<<<<<<<<<<<<<")
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
@@ -55,9 +71,6 @@ class Match(object):
         })
         self.encoder = encoder[self.encoder_type](**self.conf)
 
-
-
-
     def prepare(self):
         vocab_dict = embedding[self.embedding_type].build_dict(\
                                                                dict_path = self.dict_path,
@@ -67,7 +80,8 @@ class Match(object):
         self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
         self.gt.process(self.text_list, self.label_list, text2id,
                         self.encoder.encoder_fun, vocab_dict,
-                        self.tfrecords_path, self.label_path, self.test_size)
+                        self.tfrecords_path, self.label_path, 
+                        self.test_size, self.data_type)
         logging.info("tfrecords generated!")
 
     def create_model_fn(self):
@@ -87,7 +101,8 @@ class Match(object):
                                                    conf = self.conf)
 
         def cal_loss(pred, labels, batch_size, conf):
-            if self.sim_mode == 'represent':
+            #if self.sim_mode == 'represent':
+            if self.tfrecords_mode == 'class':
                 pos_scores, neg_scores = batch_hard_triplet_scores(labels, pred, is_distance = self.is_distance) # pos/neg scores
                 pos_scores = tf.squeeze(pos_scores, -1)
                 neg_scores = tf.squeeze(neg_scores, -1)
@@ -113,11 +128,10 @@ class Match(object):
                                     neg_target, **conf)
                     loss = pos_loss + neg_loss
 
-            elif self.sim_mode == 'cross':
-                #for cross:
-                #   pred is a batch of tensors which size == 1
-                #pdb.set_trace()
+            #elif self.sim_mode == 'cross':
+            elif self.tfrecords_mode in ['pair','point']:
                 if self.loss_type in ['hinge_loss','improved_triplet_loss']:
+                    assert self.tfrecords_mode == 'pair', "only pair mode can provide <query, pos, neg> format data"
                     #pairwise
                     if self.num_output == 1:
                         pred = tf.nn.sigmoid(pred)
@@ -134,51 +148,56 @@ class Match(object):
                                     **conf)
                 elif self.loss_type in ['sigmoid_loss']:
                     #pointwise
-                    #labels = tf.stack([labels, 1-labels], axis = -1)
+                    labels = tf.expand_dims(labels,axis=-1)
                     loss = get_loss(type = self.loss_type, logits = pred, labels =
                                     labels, **conf)
                 else:
-                    raise ValueError('unsupported loss for cross match')
+                    raise ValueError('unsupported loss for pair/point match')
             else:
-                raise ValueError('unknown sim mode, cross or represent?')
+                raise ValueError('unknown tfrecords_mode?')
             return loss
 
         def model_fn(features, labels, mode, params):
-            ############# embedding #################
-            if not self.use_language_model:
-                self.embedding = init_embedding()
-                if self.tfrecords_mode == 'class':
-                    self.embed_query = self.embedding(features = features, name = 'x_query')
-                else:
-                    self.embed_query = self.embedding(features = features, name = 'x_query')
-                    self.embed_sample = self.embedding(features = features, name = 'x_sample')
-            else:
-                self.embedding = None
-            #############  encoder  #################
             #model params
             self.encoder.keep_prob = params['keep_prob']
             self.encoder.is_training = params['is_training']
             global_step = tf.train.get_or_create_global_step()
-            if self.sim_mode == 'cross':
-                if not self.use_language_model:
-                    output = self.encoder(x_query = self.embed_query, 
-                                          x_sample = self.embed_sample,
-                                          features = features)
-                else:
-                    output = self.encoder(features = features)
 
-            elif self.sim_mode == 'represent':
-                if not self.use_language_model:
-                    #features['x_query_length'] = features['length']
+            ############# encode #################
+            if not self.use_language_model:
+                self.embedding = init_embedding()
+                if self.tfrecords_mode == 'class':
+                    self.embed_query = self.embedding(features = features, name = 'x_query')
                     output = self.encoder(self.embed_query, 
                                           name = 'x_query', 
                                           features = features)
-                else:
-                    output = self.encoder(features = features)
-            else:
-                raise ValueError('unknown sim mode')
+                    output = tf.nn.l2_normalize(output, -1)
 
-            output = tf.nn.l2_normalize(output, -1)
+                elif self.tfrecords_mode in ['pair','point']:
+                    if self.sim_mode == 'cross':
+                        self.embed_query = self.embedding(features = features, name = 'x_query')
+                        self.embed_sample = self.embedding(features = features, name = 'x_sample')
+                        output = self.encoder(x_query = self.embed_query, 
+                                              x_sample = self.embed_sample,
+                                              features = features)
+                    elif self.sim_mode == 'represent':
+                        self.embed_query = self.embedding(features = features, name = 'x_query')
+                        self.embed_sample = self.embedding(features = features, name = 'x_sample')
+                        query_encode = self.encoder(self.embed_query, 
+                                                    name = 'x_query', 
+                                                    features = features)
+                        sample_encode = self.encoder(self.embed_sample, 
+                                                     name = 'x_sample', 
+                                                     features = features)
+                        output = self.concat(query_encode, sample_encode)
+                        output = tf.layers.dense(output,
+                                                1,
+                                                kernel_regularizer=tf.contrib.layers.l2_regularizer(0.001),
+                                                name='fc')
+                    else:
+                        raise ValueError('unknown sim_mode, represent or cross')
+            else:
+                output = self.encoder(features = features)
 
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
@@ -192,8 +211,10 @@ class Match(object):
                     'label': features['label']
                 }
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
+
             ############### loss ##################
             loss = cal_loss(output, labels, self.batch_size, self.conf)
+
             ############### train ##################
             if mode == tf.estimator.ModeKeys.TRAIN:
                 if self.use_clr:
@@ -250,13 +271,21 @@ class Match(object):
     def create_input_fn(self, mode):
         n_cpu = multiprocessing.cpu_count()
         def train_input_fn():
-            if self.tfrecords_mode == 'pair':
-                num_sentences_per_class = 4
-                num_classes_per_batch = self.batch_size // num_sentences_per_class
-            else:
+            if self.tfrecords_mode  == 'class':
                 #size = self.num_class
                 num_classes_per_batch = 32
+                assert num_classes_per_batch < self.num_class
                 num_sentences_per_class = self.batch_size // num_classes_per_batch
+            elif self.tfrecords_mode == 'pair':
+                #data order: query,pos,query,neg
+                num_sentences_per_class = 4
+                num_classes_per_batch = self.batch_size // num_sentences_per_class
+            elif self.tfrecords_mode  == 'point':
+                #data order: query, sample(pos or neg)
+                num_classes_per_batch = 2
+                num_sentences_per_class = self.batch_size // num_classes_per_batch
+            else:
+                raise ValueError('unknown tfrecords_mode')
 
             #filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
             #                 for i in range(size)]
@@ -296,8 +325,10 @@ class Match(object):
             return features, label
 
         def test_input_fn(mode):
-            filenames = ["{}/{}_class_{:04d}".format(self.tfrecords_path,mode,i) \
-                             for i in range(self.num_class * self.test_size)]
+            #filenames = ["{}/{}_class_{:04d}".format(self.tfrecords_path,mode,i) \
+            #                 for i in range(self.num_class * self.test_size)]
+            filenames = [os.path.join(self.tfrecords_path,item) for item in 
+                         os.listdir(self.tfrecords_path) if item.startswith('test')]
             assert self.num_class == len(filenames), "the num of tfrecords file error!"
             logging.info("tfrecords test class num: {}".format(len(filenames)))
             dataset = tf.data.TFRecordDataset(filenames)
@@ -366,7 +397,7 @@ class Match(object):
                         'label': tf.placeholder(dtype=tf.int64, 
                                                 shape=[None],
                                                 name='label')}
-            if self.tfrecords_mode == 'pair':
+            if self.tfrecords_mode in ['pair','point']:
                 features.update({'x_sample': tf.placeholder(dtype=tf.int64, 
                                                       shape=[None, self.maxlen],
                                                       name='x_sample'),
@@ -427,7 +458,7 @@ class Match(object):
                 sum += 1
             print("Acc:{}".format(float(right)/sum))
             print("ThreAcc:{}".format(float(thre_right)/sum))
-        else:
+        elif self.tfrecords_mode == 'pair':
             #对于pair方式的评估
             scores = [item['score'] for item in predictions]
             labels = [item['label'] for item in predictions]
@@ -446,6 +477,18 @@ class Match(object):
             sum = len(pred_max_ids)
             print("Acc:{}".format(float(right)/sum))
 
+        elif self.tfrecords_mode == 'point':
+            scores = [item['score'] for item in predictions]
+            labels = [item['label'] for item in predictions]
+            pdb.set_trace()
+
+    def concat(self, a, b):
+        tmp = tf.concat([a,b], axis = -1)
+        #return tmp
+        res1 = a*b
+        res2 = a+b
+        res3 = a-b
+        return tf.concat([tmp, res1, res2, res3], axis = -1)
 
     def knn(self, scores, predictions_label, refers_label, k = 4):
         sorted_id = np.argsort(-scores, axis = -1)

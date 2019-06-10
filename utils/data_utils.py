@@ -172,171 +172,6 @@ def load_chat_data(path):
         target_texts.append(item[1]+" </s>")
     return encode_texts, decode_texts, target_texts
 
-
-
-#class PairGenerator():
-#    def __init__(self, rel_file, index_file, test_file):
-#        self.rel = self.read_relation(filename=rel_file)
-#        self.index_data, self.label_data = self.read_index(filename = index_file)
-#        self.test_data = self.read_test(filename = test_file)
-#        self.pair_list = self.make_pair(self.rel)
-#
-#    def read_relation(self, filename):
-#        data = []
-#        for line in open(filename):
-#            line = line.strip().split()
-#            data.append( (int(line[0]), int(line[1]), int(line[2])) )
-#        print('[%s]\n\trelation size: %s' % (filename, len(data)))
-#        return data
-#
-#    def read_index(self, filename):
-#        data_list = [line.strip() for line in open(filename).readlines()]
-#        data = [0 for _ in range(len(data_list))]
-#        label = [0 for _ in range(len(data_list))]
-#        for line in data_list:
-#            line = line.split('\t')
-#            data[int(line[0])] =  line[1]
-#            label[int(line[0])] =  line[2]
-#        print('[%s]\n\tindex size: %s' % (filename, len(data)))
-#        #data 为句子列表
-#        #label 为对应的标签，如（播放、关闭等）
-#        return data, label
-#
-#    def read_test(self, filename):
-#        data_list = [line.strip() for line in open(filename).readlines()]
-#        data = []
-#        for line in data_list:
-#            arr = line.split()
-#            if len(arr) == 3:
-#                data.append((arr[0], arr[1], arr[2]))
-#        print('[%s]\n\ttest size: %s' % (filename, len(data)))
-#        return data
-#
-#    def get_rel_set(self, rel):
-#        rel_set = {}
-#        for label, d1, d2 in rel:
-#            if d1 not in rel_set:
-#                rel_set[d1] = {}
-#            if label not in rel_set[d1]:
-#                rel_set[d1][label] = []
-#            rel_set[d1][label].append(d2)
-#        return rel_set
-#
-#    def make_pair(self, rel):
-#        rel_set = self.get_rel_set(rel)
-#        pair_list = []
-#        for d1 in rel_set:
-#            label_list = sorted(rel_set[d1].keys(), reverse = True)
-#            for hidx, high_label in enumerate(label_list[:-1]):
-#                for low_label in label_list[hidx+1:]:
-#                    for high_d2 in rel_set[d1][high_label]:
-#                        for low_d2 in rel_set[d1][low_label]:
-#                            pair_list.append( (d1, high_d2, low_d2) )
-#        print('Pair Instance Count:', len(pair_list))
-#        return pair_list
-#
-#    def get_batch(self,  data, batch_size, num_epochs, maxlen1, maxlen2, task,
-#                  mode = 'random', random_select_query = False, shuffle = True,
-#                  margin = None, semi_hard = False):
-#        #定义召回类对象并初始化
-#        #recall = InvertRecall(data)
-#        rel_set = self.get_rel_set(self.rel)
-#        result_list = []
-#        cnt_batch_size = 0
-#        epoch = 0
-#        rel_keys_list = list(rel_set.keys())
-#        rel_keys_id = 0
-#        rel_keys_len = len(rel_keys_list)
-#        while epoch < num_epochs:
-#            if random_select_query:
-#                #random select a query
-#                d1 = random.choice(rel_keys_list)
-#            else:
-#                if rel_keys_id == rel_keys_len - 1:
-#                    rel_keys_id = 0
-#                    epoch += 1
-#                    if shuffle:
-#                        random.shuffle(rel_keys_list)
-#                d1 = rel_keys_list[rel_keys_id]
-#                rel_keys_id += 1
-#            if cnt_batch_size == 0:
-#                X1,X2,X1_len,X2_len = [],[],[],[]
-#            pos_list = rel_set[d1][1]
-#            neg_list = rel_set[d1][0]
-#
-#            if mode == 'supervised':
-#                min_idx, max_idx = self._get_hard_d2(task, 
-#                                                     data, 
-#                                                     d1, 
-#                                                     pos_list, 
-#                                                     neg_list,
-#                                                     margin,
-#                                                     semi_hard)
-#                d2p = pos_list[min_idx]
-#                d2n = neg_list[max_idx]
-#            else:
-#                d2p = random.choice(pos_list)
-#                d2n = random.choice(neg_list)
-#            X1.append(data[d1])
-#            X1.append(data[d1])
-#            X2.append(data[d2p])
-#            X2.append(data[d2n])
-#            cnt_batch_size += 2
-#            if cnt_batch_size == batch_size:
-#                cnt_batch_size = 0
-#                yield X1,X2
-#
-#    def _get_hard_d2(self, task, data, d1, pos_list, neg_list, margin, semi_hard):
-#        #get hard positvie and hard negative sample
-#        tmp_list = []
-#        for d2 in pos_list:
-#            tmp_list.append((data[d1], data[d2]))
-#        pos_pred = task.predict_prob(tmp_list)
-#        min_idx = np.argmin(pos_pred)
-#        min_score = np.min(pos_pred)
-#
-#        tmp_list = []
-#        neg_list = random.sample(neg_list, min(128,len(neg_list)))
-#        #logging.info('{} neg sample selected!'.format(len(neg_list)))
-#        for d2 in neg_list:
-#            tmp_list.append((data[d1], data[d2]))
-#        neg_pred = task.predict_prob(tmp_list)
-#        #pdb.set_trace()
-#        if semi_hard:
-#            neg_pred_tmp = [item if item > min_score and \
-#                            item < min_score+margin else None \
-#                            for item in neg_pred]
-#            neg_pred_tmp = list(filter(lambda x : x != None, neg_pred_tmp))
-#            if len(neg_pred_tmp) != 0:
-#                neg_pred = neg_pred_tmp
-#                #logging.warn('{} simi-hard sample selected!'.format(len(neg_pred)))
-#            else:
-#                pass
-#                #logging.warn('no simi-hard sample selected!')
-#        max_idx = np.argmax(neg_pred)
-#        return min_idx, max_idx
-#
-#    def get_test_batch(self, data, maxlen1, maxlen2, query = None):
-#        if query == None:
-#            mp = defaultdict(list)
-#            for d1, label, d2 in self.test_data:
-#                mp[int(d1)].append((int(label), int(d2)))
-#
-#            for d1 in mp:
-#                X1,X2,labels = [],[],[]
-#                for idx in range(len(mp[d1])):
-#                    labels.append(mp[d1][idx][0])
-#                    d2 = mp[d1][idx][1]
-#                    X1.append(data[d1])
-#                    X2.append(data[d2])
-#                yield X1,X2,labels
-#        else:
-#            X1,X2,labels = [],[],[]
-#            for item in data:
-#                X1.append(query)
-#                X2.append(item)
-#            yield X1,X2,labels
-
 class GenerateTfrecords():
     """utils for tfrecords
     """
@@ -345,7 +180,82 @@ class GenerateTfrecords():
         #pair mode: label: 1/0, whether come from same class 
         self.tfrecords_mode = mode
         self.maxlen = maxlen
-        assert self.tfrecords_mode in ['pair','class']
+
+    def _get_pair_id(self, text_id_list, label_list, test_size = 1):
+        #return:
+        #train_list:{样本id:{1:[正样本列表],0:[负样本列表]},...}
+        #test_list: (样本id, [(1/0, 正/负样本id),(1/0, 正/负样本id),...]
+        mp_label = defaultdict(list)
+        for idx in range(len(text_id_list)):
+            mp_label[label_list[idx]].append(idx)
+
+        label_set = set(mp_label) # all labels set
+        #label d1 d2
+        train_list = defaultdict(dict)
+        test_list = []
+
+        #1667+91=1758
+        for label in mp_label:
+            #choose positive sample
+            pos_list = mp_label[label]
+            for idx in range(len(pos_list)-test_size):
+                #if len(pos_list)-1 == 1:pdb.set_trace()
+                tmp_pos_list = self._get_pos(pos_list, idx, len(pos_list)-test_size)
+                for item in tmp_pos_list:
+                    #train_list.append((1, pos_list[idx], item))
+                    if 1 not in train_list[pos_list[idx]]:
+                        train_list[pos_list[idx]][1] = []
+                    train_list[pos_list[idx]][1].append(item)
+                tmp_neg_list = self._get_neg(mp_label, label, label_set)
+                for item in tmp_neg_list:
+                    #train_list.append((0, pos_list[idx], item))
+                    if 0 not in train_list[pos_list[idx]]:
+                        train_list[pos_list[idx]][0] = []
+                    train_list[pos_list[idx]][0].append(item)
+            #test: the last sample fot each label 
+            for item in pos_list[-test_size:]:
+                test_list.append((item, \
+                                   self._get_pos_neg(mp_label, label,
+                                                     label_set, test_size)))
+        return train_list, test_list
+
+    def _get_pos(self, pos_data, idx, length):
+        #select an id not equals to the idx from range(0,length) 
+        assert 1 != length, "can't select diff pos sample with max=1"
+        res_idx = idx
+        #pdb.set_trace()
+        res_list = []
+        for tmp_idx in range(length):
+            if idx == tmp_idx:continue
+            res_list.append(pos_data[tmp_idx])
+        return res_list
+
+    def _get_neg(self, data, label, label_set):
+        #select an neg label sample from data
+        res_list = []
+        for tmp_label in list(label_set):
+            if tmp_label == label: continue
+            res_list.append(random.choice(data[tmp_label][:-1]))
+        return res_list
+
+    def _get_pos_neg(self, data, label, label_set, test_size):
+        data_list = []
+        for tmp_label in list(label_set):
+            if label == tmp_label:
+                for item in data[tmp_label][:-test_size]:
+                    data_list.append((1, item))
+                #data_list.append((1, random.choice(data[tmp_label][:-1])))
+            else:
+                for item in data[tmp_label][:-test_size]:
+                    data_list.append((0, item))
+                #data_list.append((0, random.choice(data[tmp_label][:-1])))
+        return data_list
+
+    def _output_tfrecords(self, dataset, idx, path, mode):
+        file_name = os.path.join(path, "{}_class_{:04d}".format(mode, idx))
+        with tf.python_io.TFRecordWriter(file_name) as writer:
+          for item in dataset:
+            writer.write(item)
 
     def _serialized_example(self, **kwargs):
         def get_feature(kwargs):
@@ -386,7 +296,7 @@ class GenerateTfrecords():
                     'label': label[0]}
             ret.update(encoder.parsed_to_features(parsed = parsed))
             return ret, label[0]
-        elif self.tfrecords_mode == 'pair':
+        elif self.tfrecords_mode in ['pair','point']:
             keys_to_features = {
                 "x_query": tf.FixedLenFeature([self.maxlen], tf.int64),
                 "x_sample": tf.FixedLenFeature([self.maxlen], tf.int64),
@@ -417,14 +327,8 @@ class GenerateTfrecords():
         else:
             raise ValueError('unknown tfrecords mode')
 
-    def _output_tfrecords(self, dataset, idx, path, mode):
-        file_name = os.path.join(path, "{}_class_{:04d}".format(mode, idx))
-        with tf.python_io.TFRecordWriter(file_name) as writer:
-          for item in dataset:
-            writer.write(item)
-
     def process(self, text_list, label_list, sen2id_fun, encoder_fun, vocab_dict, path,
-                label_path, test_size = 1):
+                label_path, test_size = 1, data_type = 'column_2'):
         """
         sen2id_fun: for sen2id in embedding
         encoder_fun: add features for encoder
@@ -433,14 +337,35 @@ class GenerateTfrecords():
         tmp_label = None
         output_path = path
         label_id = 0
+
+        ################## save label info ######################
         mp_label = {item:idx for idx,item in enumerate(list(set(label_list)))}
         pickle.dump(mp_label, open(label_path, 'wb'))
 
-
-        text_pred_list, text_id_list, len_id_list = sen2id_fun(text_list, 
+        ##################### text 2 id##########################
+        if data_type == 'column_2':
+            text_pred_list, text_id_list, len_list = sen2id_fun(text_list, 
                                                                vocab_dict,
                                                                self.maxlen, 
                                                                need_preprocess=False)
+            assert self.tfrecords_mode in ['class','pair'], "error data format for tfrecords_mode"
+        elif data_type == 'column_3':
+            size = len(label_list)
+            text_a_list = text_list[:size]
+            text_b_list = text_list[-size:]
+            text_a_pred_list, text_a_id_list, len_a_list = sen2id_fun(text_a_list, 
+                                                               vocab_dict,
+                                                               self.maxlen, 
+                                                               need_preprocess=False)
+            text_b_pred_list, text_b_id_list, len_b_list = sen2id_fun(text_b_list, 
+                                                               vocab_dict,
+                                                               self.maxlen, 
+                                                               need_preprocess=False)
+            assert self.tfrecords_mode in ['point'], "error data format for tfrecords_mode"
+        else:
+            raise ValueError('unknown data type error')
+        #########################################################
+
         if self.tfrecords_mode == 'class':
             mp_dataset = defaultdict(list)
             for idx,text_id in enumerate(text_id_list):
@@ -448,7 +373,7 @@ class GenerateTfrecords():
                 input_dict = {'x_query': text_id, 
                               'x_query_pred': text_pred_list[idx], 
                               'x_query_raw': text_list[idx], 
-                              'x_query_length': [len_id_list[idx]], 
+                              'x_query_length': [len_list[idx]], 
                               'label': [mp_label[label]]
                               }
                 input_dict.update(encoder_fun(**input_dict))
@@ -468,7 +393,8 @@ class GenerateTfrecords():
             logging.info('testing num in each class: {}'.format(test_size))
 
         elif self.tfrecords_mode == 'pair':
-            def _generate_input_dict(text_id_list, text_pred_list, len_id_list,
+            #build pairwise data from data like 'class' type
+            def _generate_input_dict(text_id_list, text_pred_list, len_list,
                                     encoder_fun, query_id, sample_id, label):
                 input_dict = {'x_query': text_id_list[query_id], 
                               'x_sample': text_id_list[sample_id], 
@@ -476,8 +402,8 @@ class GenerateTfrecords():
                               'x_sample_pred': text_pred_list[sample_id],
                               'x_query_raw': text_list[query_id],
                               'x_sample_raw': text_list[sample_id],
-                              'x_query_length': [len_id_list[query_id]],
-                              'x_sample_length': [len_id_list[sample_id]],
+                              'x_query_length': [len_list[query_id]],
+                              'x_sample_length': [len_list[sample_id]],
                               'label': [label]}
                 input_dict.update(encoder_fun(**input_dict))
                 del input_dict['x_query_pred']
@@ -488,9 +414,9 @@ class GenerateTfrecords():
             input_dict_fun = partial(_generate_input_dict, 
                                      text_id_list, 
                                      text_pred_list, 
-                                     len_id_list, 
+                                     len_list, 
                                      encoder_fun)
-            train_list, test_list = self.get_pair_id(text_id_list, 
+            train_list, test_list = self._get_pair_id(text_id_list, 
                                                      label_list,
                                                      test_size)
             logging.info('generating tfrecords for training ...')
@@ -521,8 +447,8 @@ class GenerateTfrecords():
                                   'x_sample_pred': text_pred_list[sample_id],
                                   'x_query_raw': text_list[query_id],
                                   'x_sample_raw': text_list[sample_id],
-                                  'x_query_length': [len_id_list[query_id]],
-                                  'x_sample_length': [len_id_list[sample_id]],
+                                  'x_query_length': [len_list[query_id]],
+                                  'x_sample_length': [len_list[sample_id]],
                                   'label': [label]}
                     input_dict.update(encoder_fun(**input_dict))
                     del input_dict['x_query_pred']
@@ -532,75 +458,46 @@ class GenerateTfrecords():
                     serialized = self._serialized_example(**input_dict)
                     serial_list.append(serialized)
                 self._output_tfrecords(serial_list, idx, output_path, "test")
+        elif self.tfrecords_mode == 'point':
+            def _generate_input_dict(text_a, text_a_id, text_a_pred, len_a,
+                                     text_b, text_b_id, text_b_pred, len_b,
+                                     encoder_fun, label):
+                input_dict = {'x_query': text_a_id, 
+                              'x_query_pred': text_a_pred,
+                              'x_query_raw': text_a,
+                              'x_query_length': [len_a],
+                              'x_sample': text_b_id, 
+                              'x_sample_pred': text_b_pred,
+                              'x_sample_raw': text_b,
+                              'x_sample_length': [len_b],
+                              'label': [label]}
+                input_dict.update(encoder_fun(**input_dict))
+                del input_dict['x_query_pred']
+                del input_dict['x_query_raw']
+                del input_dict['x_sample_pred']
+                del input_dict['x_sample_raw']
+                return input_dict
+            logging.info('generating tfrecords ...')
+            serial_mp = defaultdict(list)
+            if test_size >0 and test_size <1: test_size = int(test_size * 100)
+            for idx in range(len(text_a_list)):
+                label = label_list[idx]
+                input_dict = _generate_input_dict(text_a_list[idx],
+                                            text_a_id_list[idx],
+                                            text_a_pred_list[idx],
+                                            len_a_list[idx],
+                                            text_b_list[idx],
+                                            text_b_id_list[idx],
+                                            text_b_pred_list[idx],
+                                            len_b_list[idx],
+                                            encoder_fun, 
+                                            label)
+                serialized = self._serialized_example(**input_dict)
+                serial_mp[label].append(serialized)
+            for label in serial_mp:
+                train_serial_list = serial_mp[label][:-test_size]
+                self._output_tfrecords(train_serial_list, label, output_path, "train")
+                test_serial_list = serial_mp[label][-test_size:]
+                self._output_tfrecords(test_serial_list, label, output_path, "test")
         else:
             raise ValueError('unknown tfrecords mode')
-
-    def get_pair_id(self, text_id_list, label_list, test_size = 1):
-        #return:
-        #train_list:{样本id:{1:[正样本列表],0:[负样本列表]},...}
-        #test_list: (样本id, [(1/0, 正/负样本id),(1/0, 正/负样本id),...]
-        mp_label = defaultdict(list)
-        for idx in range(len(text_id_list)):
-            mp_label[label_list[idx]].append(idx)
-
-        label_set = set(mp_label) # all labels set
-        #label d1 d2
-        train_list = defaultdict(dict)
-        test_list = []
-
-        #1667+91=1758
-        for label in mp_label:
-            #choose positive sample
-            pos_list = mp_label[label]
-            for idx in range(len(pos_list)-test_size):
-                #if len(pos_list)-1 == 1:pdb.set_trace()
-                tmp_pos_list = self.get_pos(pos_list, idx, len(pos_list)-test_size)
-                for item in tmp_pos_list:
-                    #train_list.append((1, pos_list[idx], item))
-                    if 1 not in train_list[pos_list[idx]]:
-                        train_list[pos_list[idx]][1] = []
-                    train_list[pos_list[idx]][1].append(item)
-                tmp_neg_list = self.get_neg(mp_label, label, label_set)
-                for item in tmp_neg_list:
-                    #train_list.append((0, pos_list[idx], item))
-                    if 0 not in train_list[pos_list[idx]]:
-                        train_list[pos_list[idx]][0] = []
-                    train_list[pos_list[idx]][0].append(item)
-            #test: the last sample fot each label 
-            for item in pos_list[-test_size:]:
-                test_list.append((item, \
-                                   self.get_pos_neg(mp_label, label,
-                                                     label_set, test_size)))
-        return train_list, test_list
-
-    def get_pos(self, pos_data, idx, length):
-        #select an id not equals to the idx from range(0,length) 
-        assert 1 != length, "can't select diff pos sample with max=1"
-        res_idx = idx
-        #pdb.set_trace()
-        res_list = []
-        for tmp_idx in range(length):
-            if idx == tmp_idx:continue
-            res_list.append(pos_data[tmp_idx])
-        return res_list
-
-    def get_neg(self, data, label, label_set):
-        #select an neg label sample from data
-        res_list = []
-        for tmp_label in list(label_set):
-            if tmp_label == label: continue
-            res_list.append(random.choice(data[tmp_label][:-1]))
-        return res_list
-
-    def get_pos_neg(self, data, label, label_set, test_size):
-        data_list = []
-        for tmp_label in list(label_set):
-            if label == tmp_label:
-                for item in data[tmp_label][:-test_size]:
-                    data_list.append((1, item))
-                #data_list.append((1, random.choice(data[tmp_label][:-1])))
-            else:
-                for item in data[tmp_label][:-test_size]:
-                    data_list.append((0, item))
-                #data_list.append((0, random.choice(data[tmp_label][:-1])))
-        return data_list
