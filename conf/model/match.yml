@@ -1,7 +1,7 @@
 ############### path ############
 # path_root: "/content/data/match/"
 path_root: "data/match/"
-ori_path: "intent.csv"
+# ori_path: "intent.csv"
 ori_path: "atec.csv"
 no_train_path: "no_train.csv"
 index_path: "index.csv"
@@ -53,7 +53,7 @@ score_thre: 0.65
 ############ model ##############
 # sim_mode=cross: 对于交互的匹配方法
 # sim_mode=represent: 基于表示的匹配方法
-config_type: 31
+config_type: 30
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 2, 
     learning_rate: 0.0005, tfrecords_mode: "pair", loss_type: "hinge_loss"}
@@ -76,10 +76,11 @@ config:
     base_learning_rate: 0.000001}
 
   30: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, 
-    learning_rate: 0.00001, tfrecords_mode: "point", loss_type: "sigmoid_loss"}
+    learning_rate: 0.00001, tfrecords_mode: "point", loss_type: "sigmoid_loss", 
+    test_size: 0.1 }
   31: {encoder_type: "transformer", sim_mode: "represent", num_output: 256, 
     learning_rate: 0.00001, tfrecords_mode: "point", loss_type: "sigmoid_loss",
-    embedding_size: 128, rand_embedding: True}
+    embedding_size: 128, rand_embedding: True, test_size: 0.1}
 
 mode: "train"  #train\test\test_one
 #mode: "test"  #train\test\test_one

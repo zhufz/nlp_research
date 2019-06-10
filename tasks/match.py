@@ -23,6 +23,7 @@ from utils.recall import Annoy
 from common.layers import get_train_op
 from common.loss import get_loss
 from common.lr import cyclic_learning_rate
+from common.metrics import metrics
 from common.triplet import batch_hard_triplet_scores
 
 
@@ -478,9 +479,12 @@ class Match(object):
             print("Acc:{}".format(float(right)/sum))
 
         elif self.tfrecords_mode == 'point':
-            scores = [item['score'] for item in predictions]
+            scores = [item['pred'] for item in predictions]
             labels = [item['label'] for item in predictions]
-            pdb.set_trace()
+            scores = np.reshape(scores, -1)
+            res = metrics(labels = labels, logits = scores)
+            print("precision:{} recall:{} f1:{}".format(res[3],res[4],res[5]))
+
 
     def concat(self, a, b):
         tmp = tf.concat([a,b], axis = -1)
