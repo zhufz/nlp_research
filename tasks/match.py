@@ -329,7 +329,7 @@ class Match(object):
             #filenames = ["{}/{}_class_{:04d}".format(self.tfrecords_path,mode,i) \
             #                 for i in range(self.num_class * self.test_size)]
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
-                         os.listdir(self.tfrecords_path) if item.startswith('test')]
+                         os.listdir(self.tfrecords_path) if item.startswith(mode)]
             assert self.num_class == len(filenames), "the num of tfrecords file error!"
             logging.info("tfrecords test class num: {}".format(len(filenames)))
             dataset = tf.data.TFRecordDataset(filenames)
@@ -479,10 +479,12 @@ class Match(object):
             print("Acc:{}".format(float(right)/sum))
 
         elif self.tfrecords_mode == 'point':
-            scores = [item['pred'] for item in predictions]
-            labels = [item['label'] for item in predictions]
+            scores = [item['score'] for item in predictions]
             scores = np.reshape(scores, -1)
-            res = metrics(labels = labels, logits = scores)
+            scores = [0 if item < self.score_thre else 1 for item in scores]
+            #pred = [item['pred'] for item in predictions]
+            labels = [item['label'] for item in predictions]
+            res = metrics(labels = labels, logits = np.array(scores))
             print("precision:{} recall:{} f1:{}".format(res[3],res[4],res[5]))
 
 
