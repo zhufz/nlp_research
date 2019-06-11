@@ -1,9 +1,10 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
-from encoder import Base
+from encoder import EncoderBase
 import pdb
 import copy
 
-class FastText(Base):
+class FastText(EncoderBase):
     def __init__(self, **kwargs):
         """
         :param config:

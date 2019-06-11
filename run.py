@@ -1,4 +1,4 @@
-from tasks import dl_tasks
+#-*- coding:utf-8 -*-
 from tests import tests
 import yaml
 import os,sys
@@ -45,8 +45,8 @@ class Run():
 
     def read_conf(self, task_type):
         base_yml = os.path.join(ROOT_PATH, "conf/model/base.yml")
-        task_yml = os.path.join(ROOT_PATH, f"conf/model/{task_type}.yml")
-        assert os.path.exists(task_yml),'fmodel {task_type} does not exists!'
+        task_yml = os.path.join(ROOT_PATH, "conf/model/{}.yml".format(task_type))
+        assert os.path.exists(task_yml),'model does not exists!'
         conf = yaml.load(open(task_yml))
         self.read_config_type(conf)
         base = yaml.load(open(base_yml))
@@ -90,13 +90,16 @@ if __name__ == '__main__':
     logging.info(conf)
 
     if conf['mode'] == 'train':
+        from tasks import dl_tasks
         cl = dl_tasks[task_type](conf)
         cl.train()
         cl.test()
     elif conf['mode'] == 'test':
+        from tasks import dl_tasks
         cl = dl_tasks[task_type](conf)
         cl.test()
     elif conf['mode'] == 'predict':
+        from tasks import dl_tasks
         cl = dl_tasks[task_type](conf)
         cl.predict()
     elif conf['mode'] in ['test_one','test_unit']:
@@ -111,10 +114,11 @@ if __name__ == '__main__':
             print(ret)
             end = time.time()
             consume = end-start
-            print(f'consume: {consume}')
+            print('consume: {}'.format(consume))
     elif conf['mode'] == 'prepare':
         split = GenerateData(conf)
         if task_type in ['match','classify']:
+            from tasks import dl_tasks
             cl = dl_tasks[task_type](conf)
             cl.prepare()
         else:

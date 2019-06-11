@@ -1,8 +1,9 @@
+#-*- coding:utf-8 -*-
 import sys,os
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 sys.path.append(ROOT_PATH)
 
-from encoder_base import Base
+from encoder_base import EncoderBase
 encoder = {}
 #sentence encoder
 from cnn import CNN

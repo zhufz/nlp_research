@@ -1,9 +1,10 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 import pdb
-from encoder import Base
+from encoder import EncoderBase
 
 
-class VDCNN(Base):
+class VDCNN(EncoderBase):
     def __init__(self, **args):
         #TODO: fix problem
         super(VDCNN, self).__init__(**kwargs)

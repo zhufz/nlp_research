@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 """Define functions to create the triplet loss with online triplet mining.
     refer:https://omoindrot.github.io/triplet-loss
     introduction:https://blog.csdn.net/qq_36387683/article/details/83583099

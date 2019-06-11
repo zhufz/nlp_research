@@ -1,7 +1,7 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from tensorflow.contrib import predictor
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
-from pathlib import Path
 import pdb
 import traceback
 import pickle
@@ -15,7 +15,6 @@ sys.path.append(ROOT_PATH)
 from embedding import embedding
 from encoder import encoder
 from utils.data_utils import *
-from utils.recall import Annoy
 
 
 class Test(object):
@@ -27,12 +26,23 @@ class Test(object):
         #init embedding
         self.init_embedding()
         #load train data
-        csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
-        self.text_list = list(csv['text'])
-        self.label_list = list(csv['target'])
-        #load model
-        subdirs = [x for x in Path(self.export_dir_path).iterdir()
-                if x.is_dir() and 'temp' not in str(x)]
+        csv = pd.read_csv(self.ori_path, header = 0, sep="\t", error_bad_lines=False)
+        if 'text' in csv.keys() and 'target' in csv.keys():
+            #format: text \t target
+            #for this format, the size for each class should be larger than 2 
+            self.text_list = list(csv['text'])
+            self.label_list = list(csv['target'])
+        elif 'text_a' in csv.keys() and 'text_b' in csv.keys() and'target' in csv.keys():
+            #format: text_a \t text_b \t target
+            #for this format, target value can only be choosen from 0 or 1
+            self.text_a_list = list(csv['text_a'])
+            self.text_b_list = list(csv['text_b'])
+            self.text_list = self.text_a_list + self.text_b_list
+            self.label_list = list(csv['target'])
+
+        subdirs = [os.path.join(self.export_dir_path,x) for x in os.listdir(self.export_dir_path)
+                if 'temp' not in(x)]
+
         latest = str(sorted(subdirs)[-1])
         self.predict_fn = predictor.from_saved_model(latest)
 
@@ -85,6 +95,12 @@ class TestMatch(Test):
             self.vec_list = self._get_vecs(self.text_list, True)
 
     def __call__(self, text):
+        if self.tfrecords_mode == 'point':
+            assert text.find('||') != -1,"input should cotain two sentences seperated by ||"
+            text_a = text.split('||')[0]
+            text_b = text.split('||')[-1]
+            pred,score = self._get_label([text_a], [text_b], need_preprocess = True)
+            return pred[0][0], score[0][0]
 
         #加载自定义问句(自定义优先)
         if self.sim_mode == 'cross':
@@ -143,17 +159,23 @@ class TestMatch(Test):
 
     def _get_label(self, query_list, sample_list, need_preprocess = False):
         #计算query_list 与 sample_list的匹配分数
-        _, x_query, x_query_length = self.text2id(query_list)
-        _, x_sample, x_sample_length = self.text2id(sample_list)
+        x_query_pred, x_query, x_query_length = self.text2id(query_list)
+        x_sample_pred, x_sample, x_sample_length = self.text2id(sample_list)
         label = [0 for _ in range(len(sample_list))]
-        x_query = np.tile(x_query[0],(len(x_sample),1))
-        x_query_length = np.tile(x_query_length[0],(len(x_sample),))
+        if len(x_query) != len(x_sample):
+            x_query = np.tile(x_query[0],(len(x_sample),1))
+            x_query_raw = np.tile(x_query_raw[0],(len(x_sample),1))
+            x_query_length = np.tile(x_query_length[0],(len(x_sample),))
         input_dict = {'x_query': x_query, 
-                     'x_query_length': x_query_length, 
-                     'x_sample': x_sample,
-                     'x_sample_length': x_sample_length, 
-                     'label': label}
+                      'x_query_raw': x_query_pred,
+                      'x_query_length': x_query_length, 
+                      'x_sample': x_sample,
+                      'x_sample_raw': x_sample_pred,
+                      'x_sample_length': x_sample_length, 
+                      'label': label}
         input_dict.update(self.encoder.encoder_fun(**input_dict))
+        del input_dict['x_query_raw']
+        del input_dict['x_sample_raw']
         predictions = self.predict_fn(input_dict)
         return predictions['pred'], predictions['score']
 

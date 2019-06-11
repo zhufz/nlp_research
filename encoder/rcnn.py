@@ -1,11 +1,12 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from tensorflow.contrib import rnn
 from common.layers import get_initializer
-from encoder import Base
+from encoder import EncoderBase
 import pdb
 import copy
 
-class RCNN(Base):
+class RCNN(EncoderBase):
     def __init__(self, **kwargs):
         super(RCNN, self).__init__(**kwargs)
         self.keep_prob = kwargs['keep_prob']

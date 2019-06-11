@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 
 from utils.tf_utils import  get_placeholder_batch_size

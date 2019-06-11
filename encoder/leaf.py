@@ -1,11 +1,12 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
-from encoder import Base
+from encoder import EncoderBase
 from common.layers import get_initializer
 import pdb
 import copy
 
 #matching based fasttext
-class LEAF(Base):
+class LEAF(EncoderBase):
     def __init__(self, **kwargs):
         """
         :param config:

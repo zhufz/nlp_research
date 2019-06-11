@@ -1,13 +1,14 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 import numpy as np
 import pdb
 from common.layers import get_initializer
-from encoder import Base
+from encoder import EncoderBase
 import copy
 #refer:https://github.com/galsang/ABCNN/blob/master/ABCNN.py
 
 
-class ABCNN(Base):
+class ABCNN(EncoderBase):
     def __init__(self, **kwargs):
         """
         Implmenentaion of ABCNNs

@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 import numpy as np
 import pandas as pd
 import numpy as np
@@ -343,6 +344,7 @@ class GenerateTfrecords():
         pickle.dump(mp_label, open(label_path, 'wb'))
 
         ##################### text 2 id##########################
+        logging.info('sentence to id ...')
         if data_type == 'column_2':
             text_pred_list, text_id_list, len_list = sen2id_fun(text_list, 
                                                                vocab_dict,
@@ -382,6 +384,7 @@ class GenerateTfrecords():
                 serialized = self._serialized_example(**input_dict)
                 mp_dataset[label].append(serialized)
             ##################################################
+            logging.info('generating tfrecords ...')
             for label in mp_dataset:
                 dataset_train = mp_dataset[label][:-test_size]
                 dataset_test = [mp_dataset[label][-test_size]]
@@ -480,7 +483,7 @@ class GenerateTfrecords():
             logging.info('generating tfrecords ...')
             serial_mp = defaultdict(list)
             if test_size >0 and test_size <1: test_size = int(test_size * 100)
-            for idx in range(len(text_a_list)):
+            for idx in tqdm(range(len(text_a_list)), ncols = 70):
                 label = label_list[idx]
                 input_dict = _generate_input_dict(text_a_list[idx],
                                             text_a_id_list[idx],

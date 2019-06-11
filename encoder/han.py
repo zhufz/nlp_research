@@ -1,9 +1,10 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
-from encoder import Base
+from encoder import EncoderBase
 
 
 
-class HAN(Base):
+class HAN(EncoderBase):
     def __init__(self, **kwargs):
         super(HAN, self).__init__(**kwargs)
         self.seq_length = kwargs['maxlen']

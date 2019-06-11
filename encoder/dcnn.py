@@ -1,8 +1,9 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from common.layers import get_initializer
-from encoder import Base
+from encoder import EncoderBase
 
-class DCNN(Base):
+class DCNN(EncoderBase):
     def __init__(self, **kwargs):
         super(DCNN, self).__init__(**kwargs)
         self.batch_size = kwargs['batch_size']

@@ -1,6 +1,6 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from tensorflow.contrib import predictor
-from pathlib import Path
 import pdb
 import re
 import traceback
@@ -37,11 +37,11 @@ class Classify(object):
         self.label_list = list(csv['target'])
         self.num_class = len(set(self.label_list))
         self.num_output = self.num_class
-        logging.info(f">>>>>>>>>>>> class num:{self.num_class} <<<<<<<<<<<<<<<")
+        logging.info(">>>>>>>>>>>> class num:%s <<<<<<<<<<<<<<<"%self.num_class)
         for idx,text in enumerate(self.text_list):
             self.text_list[idx] = self.pre.get_dl_input_by_text(text)
             if len(self.text_list[idx]) == 0:
-                logging.error(f"find blank lines in {idx}")
+                logging.error("find blank lines in %s"%idx)
 
         self.conf.update({
             "maxlen": self.maxlen,
@@ -180,7 +180,7 @@ class Classify(object):
             size = self.num_class
             num_classes_per_batch = self.num_class_per_batch
             assert num_classes_per_batch <= self.num_class, \
-                f"num_classes_per_batch is {num_classes_per_batch} > {self.num_class}"
+                "num_classes_per_batch is %s > %s"%(num_classes_per_batch, self.num_class)
             num_sentences_per_class = self.batch_size // num_classes_per_batch
 
             #filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \

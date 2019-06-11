@@ -1,7 +1,8 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
-from encoder import Base
+from encoder import EncoderBase
 #simple CNN demo
-class CNN(Base):
+class CNN(EncoderBase):
     def __init__(self, **kwargs):
         super(DCNN, self).__init__(**kwargs)
         self.document_max_len = kwargs['maxlen']

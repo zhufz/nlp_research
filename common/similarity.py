@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 #refer: https://github.com/xionghhcs/chip2018/blob/c2bb9efc08eca521a9ef5d37d4b915fb4c2a69dc/src/feature_extractor.py
 from nltk import ngrams
 from sklearn.preprocessing import MinMaxScaler
@@ -69,7 +70,7 @@ class Similarity():
             query = query.split()
             ret = self.bm25_model.get_scores(query)
         else:
-            raise ValueError(f'similarity type error:{type}')
+            raise ValueError('similarity type error:%s'%type)
         return ret
 
 if __name__ == '__main__':

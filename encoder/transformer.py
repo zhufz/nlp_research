@@ -1,10 +1,11 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 import numpy as np
 import pdb
-from encoder import Base
+from encoder import EncoderBase
 
 
-class Transformer(Base):
+class Transformer(EncoderBase):
     def __init__(self, **kwargs):
         super(Transformer, self).__init__(**kwargs)
         self.maxlen = kwargs['maxlen']

@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 import sys,os
 import yaml
 import time
@@ -183,7 +184,7 @@ class NER(object):
                              ["is_training", self.output_nodes])
                 else:
                     self.save_pb()
-                    logging.info(f'train finished! accuracy: {max_acc}')
+                    logging.info('train finished! accuracy: %s'%max_acc)
                     sys.exit(0)
 
     def test(self):

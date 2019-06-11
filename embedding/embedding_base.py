@@ -1,7 +1,8 @@
+#-*- coding:utf-8 -*-
 #所有encoder的基类
 import copy
 
-class Base():
+class Base(object):
     def __init__(self, **kwargs):
         pass
 

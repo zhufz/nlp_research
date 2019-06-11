@@ -1,7 +1,8 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
-from encoder import Base
+from encoder import EncoderBase
 
-class DPCNN(Base):
+class DPCNN(EncoderBase):
     def __init__(self, **kwargs):
         super(DPCNN, self).__init__(**kwargs)
         self.seq_length = kwargs['maxlen']

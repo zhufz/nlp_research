@@ -1,7 +1,8 @@
+#-*- coding:utf-8 -*-
 #所有encoder的基类
 import copy
 
-class Base():
+class EncoderBase(object):
     def __init__(self, **kwargs):
         self.features = {} #placeholder dict for export model
 

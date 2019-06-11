@@ -1,12 +1,13 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from tensorflow.contrib import rnn
 import numpy as np
 import pdb
 from common.layers import RNNLayer
-from encoder import Base
+from encoder import EncoderBase
 import copy
 
-class Seq2seq(Base):
+class Seq2seq(EncoderBase):
     def __init__(self, **kwargs):
         super(Seq2seq, self).__init__(**kwargs)
         self.maxlen = kwargs['maxlen']

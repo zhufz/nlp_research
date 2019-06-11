@@ -1,12 +1,13 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from tensorflow.contrib import rnn
 import numpy as np
 import pdb
 from common.layers import RNNLayer
-from encoder import Base
+from encoder import EncoderBase
 import copy
 
-class RNN(Base):
+class RNN(EncoderBase):
     def __init__(self, **kwargs):
         super(RNN, self).__init__(**kwargs)
         self.maxlen = kwargs['maxlen']

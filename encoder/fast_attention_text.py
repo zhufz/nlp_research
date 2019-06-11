@@ -1,8 +1,9 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from common.layers import get_initializer
-from encoder import Base
+from encoder import EncoderBase
 
-class FastAttentionText(Base):
+class FastAttentionText(EncoderBase):
     def __init__(self, **kwargs):
         """
         :param config:

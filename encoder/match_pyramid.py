@@ -1,12 +1,13 @@
+#-*- coding:utf-8 -*-
 import sys
 import tensorflow as tf
 import numpy as np
 import pdb
 import pickle
-from encoder import Base
+from encoder import EncoderBase
 import copy
 
-class MatchPyramid(Base):
+class MatchPyramid(EncoderBase):
     def __init__(self, **kwargs):
         super(MatchPyramid, self).__init__(**kwargs)
         self.num_output = kwargs['num_output']

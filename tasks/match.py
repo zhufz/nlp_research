@@ -1,7 +1,7 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from tensorflow.contrib import predictor
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
-from pathlib import Path
 import pdb
 import re
 import traceback
@@ -56,7 +56,7 @@ class Match(object):
             raise ValueError('error format for train file')
 
         self.num_class = len(set(self.label_list))
-        logging.info(f">>>>>>>>>>>> class num:{self.num_class} <<<<<<<<<<<<<<<")
+        logging.info(">>>>>>>>>>>> class num:%s <<<<<<<<<<<<<<<"%self.num_class)
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
                           self.text_list]
         self.conf.update({
@@ -102,7 +102,6 @@ class Match(object):
                                                    conf = self.conf)
 
         def cal_loss(pred, labels, batch_size, conf):
-            #if self.sim_mode == 'represent':
             if self.tfrecords_mode == 'class':
                 pos_scores, neg_scores = batch_hard_triplet_scores(labels, pred, is_distance = self.is_distance) # pos/neg scores
                 pos_scores = tf.squeeze(pos_scores, -1)
@@ -129,7 +128,6 @@ class Match(object):
                                     neg_target, **conf)
                     loss = pos_loss + neg_loss
 
-            #elif self.sim_mode == 'cross':
             elif self.tfrecords_mode in ['pair','point']:
                 if self.loss_type in ['hinge_loss','improved_triplet_loss']:
                     assert self.tfrecords_mode == 'pair', "only pair mode can provide <query, pos, neg> format data"

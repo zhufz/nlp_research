@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 from sklearn.metrics import roc_auc_score, accuracy_score, log_loss, precision_score, recall_score, f1_score
 
 def metrics(labels, logits):

@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 import keras
 import tensorflow as tf
 from keras.layers import *
@@ -6,11 +7,11 @@ from keras.models import Model
 from keras.layers.merge import concatenate
 from keras.layers.normalization import BatchNormalization
 from keras.utils import multi_gpu_model
-from encoder import Base
+from encoder import EncoderBase
 
 #refer:https://arxiv.org/abs/1609.06038
 
-class ESIM(Base):
+class ESIM(EncoderBase):
     def __init__(self, **kwargs):
         super(ESIM, self).__init__(**kwargs)
         self.maxlen = kwargs['maxlen']

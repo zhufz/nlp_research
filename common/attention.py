@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 #refer: https://github.com/sjvasquez/quora-duplicate-questions/blob/d93a4bd5edf8327bd5ed7900107ca18bf8bb2b2f/attend.py
 

@@ -1,12 +1,13 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from language_model.bert import modeling
 from language_model.bert import optimization
 from language_model.bert import tokenization
-from encoder import Base
+from encoder import EncoderBase
 import pdb
 import copy
 
-class Bert(Base):
+class Bert(EncoderBase):
     def __init__(self, **kwargs):
         """
         :param config:

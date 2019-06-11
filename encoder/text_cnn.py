@@ -1,10 +1,11 @@
+#-*- coding:utf-8 -*-
 import tensorflow as tf
 from common.layers import get_initializer
-from encoder import Base
+from encoder import EncoderBase
 #from kim cnn 2014:https://arxiv.org/abs/1408.5882
 
 
-class TextCNN(Base):
+class TextCNN(EncoderBase):
     def __init__(self, **kwargs):
         super(TextCNN, self).__init__(**kwargs)
         self.maxlen = kwargs['maxlen']
