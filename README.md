@@ -19,7 +19,7 @@
 ## 快速开始
 
     [依赖]
-         环境：python3+tensorflow 1.10
+         环境：python3+tensorflow 1.10(python2.7已支持)
          pip3 install --user -r requirements.txt
          
     [分类]
