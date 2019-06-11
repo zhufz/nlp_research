@@ -13,7 +13,8 @@
 ## 数据
 
     训练数据:
-    对于分类和匹配任务的数据使用csv格式，csv头部包括列名‘target’和‘text’。
+    对于分类任务的数据使用csv格式，csv头部包括列名‘target’和‘text’;
+    对于匹配任务的数据使用csv格式，csv头部包括列名‘target’,‘text’ 或者 ‘target’,‘text_a’,‘text_b’
 
     预训练数据(目前在分类和匹配任务上已支持):
     如果使用到bert作为预训练，请提前运行"sh scripts/prepare.sh"
