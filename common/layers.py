@@ -245,7 +245,7 @@ def get_train_op(global_step, optimizer_type, loss, learning_rate, var_list = No
 
         if var_list != None:
             grads_and_vars = optim.compute_gradients(loss, var_list)
-            grads_and_vars_clip = [[tf.clip_by_value(g, -clip_grad, clip_grad), v] for g, v in grads_and_vars]
+            grads_and_vars_clip = [[tf.clip_by_value(g, -clip_grad, clip_grad), v] if g!= None else [g,v] for g, v in grads_and_vars]
         else:
             grads_and_vars = optim.compute_gradients(loss)
             grads_and_vars_clip = [[tf.clip_by_value(g, -clip_grad, clip_grad), v] for g, v in grads_and_vars]

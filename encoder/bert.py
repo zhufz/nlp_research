@@ -21,6 +21,7 @@ class Bert(EncoderBase):
         self.bert_config_file = kwargs['bert_config_file_path']
         self.bert_config = modeling.BertConfig.from_json_file(self.bert_config_file)
         self.vocab_file = kwargs['vocab_file_path']
+        self.bert_out_layer = kwargs['bert_out_layer'] if 'bert_out_layer' in kwargs else -1
         self.placeholder = {}
 
     def __call__(self, name = 'encoder', features = None, reuse = tf.AUTO_REUSE, **kwargs):
@@ -39,6 +40,7 @@ class Bert(EncoderBase):
             self.placeholder[name+'_segment_ids'] = features[name+'_segment_ids']
 
         #with tf.variable_scope("bert", reuse = reuse):
+        #bert_out_layer: 1-12,or -1 represent last layer of bert
 
         model = modeling.BertModel(
             config=self.bert_config,
@@ -46,7 +48,9 @@ class Bert(EncoderBase):
             input_ids=self.placeholder[name+"_input_ids"],
             input_mask=self.placeholder[name+'_input_mask'],
             token_type_ids=self.placeholder[name+'_segment_ids'],
-            use_one_hot_embeddings=False)
+            use_one_hot_embeddings=False,
+            bert_out_layer = self.bert_out_layer)
+
 
         output_layer = model.get_pooled_output()
 

@@ -370,7 +370,7 @@ class GenerateTfrecords():
 
         if self.tfrecords_mode == 'class':
             mp_dataset = defaultdict(list)
-            for idx,text_id in enumerate(text_id_list):
+            for idx,text_id in enumerate(tqdm(text_id_list, ncols = 70)):
                 label = label_list[idx]
                 input_dict = {'x_query': text_id, 
                               'x_query_pred': text_pred_list[idx], 

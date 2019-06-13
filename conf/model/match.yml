@@ -1,5 +1,5 @@
 ############### path ############
-path_root: "/content/data/match/"
+# path_root: "/content/data/match/"
 path_root: "data/match/"
 ori_path: "intent.csv"
 # ori_path: "atec.csv"
@@ -24,6 +24,7 @@ embedding_type: "char_embedding"
 embedding_size: 300
 rand_embedding: False
 use_language_model: False
+bert_out_layer: -1
 
 ############# optim #############
 learning_rate: 0.00001
@@ -53,7 +54,7 @@ score_thre: 0.65
 ############ model ##############
 # sim_mode=cross: 对于交互的匹配方法
 # sim_mode=represent: 基于表示的匹配方法
-config_type: 10
+config_type: 23
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 2, 
     learning_rate: 0.0005, tfrecords_mode: "pair", loss_type: "hinge_loss"}
@@ -73,7 +74,7 @@ config:
     learning_rate: 0.00001, embedding_size: 128, rand_embedding: True}
   23: {encoder_type: "bert", sim_mode: "represent", tfrecords_mode: "class", 
     learning_rate: 0.000001, use_language_model: True, num_output: 256,
-    base_learning_rate: 0.000001}
+    base_learning_rate: 0.000001, bert_out_layer: 1}
 
   30: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, 
     learning_rate: 0.00005, tfrecords_mode: "point", loss_type: "sigmoid_loss", 

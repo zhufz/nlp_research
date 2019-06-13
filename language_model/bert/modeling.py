@@ -135,7 +135,8 @@ class BertModel(object):
                input_mask=None,
                token_type_ids=None,
                use_one_hot_embeddings=False,
-               scope=None):
+               scope=None,
+               bert_out_layer=-1):
     """Constructor for BertModel.
 
     Args:
@@ -218,7 +219,7 @@ class BertModel(object):
             initializer_range=config.initializer_range,
             do_return_all_layers=True)
 
-      self.sequence_output = self.all_encoder_layers[-1]
+      self.sequence_output = self.all_encoder_layers[bert_out_layer]
       # The "pooler" converts the encoded sequence tensor of shape
       # [batch_size, seq_length, hidden_size] to a tensor of shape
       # [batch_size, hidden_size]. This is necessary for segment-level
