@@ -119,12 +119,7 @@ class NER(TaskBase):
                                                                       transition_params)
                 loss = -tf.reduce_mean(log_likelihood)
                 if mode == tf.estimator.ModeKeys.TRAIN:
-                    optimizer = get_train_op(global_step, 
-                                             self.optimizer_type, 
-                                             loss, 
-                                             self.learning_rate)
-                    return tf.estimator.EstimatorSpec(mode, loss = loss,
-                                                      train_op=optimizer)
+                    return self.train_estimator_spec(mode, loss, global_step, params)
                 if mode == tf.estimator.ModeKeys.EVAL:
                     #pdb.set_trace()
                     weights = tf.sequence_mask(seq_len, self.maxlen)

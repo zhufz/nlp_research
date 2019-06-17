@@ -45,7 +45,7 @@ class Run():
     def read_conf(self, task_type):
         base_yml = os.path.join(ROOT_PATH, "conf/model/base.yml")
         task_yml = os.path.join(ROOT_PATH, "conf/model/{}.yml".format(task_type))
-        assert os.path.exists(task_yml),'model does not exists!'
+        assert os.path.exists(task_yml),'model [%s] does not exists!'%task_type
         conf = yaml.load(open(task_yml))
         self.read_config_type(conf)
         base = yaml.load(open(base_yml))
