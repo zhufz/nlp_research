@@ -19,9 +19,6 @@ from embedding import embedding
 from encoder import encoder
 from utils.data_utils import *
 from utils.ner_util import NERUtil
-from utils.tf_utils import load_pb,write_pb
-from common.layers import get_train_op
-from language_model.bert.modeling import get_assignment_map_from_checkpoint
 from task_base import TaskBase
 import pdb
 

@@ -13,16 +13,12 @@ import os,sys
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 
-from language_model.bert.modeling import get_assignment_map_from_checkpoint
+
 from embedding import embedding
 from encoder import encoder
 from utils.data_utils import *
 from utils.preprocess import Preprocess
-from utils.tf_utils import load_pb,write_pb
-from utils.recall import Annoy
-from common.layers import get_train_op
 from common.loss import get_loss
-from common.lr import cyclic_learning_rate
 from common.metrics import metrics
 from common.triplet import batch_hard_triplet_scores
 from task_base import TaskBase

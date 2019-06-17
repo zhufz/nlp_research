@@ -14,10 +14,7 @@ sys.path.append(ROOT_PATH)
 from encoder import encoder
 from utils.data_utils import *
 from utils.preprocess import Preprocess
-from utils.tf_utils import load_pb,write_pb
-from utils.recall import Annoy
 from common.loss import get_loss
-from common.triplet import batch_hard_triplet_scores
 from task_base import TaskBase
 
 
@@ -114,8 +111,6 @@ class Classify(TaskBase):
                 "num_classes_per_batch is %s > %s"%(num_classes_per_batch, self.num_class)
             num_sentences_per_class = self.batch_size // num_classes_per_batch
 
-            #filenames = ["{}/train_class_{:04d}".format(self.tfrecords_path,i) \
-            #                 for i in range(size)]
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
                          os.listdir(self.tfrecords_path) if item.startswith('train')]
             assert len(filenames) > 0, "Can't find any tfrecords file for train!"
@@ -181,8 +176,6 @@ class Classify(TaskBase):
         estimator.train(input_fn = self.create_input_fn("train"), max_steps =
                         self.max_steps)
         self.save()
-
-
 
     def test(self, mode = 'test'):
         params = {
