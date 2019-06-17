@@ -1,8 +1,8 @@
 ############### path ############
 # path_root: "/content/data/classify/"
 path_root: "data/classify/"
-ori_path: "intent.csv"
-# ori_path: "review.csv"
+# ori_path: "intent.csv"
+ori_path: "review.csv"
 classes_path: "{encoder_type}classes"
 dict_path: "{encoder_type}/dict.pkl"
 checkpoint_path: "{encoder_type}/checkpoint"
@@ -34,14 +34,14 @@ learning_rate: 0.001
 ############# data ####################
 maxlen: 20
 batch_size: 64
-num_class_per_batch: 16
-test_size: 1
-max_steps: 3000
+num_class_per_batch: 2 #num_class_per_batch should be small than num_class
+dev_size: 0.1
+max_steps: 6000
 
 # loss_type: "am_softmax_loss"
 
 ############ model ##############
-config_type: 8
+config_type: 0
 config: 
   0: {encoder_type: "fasttext", learning_rate: 0.003}
   1: {encoder_type: "transformer", learning_rate: 0.0001}
@@ -55,6 +55,7 @@ config:
       base_learning_rate: 0.000001}
   # 9: {encoder_type: "leaf", learning_rate: 0.003}
 
+prepare_data: "false"
 mode: "train"  #train\test\test_one
 #mode: "test"  #train\test\test_one
 #mode: "test_one"

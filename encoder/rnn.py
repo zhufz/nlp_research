@@ -10,13 +10,9 @@ import copy
 class RNN(EncoderBase):
     def __init__(self, **kwargs):
         super(RNN, self).__init__(**kwargs)
-        self.maxlen = kwargs['maxlen']
         self.num_hidden = kwargs['num_hidden'] if 'num_hidden' in kwargs else 256
         self.num_layers = kwargs['num_layers'] if 'num_layers' in kwargs else 2
-        self.keep_prob = kwargs['keep_prob']
-        self.batch_size = kwargs['batch_size']
         self.rnn_type = kwargs['rnn_type']
-        self.num_output = kwargs['num_output']
         self.rnn_layer = RNNLayer(self.rnn_type, 
                                   self.num_hidden,
                                   self.num_layers)

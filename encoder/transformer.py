@@ -8,10 +8,8 @@ from encoder import EncoderBase
 class Transformer(EncoderBase):
     def __init__(self, **kwargs):
         super(Transformer, self).__init__(**kwargs)
-        self.maxlen = kwargs['maxlen']
         self.d_model = kwargs['embedding_size']
         self.dropout_rate = 1 - kwargs['keep_prob']
-        self.num_output = kwargs['num_output']
         self.training = kwargs['is_training']
         self.num_blocks = 3
         self.num_heads = 8

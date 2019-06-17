@@ -10,8 +10,6 @@ class VDCNN(EncoderBase):
         super(VDCNN, self).__init__(**kwargs)
         self.embedding_size = args['embedding_size']
         self.is_training = args['is_training']
-        self.keep_prob = args['keep_prob']
-        self.num_output = args['num_output']
         self.filter_sizes = [3, 3, 3, 3, 3]
         self.num_filters = [64, 64, 128, 256, 512]
         self.num_blocks = [2, 2, 2, 2]

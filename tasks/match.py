@@ -25,19 +25,35 @@ from common.loss import get_loss
 from common.lr import cyclic_learning_rate
 from common.metrics import metrics
 from common.triplet import batch_hard_triplet_scores
+from task_base import TaskBase
 
 
-class Match(object):
+class Match(TaskBase):
     def __init__(self, conf):
+        super(Match, self).__init__(conf)
         self.task_type = 'match'
         self.conf = conf
-        for attr in conf:
-            setattr(self, attr, conf[attr])
         self.pre = Preprocess()
         self.model_loaded = False
         self.zdy = {}
-        csv = pd.read_csv(self.ori_path, header = 0, sep="\t", error_bad_lines=False)
+        self.read_data()
+        self.num_class = len(set(self.label_list))
+        logging.info(">>>>>>>>>>>> class num:%s <<<<<<<<<<<<<<<"%self.num_class)
+        self.conf.update({
+            "maxlen": self.maxlen,
+            "maxlen1": self.maxlen,
+            "maxlen2": self.maxlen,
+            "num_class": self.num_class,
+            "embedding_size": self.embedding_size,
+            "batch_size": self.batch_size,
+            "num_output": self.num_output,
+            "keep_prob": 1,
+            "is_training": False,
+        })
+        self.encoder = encoder[self.encoder_type](**self.conf)
 
+    def read_data(self):
+        csv = pd.read_csv(self.ori_path, header = 0, sep="\t", error_bad_lines=False)
         if 'text' in csv.keys() and 'target' in csv.keys():
             #format: text \t target
             #for this format, the size for each class should be larger than 2 
@@ -54,23 +70,8 @@ class Match(object):
             self.data_type = 'column_3'
         else:
             raise ValueError('error format for train file')
-
-        self.num_class = len(set(self.label_list))
-        logging.info(">>>>>>>>>>>> class num:%s <<<<<<<<<<<<<<<"%self.num_class)
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in \
                           self.text_list]
-        self.conf.update({
-            "maxlen": self.maxlen,
-            "maxlen1": self.maxlen,
-            "maxlen2": self.maxlen,
-            "num_class": self.num_class,
-            "embedding_size": self.embedding_size,
-            "batch_size": self.batch_size,
-            "num_output": self.num_output,
-            "keep_prob": 1,
-            "is_training": False,
-        })
-        self.encoder = encoder[self.encoder_type](**self.conf)
 
     def prepare(self):
         vocab_dict = embedding[self.embedding_type].build_dict(\
@@ -82,7 +83,7 @@ class Match(object):
         self.gt.process(self.text_list, self.label_list, text2id,
                         self.encoder.encoder_fun, vocab_dict,
                         self.tfrecords_path, self.label_path, 
-                        self.test_size, self.data_type)
+                        self.dev_size, self.data_type, mode = self.mode)
         logging.info("tfrecords generated!")
 
     def create_model_fn(self):
@@ -325,7 +326,7 @@ class Match(object):
 
         def test_input_fn(mode):
             #filenames = ["{}/{}_class_{:04d}".format(self.tfrecords_path,mode,i) \
-            #                 for i in range(self.num_class * self.test_size)]
+            #                 for i in range(self.num_class * self.dev_size)]
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
                          os.listdir(self.tfrecords_path) if item.startswith(mode)]
             assert self.num_class == len(filenames), "the num of tfrecords file error!"
@@ -344,6 +345,8 @@ class Match(object):
             return train_input_fn
         elif mode == 'test':
             return lambda : test_input_fn("test")
+        elif mode == 'dev':
+            return lambda : test_input_fn("dev")
         elif mode == 'label':
             return lambda : test_input_fn("train")
         else:
@@ -413,7 +416,7 @@ class Match(object):
             as_text = False,
             checkpoint_path=None)
 
-    def test(self):
+    def test(self, mode = 'test'):
         params = {
             'is_training': False,
             'keep_prob': 1
@@ -423,7 +426,7 @@ class Match(object):
         estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
                                            config = config,
                                            params = params)
-        predictions = estimator.predict(input_fn=self.create_input_fn("test"))
+        predictions = estimator.predict(input_fn=self.create_input_fn(mode))
         predictions = list(predictions)
 
         if self.tfrecords_mode == 'class':
@@ -464,7 +467,7 @@ class Match(object):
             #pdb.set_trace()
 
             #predictions
-            scores = np.reshape(scores,[self.num_class*self.test_size, -1])
+            scores = np.reshape(scores,[self.num_class*self.dev_size, -1])
             pred_max_ids = np.argmax(scores, axis = -1)
             #label
             labels = np.reshape(labels,[self.num_class, -1])

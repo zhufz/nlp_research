@@ -5,7 +5,6 @@ import os,sys
 import pdb
 import time
 import logging
-from utils.generate_data import GenerateData
 
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 sys.path.append(ROOT_PATH)
@@ -86,42 +85,41 @@ if __name__ == '__main__':
 
     run = Run(init_log = True)
     conf = run.read_conf(task_type)
-
     logging.info(conf)
 
-    if conf['mode'] == 'train':
-        from tasks import dl_tasks
-        cl = dl_tasks[task_type](conf)
-        cl.train()
-        cl.test()
-    elif conf['mode'] == 'test':
-        from tasks import dl_tasks
-        cl = dl_tasks[task_type](conf)
-        cl.test()
-    elif conf['mode'] == 'predict':
-        from tasks import dl_tasks
-        cl = dl_tasks[task_type](conf)
-        cl.predict()
-    elif conf['mode'] in ['test_one','test_unit']:
-        #cl = dl_tasks[task_type](conf)
-        conf['task_type'] = task_type
-        ts = tests[task_type](conf)
-
-        while True:
-            a = input('input:')
-            start = time.time()
-            ret = ts(a)
-            print(ret)
-            end = time.time()
-            consume = end-start
-            print('consume: {}'.format(consume))
-    elif conf['mode'] == 'prepare':
-        split = GenerateData(conf)
-        if task_type in ['match','classify']:
+    if conf['prepare_data'].lower() != 'false':
+        if task_type in ['match','classify','ner']:
             from tasks import dl_tasks
             cl = dl_tasks[task_type](conf)
             cl.prepare()
         else:
             logging.warn('unknown task type for prepare data step!')
     else:
-        logging.error('unknown mode!')
+        if conf['mode'] == 'train':
+            from tasks import dl_tasks
+            cl = dl_tasks[task_type](conf)
+            cl.train()
+            cl.test('dev')
+        elif conf['mode'] == 'dev':
+            from tasks import dl_tasks
+            cl = dl_tasks[task_type](conf)
+            cl.test('dev')
+        elif conf['mode'] == 'test':
+            from tasks import dl_tasks
+            cl = dl_tasks[task_type](conf)
+            cl.test('test')
+        elif conf['mode'] in ['test_one','test_unit','ner']:
+            #cl = dl_tasks[task_type](conf)
+            conf['task_type'] = task_type
+            ts = tests[task_type](conf)
+
+            while True:
+                a = input('input:')
+                start = time.time()
+                ret = ts(a)
+                print(ret)
+                end = time.time()
+                consume = end-start
+                print('consume: {}'.format(consume))
+        else:
+            logging.error('unknown mode!')

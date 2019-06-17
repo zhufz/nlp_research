@@ -239,10 +239,7 @@ def vec_transformationByMat(poses, input_capsule_dim, input_capsule_num, output_
 class Capsule(EncoderBase):
     def __init__(self, **kwargs):
         super(Capsule, self).__init__(**kwargs)
-        self.seq_length = kwargs['maxlen']
         self.embedding_size = kwargs['embedding_size']
-        self.keep_prob = kwargs['keep_prob']
-        self.num_output = kwargs['num_output']
         if 'caps_type' in kwargs:
             self.caps_type = kwargs['caps_type']
         else:

@@ -7,13 +7,11 @@ from encoder import EncoderBase
 class HAN(EncoderBase):
     def __init__(self, **kwargs):
         super(HAN, self).__init__(**kwargs)
-        self.seq_length = kwargs['maxlen']
         self.embedding_dim = kwargs['embedding_size']
         self.num_sentences = 10
         self.hidden_dim = 128
         self.context_dim = 256
         self.rnn_type = "lstm"
-        self.keep_prob = kwargs['keep_prob']
 
 
     def __call__(self, embed, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
@@ -57,7 +55,7 @@ class HAN(EncoderBase):
 
             return attention_output
 
-        sentence_len = int(self.seq_length / self.num_sentences)
+        sentence_len = int(self.maxlen / self.num_sentences)
         embedding_inputs_reshaped = tf.reshape(embed,
                                                    shape=[-1, sentence_len, self.embedding_dim])
         with tf.variable_scope("word_vec", reuse = reuse):

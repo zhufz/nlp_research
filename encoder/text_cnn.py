@@ -8,10 +8,7 @@ from encoder import EncoderBase
 class TextCNN(EncoderBase):
     def __init__(self, **kwargs):
         super(TextCNN, self).__init__(**kwargs)
-        self.maxlen = kwargs['maxlen']
         self.embedding_size = kwargs['embedding_size']
-        self.keep_prob = kwargs['keep_prob']
-        self.num_output = kwargs['num_output']
         self.filter_sizes = [3, 4, 5]
         self.num_filters = 100
 

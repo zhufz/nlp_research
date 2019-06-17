@@ -5,10 +5,7 @@ from encoder import EncoderBase
 class CNN(EncoderBase):
     def __init__(self, **kwargs):
         super(DCNN, self).__init__(**kwargs)
-        self.document_max_len = kwargs['maxlen']
         self.embedding_size = kwargs['embedding_size']
-        self.keep_prob = kwargs['keep_prob']
-        self.num_output = kwargs['num_output']
         self.filter_sizes = [3, 4, 5]
         self.num_filters = 100
 
@@ -28,7 +25,7 @@ class CNN(EncoderBase):
                     activation=tf.nn.relu)
                 pool = tf.layers.max_pooling2d(
                     conv,
-                    pool_size=[self.document_max_len - filter_size + 1, 1],
+                    pool_size=[self.maxlen - filter_size + 1, 1],
                     strides=(1, 1),
                     padding="VALID")
                 pooled_outputs.append(pool)

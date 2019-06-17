@@ -9,8 +9,6 @@ import copy
 class RCNN(EncoderBase):
     def __init__(self, **kwargs):
         super(RCNN, self).__init__(**kwargs)
-        self.keep_prob = kwargs['keep_prob']
-        self.num_output = kwargs['num_output']
         self.rnn_type = "bi_lstm"
         self.embedding_size = kwargs['embedding_size']
         self.num_hidden = 256

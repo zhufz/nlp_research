@@ -21,28 +21,21 @@ from common.layers import get_train_op
 from common.loss import get_loss
 from common.lr import cyclic_learning_rate
 from common.triplet import batch_hard_triplet_scores
+from task_base import TaskBase
 
 
-class Classify(object):
+class Classify(TaskBase):
     def __init__(self, conf):
+        super(Classify, self).__init__(conf)
         self.task_type = 'classify'
         self.conf = conf
-        for attr in conf:
-            setattr(self, attr, conf[attr])
         self.pre = Preprocess()
         self.model_loaded = False
         self.zdy = {}
-        csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
-        self.text_list = list(csv['text'])
-        self.label_list = list(csv['target'])
+        self.read_data()
         self.num_class = len(set(self.label_list))
         self.num_output = self.num_class
         logging.info(">>>>>>>>>>>> class num:%s <<<<<<<<<<<<<<<"%self.num_class)
-        for idx,text in enumerate(self.text_list):
-            self.text_list[idx] = self.pre.get_dl_input_by_text(text)
-            if len(self.text_list[idx]) == 0:
-                logging.error("find blank lines in %s"%idx)
-
         self.conf.update({
             "maxlen": self.maxlen,
             "maxlen1": self.maxlen,
@@ -56,40 +49,52 @@ class Classify(object):
         })
         self.encoder = encoder[self.encoder_type](**self.conf)
 
-    def init_embedding(self):
-        self.vocab_dict = embedding[self.embedding_type].build_dict(\
-                                            dict_path = self.dict_path,
-                                            text_list = self.text_list,
-                                            mode = self.mode)
-        self.embedding = embedding[self.embedding_type](text_list = self.text_list,
-                                                        vocab_dict = self.vocab_dict,
-                                                        dict_path = self.dict_path,
-                                                        random=self.rand_embedding,
-                                                        maxlen = self.maxlen,
-                                                        batch_size = self.batch_size,
-                                                        embedding_size =
-                                                        self.embedding_size,
-                                                        conf = self.conf)
+    def read_data(self):
+        csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
+        self.text_list = list(csv['text'])
+        self.label_list = list(csv['target'])
+        for idx,text in enumerate(self.text_list):
+            self.text_list[idx] = self.pre.get_dl_input_by_text(text)
+            if len(self.text_list[idx]) == 0:
+                logging.error("find blank lines in %s"%idx)
 
     def prepare(self):
-        self.init_embedding()
+        vocab_dict = embedding[self.embedding_type].build_dict(\
+                                                               dict_path = self.dict_path,
+                                                               text_list = self.text_list,
+                                                               mode = self.mode)
+        text2id = embedding[self.embedding_type].text2id
         self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
-        self.gt.process(self.text_list, self.label_list, self.embedding.text2id,
-                        self.encoder.encoder_fun, 
-                        self.vocab_dict, self.tfrecords_path, 
-                        self.label_path, self.test_size)
+        self.gt.process(self.text_list, self.label_list, text2id,
+                        self.encoder.encoder_fun, vocab_dict, 
+                        self.tfrecords_path, self.label_path, 
+                        self.dev_size, mode = self.mode)
         logging.info("tfrecords generated!")
 
-    def cal_loss(self, pred, labels, batch_size, conf):
-        loss = get_loss(type = self.loss_type, logits = pred, labels =
-                                labels, labels_sparse = True, **conf)
-        return loss
-
     def create_model_fn(self):
+        def init_embedding():
+            self.vocab_dict = embedding[self.embedding_type].build_dict(\
+                                                dict_path = self.dict_path,
+                                                text_list = self.text_list,
+                                                mode = self.mode)
+            self.embedding = embedding[self.embedding_type](text_list = self.text_list,
+                                                            vocab_dict = self.vocab_dict,
+                                                            dict_path = self.dict_path,
+                                                            random=self.rand_embedding,
+                                                            maxlen = self.maxlen,
+                                                            batch_size = self.batch_size,
+                                                            embedding_size =
+                                                            self.embedding_size,
+                                                            conf = self.conf)
+        def cal_loss(pred, labels, batch_size, conf):
+            loss = get_loss(type = self.loss_type, logits = pred, labels =
+                                    labels, labels_sparse = True, **conf)
+            return loss
+
         def model_fn(features, labels, mode, params):
             ########### embedding #################
             if not self.use_language_model:
-                self.init_embedding()
+                init_embedding()
                 self.embed_query = self.embedding(features = features, name = 'x_query')
             else:
                 self.embedding = None
@@ -106,6 +111,7 @@ class Classify(object):
                 out = self.encoder(features = features)
             #pred = tf.nn.softmax(tf.layers.dense(out, self.num_class))
             pred = tf.nn.softmax(out)
+            pred_labels = tf.argmax(pred, axis=-1)
 
             ############### predict ##################
             if mode == tf.estimator.ModeKeys.PREDICT:
@@ -117,10 +123,7 @@ class Classify(object):
                 return tf.estimator.EstimatorSpec(mode, predictions=predictions)
 
             ############### loss ##################
-            loss = self.cal_loss(pred,
-                             labels,
-                             self.batch_size,
-                             self.conf)
+            loss = cal_loss(pred, labels, self.batch_size, self.conf) 
 
             ############### train ##################
             if mode == tf.estimator.ModeKeys.TRAIN:
@@ -166,9 +169,9 @@ class Classify(object):
                                                       train_op=optimizer)
             ############### eval ##################
             if mode == tf.estimator.ModeKeys.EVAL:
-                eval_metric_ops = {}
-                #{"accuracy": tf.metrics.accuracy(
-                #    labels=labels, predictions=predictions["classes"])}
+                eval_metric_ops = {"accuracy": 
+                                   tf.metrics.accuracy(labels=labels, 
+                                                       predictions=pred_labels)}
                 return tf.estimator.EstimatorSpec(
                     mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
@@ -187,6 +190,7 @@ class Classify(object):
             #                 for i in range(size)]
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
                          os.listdir(self.tfrecords_path) if item.startswith('train')]
+            assert len(filenames) > 0, "Can't find any tfrecords file for train!"
             logging.info("tfrecords train class num: {}".format(len(filenames)))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
@@ -217,8 +221,8 @@ class Classify(object):
             return features, label
 
         def test_input_fn(mode):
-            filenames = ["{}/{}_class_{:04d}".format(self.tfrecords_path,mode,i) \
-                             for i in range(self.num_class)]
+            filenames = [os.path.join(self.tfrecords_path,item) for item in 
+                         os.listdir(self.tfrecords_path) if item.startswith(mode)]
             assert self.num_class == len(filenames), "the num of tfrecords file error!"
             logging.info("tfrecords test class num: {}".format(len(filenames)))
             dataset = tf.data.TFRecordDataset(filenames)
@@ -235,6 +239,8 @@ class Classify(object):
             return train_input_fn
         elif mode == 'test':
             return lambda : test_input_fn("test")
+        elif mode == 'dev':
+            return lambda : test_input_fn("dev")
         else:
             raise ValueError("unknown input_fn type!")
 
@@ -294,7 +300,7 @@ class Classify(object):
             as_text=False,
             checkpoint_path=None)
 
-    def test(self):
+    def test(self, mode = 'test'):
         params = {
             'is_training': False,
             'keep_prob': 1
@@ -304,14 +310,10 @@ class Classify(object):
         estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
                                            config = config,
                                            params = params)
-        predictions = estimator.predict(input_fn=self.create_input_fn("test"))
-        predictions = list(predictions)
-        scores = [item['logit'] for item in predictions]
-        labels = [item['label'] for item in predictions]
-        max_scores = np.max(scores, axis = -1)
-        max_ids = np.argmax(scores, axis = -1)
-        res = np.equal(labels, max_ids)
-        right = len(list(filter(lambda x:x == True, res)))
-        sum = len(res)
-        print("Acc:{}".format(float(right)/sum))
+        if mode == 'dev':
+            estimator.evaluate(input_fn=self.create_input_fn('dev'))
+        elif mode == 'test':
+            estimator.evaluate(input_fn=self.create_input_fn('test'))
+        else:
+            raise ValueError("unknown mode:[%s]"%mode)
 

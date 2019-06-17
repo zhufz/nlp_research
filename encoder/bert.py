@@ -13,10 +13,7 @@ class Bert(EncoderBase):
         :param config:
         """
         super(Bert, self).__init__(**kwargs)
-        self.maxlen = kwargs['maxlen']
         self.embedding_dim = kwargs['embedding_size']
-        self.keep_prob = kwargs['keep_prob']
-        self.num_output = kwargs['num_output']
         self.is_training = kwargs['is_training']
         self.bert_config_file = kwargs['bert_config_file_path']
         self.bert_config = modeling.BertConfig.from_json_file(self.bert_config_file)

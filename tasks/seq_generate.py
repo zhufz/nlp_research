@@ -17,6 +17,7 @@ from embedding import embedding
 from encoder import encoder
 from common.loss import get_loss
 from language_model.bert.modeling import get_assignment_map_from_checkpoint
+from task_base import TaskBase
 
 import pdb
 

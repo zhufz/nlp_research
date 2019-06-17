@@ -10,7 +10,6 @@ import copy
 class MatchPyramid(EncoderBase):
     def __init__(self, **kwargs):
         super(MatchPyramid, self).__init__(**kwargs)
-        self.num_output = kwargs['num_output']
         self.maxlen1 = kwargs['maxlen1']
         self.maxlen2 = kwargs['maxlen2']
         self.psize1 = 3

@@ -6,11 +6,7 @@ from encoder import EncoderBase
 class DCNN(EncoderBase):
     def __init__(self, **kwargs):
         super(DCNN, self).__init__(**kwargs)
-        self.batch_size = kwargs['batch_size']
-        self.sentence_length = kwargs['maxlen']
         self.embed_dim = kwargs['embedding_size']
-        self.keep_prob = kwargs['keep_prob']
-        self.num_output = kwargs['num_output']
         self.num_filters = [6,14]
         self.top_k = 4
         self.k1 = 19
@@ -48,7 +44,7 @@ class DCNN(EncoderBase):
             for i in range(self.embed_dim):
                 conv = tf.nn.relu(tf.nn.conv1d(input_unstack[i], w_unstack[i], stride=1, padding="SAME") + b_unstack[i])
                 #conv:[batch_size, sent_length+ws-1, num_filters]
-                conv = tf.reshape(conv, [self.batch_size, self.num_filters[0], self.sentence_length])#[batch_size, sentence_length, num_filters]
+                conv = tf.reshape(conv, [self.batch_size, self.num_filters[0], self.maxlen])#[batch_size, maxlen, num_filters]
                 values = tf.nn.top_k(conv, k, sorted=False).values
                 values = tf.reshape(values, [self.batch_size, k, self.num_filters[0]])
                 #k_max pooling in axis=1

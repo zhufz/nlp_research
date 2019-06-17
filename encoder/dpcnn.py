@@ -5,10 +5,7 @@ from encoder import EncoderBase
 class DPCNN(EncoderBase):
     def __init__(self, **kwargs):
         super(DPCNN, self).__init__(**kwargs)
-        self.seq_length = kwargs['maxlen']
-        self.keep_prob = kwargs['keep_prob']
         self.embedding_dim = kwargs['embedding_size']
-        self.num_output = kwargs['num_output']
         self.num_filters = 250
         self.kernel_size = 3
 
@@ -48,7 +45,7 @@ class DPCNN(EncoderBase):
 
         # resdul
         conv3 = conv3 + pool
-        pool_size = int((self.seq_length - 3 + 1)/2)
+        pool_size = int((self.maxlen - 3 + 1)/2)
         conv3 = tf.layers.max_pooling1d(tf.squeeze(conv3, [2]), pool_size, 1)
         conv3 = tf.squeeze(conv3, [1]) # [batch,250]
         conv3 = tf.nn.dropout(conv3, self.keep_prob)

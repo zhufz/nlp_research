@@ -10,10 +10,7 @@ class FastText(EncoderBase):
         :param config:
         """
         super(FastText, self).__init__(**kwargs)
-        self.maxlen = kwargs['maxlen']
         self.embedding_dim = kwargs['embedding_size']
-        self.keep_prob = kwargs['keep_prob']
-        self.num_output = kwargs['num_output']
         self.placeholder = {}
 
     def __call__(self, embed, name = 'encoder', features = None, reuse = tf.AUTO_REUSE, **kwargs):

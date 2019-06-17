@@ -10,13 +10,9 @@ import copy
 class AttentionRNN(EncoderBase):
     def __init__(self, **kwargs):
         super(AttentionRNN, self).__init__(**kwargs)
-        self.maxlen = kwargs['maxlen']
         self.num_hidden = 256
         self.num_layers = 2
-        self.keep_prob = kwargs['keep_prob']
-        self.batch_size = kwargs['batch_size']
         self.rnn_type = kwargs['rnn_type']
-        self.num_output = kwargs['num_output']
         self.rnn_layer = RNNLayer(self.rnn_type, 
                                   self.num_hidden,
                                   self.num_layers)

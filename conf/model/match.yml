@@ -7,7 +7,8 @@ no_train_path: "no_train.csv"
 index_path: "index.csv"
 relation_path: "relation.csv"
 test_path: "test.csv"
-classes_path: "{encoder_type}classes"
+
+classes_path: "{encoder_type}/classes"
 dict_path: "{encoder_type}/dict.pkl"
 checkpoint_path: "{encoder_type}/checkpoint"
 model_path: "{encoder_type}/model.pb"
@@ -47,14 +48,14 @@ tfrecords_mode: "class"
 maxlen: 20
 max_steps: 3000
 batch_size: 128
-test_size: 1
+dev_size: 1
 score_thre: 0.65
 
 
 ############ model ##############
 # sim_mode=cross: 对于交互的匹配方法
 # sim_mode=represent: 基于表示的匹配方法
-config_type: 23
+config_type: 10
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 2, 
     learning_rate: 0.0005, tfrecords_mode: "pair", loss_type: "hinge_loss"}
@@ -73,21 +74,22 @@ config:
   22: {encoder_type: "transformer", sim_mode: "represent", num_output: 256, 
     learning_rate: 0.00001, embedding_size: 128, rand_embedding: True}
   23: {encoder_type: "bert", sim_mode: "represent", tfrecords_mode: "class", 
-    learning_rate: 0.000001, use_language_model: True, num_output: 256,
-    base_learning_rate: 0.000001, bert_out_layer: 1}
+    learning_rate: 0.00001, use_language_model: True, num_output: 256,
+    base_learning_rate: 0.000001, bert_out_layer: 2}
 
   30: {encoder_type: "abcnn", sim_mode: "cross", num_output: 1, 
     learning_rate: 0.00005, tfrecords_mode: "point", loss_type: "sigmoid_loss", 
-    test_size: 0.1, score_thre: 0.5}
+    dev_size: 0.1, score_thre: 0.5}
   31: {encoder_type: "transformer", sim_mode: "represent", num_output: 256, 
     learning_rate: 0.00005, tfrecords_mode: "point", loss_type: "sigmoid_loss",
-    embedding_size: 128, rand_embedding: True, test_size: 0.1, 
+    embedding_size: 128, rand_embedding: True, dev_size: 0.1, 
     score_thre: 0.5}
   32: {encoder_type: "bert", sim_mode: "cross", num_output: 1, 
     learning_rate: 0.00005, base_learning_rate: 0.000001,
     tfrecords_mode: "point", loss_type: "sigmoid_loss",
-    test_size: 0.1, score_thre: 0.5, use_language_model: True}
+    dev_size: 0.1, score_thre: 0.5, use_language_model: True}
 
+prepare_data: "false"
 mode: "train"  #train\test\test_one
 #mode: "test"  #train\test\test_one
 #mode: "test_one"  #train\test\test_one

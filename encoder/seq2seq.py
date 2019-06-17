@@ -10,12 +10,8 @@ import copy
 class Seq2seq(EncoderBase):
     def __init__(self, **kwargs):
         super(Seq2seq, self).__init__(**kwargs)
-        self.maxlen = kwargs['maxlen']
         self.num_hidden = kwargs['num_hidden'] if 'num_hidden' in kwargs else 256
         self.num_layers = kwargs['num_layers'] if 'num_layers' in kwargs else 2
-        self.keep_prob = kwargs['keep_prob']
-        self.batch_size = kwargs['batch_size']
-        self.num_output = kwargs['num_output']
         self.rnn_type = kwargs['rnn_type']
         self.rnn_encode_layer = RNNLayer(self.rnn_type, self.num_hidden, self.num_layers)
         self.rnn_decode_layer = RNNLayer(self.rnn_type, self.num_hidden, self.num_layers)

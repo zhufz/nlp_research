@@ -14,10 +14,7 @@ from encoder import EncoderBase
 class ESIM(EncoderBase):
     def __init__(self, **kwargs):
         super(ESIM, self).__init__(**kwargs)
-        self.maxlen = kwargs['maxlen']
         self.embedding_size = kwargs['embedding_size']
-        self.keep_prob = kwargs['keep_prob']
-        self.num_output = kwargs['num_output']
         self.recurrent_units = 300
         self.dense_units = 300
 

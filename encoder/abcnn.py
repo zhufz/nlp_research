@@ -18,9 +18,6 @@ class ABCNN(EncoderBase):
         :param embedding_size: The size of embedding.
         """
         super(ABCNN, self).__init__(**kwargs)
-        self.keep_prob = kwargs['keep_prob']
-        self.batch_size = kwargs['batch_size']
-        self.num_output = kwargs['num_output']
         self.s = kwargs['maxlen']
         self.d0 = kwargs['embedding_size']
         self.w = 4

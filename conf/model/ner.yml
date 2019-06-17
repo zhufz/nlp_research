@@ -1,35 +1,53 @@
+########## path ##########################
 path_root: "data/ner/"
-train_path: "train_data"
-test_path: "test_data"
-result_path: "result"
-dict_path: "word2id.pkl"
-classes_path: "classes"
-checkpoint_path: "checkpoint"
-model_path: "model.pb"
+ori_path: "train_data"
+# ori_path: "test_data"
+# test_path: "test_data"
+# result_path: "result"
 
-batch_size: 64
-epoch_num: 30
-maxlen: -1
+classes_path: "{encoder_type}/classes"
+dict_path: "{encoder_type}/dict.pkl"
+checkpoint_path: "{encoder_type}/checkpoint"
+model_path: "{encoder_type}/model.pb"
+label_path: "{encoder_type}/label"
+tfrecords_path: "{encoder_type}/tfrecords"
+export_dir_path: "{encoder_type}/model"
+########### embedding ###########
 embedding_size: 128
-valid_step: 1000 #valid one time every valid_step 
-num_class: 7
+embedding_type: 'char_embedding'
+rand_embedding: True
+use_language_model: False
+
+############# optim #############
 learning_rate: 0.001
 optimizer_type: "Adam"
 #keep_prob: 0.5
-use_language_model: False
-embedding_type: 'char_embedding'
-rand_embedding: True
+clip_grad: 5
 use_crf: True
+
+############ data ###############
+num_class: 7
+num_output: 7
+maxlen: 100
+batch_size: 64
+dev_size: 0.1
+epoch_num: 30
+valid_step: 1000 #valid one time every valid_step 
+tfrecords_mode: "ner"
+max_steps: 200
+
+############ model ##############
 num_hidden: 256
 num_layers: 1
 tag2label: {"O": 0, "B-PER": 1, "I-PER": 2, 
             "B-LOC": 3, "I-LOC": 4, "B-ORG": 5, "I-ORG": 6}
-config_type: 1
+config_type: 0
 config: 
   0: {encoder_type: "rnn", rnn_type: "bi_lstm"}
   1: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400}
 
+prepare_data: "false"
 mode: "train"  #train\test\test_one
-#mode: "test_one"  #train\test\test_one
-#mode: "test"  #train\test\test_one
+# mode: "test_one"  #train\test\test_one
+# mode: "test"  #train\test\test_one
 
