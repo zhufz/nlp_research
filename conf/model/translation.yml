@@ -30,7 +30,7 @@ step_size: 500
 
 
 ############ data ###############
-maxlen: 100
+maxlen: 32
 batch_size: 64
 dev_size: 0.1
 epoch_num: 30
