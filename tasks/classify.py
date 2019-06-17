@@ -11,7 +11,6 @@ import os,sys
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 
-from embedding import embedding
 from encoder import encoder
 from utils.data_utils import *
 from utils.preprocess import Preprocess
@@ -53,35 +52,9 @@ class Classify(TaskBase):
             self.text_list[idx] = self.pre.get_dl_input_by_text(text)
             if len(self.text_list[idx]) == 0:
                 logging.error("find blank lines in %s"%idx)
-
-    def prepare(self):
-        vocab_dict = embedding[self.embedding_type].build_dict(\
-                                                               dict_path = self.dict_path,
-                                                               text_list = self.text_list,
-                                                               mode = self.mode)
-        text2id = embedding[self.embedding_type].text2id
-        self.gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
-        self.gt.process(self.text_list, self.label_list, text2id,
-                        self.encoder.encoder_fun, vocab_dict, 
-                        self.tfrecords_path, self.label_path, 
-                        self.dev_size, mode = self.mode)
-        logging.info("tfrecords generated!")
+        self.data_type = 'column_2'
 
     def create_model_fn(self):
-        def init_embedding():
-            self.vocab_dict = embedding[self.embedding_type].build_dict(\
-                                                dict_path = self.dict_path,
-                                                text_list = self.text_list,
-                                                mode = self.mode)
-            self.embedding = embedding[self.embedding_type](text_list = self.text_list,
-                                                            vocab_dict = self.vocab_dict,
-                                                            dict_path = self.dict_path,
-                                                            random=self.rand_embedding,
-                                                            maxlen = self.maxlen,
-                                                            batch_size = self.batch_size,
-                                                            embedding_size =
-                                                            self.embedding_size,
-                                                            conf = self.conf)
         def cal_loss(pred, labels, batch_size, conf):
             loss = get_loss(type = self.loss_type, logits = pred, labels =
                                     labels, labels_sparse = True, **conf)
@@ -95,7 +68,7 @@ class Classify(TaskBase):
             #############  encoder  #################
             global_step = tf.train.get_or_create_global_step()
             if not self.use_language_model:
-                init_embedding()
+                self.embedding = self.init_embedding()
                 self.embed_query = self.embedding(features = features, name = 'x_query')
                 out = self.encoder(self.embed_query, 
                                     name = 'x_query',
@@ -204,56 +177,12 @@ class Classify(TaskBase):
             'is_training': True,
             'keep_prob': 0.7
         }
-        config = tf.estimator.RunConfig(tf_random_seed=230,
-                                        model_dir=self.checkpoint_path)
-        if self.use_language_model:
-            init_vars = tf.train.list_variables(self.init_checkpoint_path)
-            init_vars_name = []
-            for x in list(init_vars):
-                (name, var) = (x[0], x[1])
-                init_vars_name.append(name)
-            ws = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=self.init_checkpoint_path,
-                        vars_to_warm_start=init_vars_name)
-            params.update({'base_var':init_vars_name})
-        else:
-            ws = None
-        estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
-                                           config = config,
-                                           params = params,
-                                           warm_start_from = ws)
+        estimator = self.get_train_estimator(self.create_model_fn(), params)
         estimator.train(input_fn = self.create_input_fn("train"), max_steps =
                         self.max_steps)
         self.save()
 
-    def save(self):
-        params = {
-            'is_training': False,
-            'keep_prob': 1
-        }
-        config = tf.estimator.RunConfig(tf_random_seed=230,
-                                        model_dir=self.checkpoint_path)
-        estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
-                                           config = config,
-                                           params = params)
-        def serving_input_receiver_fn():
-            features = {'x_query': tf.placeholder(dtype=tf.int64, 
-                                                  shape=[None, self.maxlen],
-                                                  name='x_query'),
-                        'x_query_length': tf.placeholder(dtype=tf.int64,
-                                                         shape=[None],
-                                                         name='x_query_length'),
-                        'label': tf.placeholder(dtype=tf.int64, 
-                                                shape=[None],
-                                                name='label')}
-            features.update(self.encoder.features)
-            return tf.estimator.export.ServingInputReceiver(features, features)
 
-        estimator.export_savedmodel(
-            self.export_dir_path, # 目录
-            serving_input_receiver_fn, # 返回ServingInputReceiver的函数
-            assets_extra=None,
-            as_text=False,
-            checkpoint_path=None)
 
     def test(self, mode = 'test'):
         params = {
@@ -272,3 +201,21 @@ class Classify(TaskBase):
         else:
             raise ValueError("unknown mode:[%s]"%mode)
 
+    def save(self):
+        params = {
+            'is_training': False,
+            'keep_prob': 1
+        }
+        def get_features():
+            features = {'x_query': tf.placeholder(dtype=tf.int64, 
+                                                  shape=[None, self.maxlen],
+                                                  name='x_query'),
+                        'x_query_length': tf.placeholder(dtype=tf.int64,
+                                                         shape=[None],
+                                                         name='x_query_length'),
+                        'label': tf.placeholder(dtype=tf.int64, 
+                                                shape=[None],
+                                                name='label')}
+            features.update(self.encoder.features)
+            return features
+        self.save_model(self.create_model_fn(), params, get_features)

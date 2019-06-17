@@ -205,6 +205,9 @@ class GenerateTfrecords(object):
             serialized = self._serialized_example(**input_dict)
             mp_dataset[label].append(serialized)
         logging.info('generating tfrecords ...')
+        train_num = 0
+        dev_num = 0
+        test_num = 0
         for label in mp_dataset:
             if mode == 'train':
                 if dev_size >0 and dev_size <1: 
@@ -217,16 +220,24 @@ class GenerateTfrecords(object):
                                        "train")
                 self._output_tfrecords(dataset_test, mp_label[label], output_path, 
                                        "dev")
-                logging.info('training num [{}] for label [{}]'.\
-                             format(len(dataset_train), label))
-                logging.info('dev num [{}] for label [{}]'.format(_dev_size,
-                                                                   label))
+                train_num += len(dataset_train)
+                dev_num += len(dataset_test)
+                #logging.info('training num [{}] for label [{}]'.\
+                #             format(len(dataset_train), label))
+                #logging.info('dev num [{}] for label [{}]'.format(_dev_size,
+                #                                                   label))
             else:
                 dataset = mp_dataset[label]
                 self._output_tfrecords(dataset, mp_label[label], output_path,
                                        "test")
-                logging.info('testing num [{}] for label [{}]'.format(len(dataset),
-                                                                   label))
+                test_num += len(dataset)
+                #logging.info('testing num [{}] for label [{}]'.format(len(dataset),
+                #                                                   label))
+        if mode == 'train':
+            logging.info('training num [{}]'.format(train_num))
+            logging.info('dev num [{}]'.format(dev_num))
+        else:
+            logging.info('testing num [{}]'.format(test_num))
 
     def process_pair_data(self, text_id_list, text_pred_list, 
                           len_list, text_list, label_list, 

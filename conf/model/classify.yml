@@ -36,7 +36,7 @@ maxlen: 20
 batch_size: 64
 num_class_per_batch: 2 #num_class_per_batch should be small than num_class
 dev_size: 0.1
-max_steps: 6000
+max_steps: 300
 
 # loss_type: "am_softmax_loss"
 

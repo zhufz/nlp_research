@@ -121,5 +121,9 @@ if __name__ == '__main__':
                 end = time.time()
                 consume = end-start
                 print('consume: {}'.format(consume))
+        elif conf['mode'] == 'save':
+            from tasks import dl_tasks
+            cl = dl_tasks[task_type](conf)
+            cl.save()
         else:
             logging.error('unknown mode!')
