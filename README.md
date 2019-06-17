@@ -10,9 +10,9 @@
 ## 数据
 
     训练数据:
-    对于分类任务的数据使用csv格式，csv头部包括列名‘target’和‘text’;
-    对于匹配任务的数据使用csv格式，csv头部包括列名‘target’,‘text’ 或者 ‘target’,‘text_a’,‘text_b’
-
+    （1）对于分类任务的数据使用csv格式，csv头部包括列名‘target’和‘text’;
+    （2）对于匹配任务的数据使用csv格式，csv头部包括列名‘target’,‘text’ 或者 ‘target’,‘text_a’,‘text_b’
+    （3）对于NER任务的数据，参考"data/ner/train_data",或者使用其它格式的数据的话，修改task/ner.py中的read_data方法即可。
     预训练数据(目前在分类和匹配任务上已支持):
     如果使用到bert作为预训练，请提前运行"sh scripts/prepare.sh"
 
