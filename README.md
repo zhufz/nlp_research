@@ -24,21 +24,25 @@
          
     [分类]
          1.生成tfrecords数据，训练:
-            python3 run.py classify mode=prepare
-            python3 run.py classify 
+            python3 run.py classify prepare_data=true mode=train
+            python3 run.py classify prepare_data=false mode=train
            或者直接使用脚本:
             sh scripts/restart.sh classify
          
-         2.测试：python3 run.py classify model=test
-           单个测试：python3 run.py classify model=test_one
+         2.测试：
+             python3 run.py classify prepare_data=true model=test
+             python3 run.py classify prepare_data=false model=test
+           单个测试：python3 run.py classify prepare_data=false model=test_one
     [匹配]
          1.生成tfrecords数据，训练:
-             python3 run.py match mode=prepare
-             python3 run.py match mode=train
+             python3 run.py match prepare_data=true mode=train
+             python3 run.py match prepare_data=false mode=train
            或者直接使用脚本:
              sh scripts/restart.sh match
-         2.测试：python3 run.py match model=test
-           单个测试：python3 run.py match model=test_one
+         2.测试：
+            python3 run.py match prepare_data=true mode=test
+            python3 run.py match prepare_data=false model=test
+            单个测试：python3 run.py match prepare_data=false model=test_one
     [序列标注]
         ...
         sh scripts/restart.sh ner
