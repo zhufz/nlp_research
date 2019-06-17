@@ -56,7 +56,7 @@
     1. classify, 训练
     2. match   , 匹配
     3. ner     , 序列标注
-    4. seq2seq , 翻译任务
+    4. translation , 翻译任务
 
 ## 模块
 
