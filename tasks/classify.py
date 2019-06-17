@@ -27,9 +27,6 @@ class Classify(TaskBase):
         super(Classify, self).__init__(conf)
         self.task_type = 'classify'
         self.conf = conf
-        self.pre = Preprocess()
-        self.model_loaded = False
-        self.zdy = {}
         self.read_data()
         self.num_class = len(set(self.label_list))
         self.num_output = self.num_class
@@ -48,6 +45,7 @@ class Classify(TaskBase):
         self.encoder = encoder[self.encoder_type](**self.conf)
 
     def read_data(self):
+        self.pre = Preprocess()
         csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
         self.text_list = list(csv['text'])
         self.label_list = list(csv['target'])

@@ -32,10 +32,6 @@ class NER(TaskBase):
         self.conf = conf
         self.label2tag = {self.tag2label[item]:item for item in self.tag2label}
         pickle.dump(self.label2tag, open(self.label_path, 'wb'))
-        self.shuffle = True
-
-        self.pre = Preprocess()
-        self.util = NERUtil()
         self.read_data()
         #if self.maxlen == -1:
         #    self.maxlen = max([len(text.split()) for text in self.text_list])
@@ -53,6 +49,8 @@ class NER(TaskBase):
         self.encoder = encoder[self.encoder_type](**params)
 
     def read_data(self):
+        self.pre = Preprocess()
+        self.util = NERUtil()
         self.text_list, self.label_list = self.util.load_ner_data(self.ori_path)
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
         self.trans_label_list(self.label_list, self.tag2label)

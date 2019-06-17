@@ -9,7 +9,7 @@ import pickle
 import logging
 import multiprocessing
 import os,sys
-from functools import partial
+
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 
@@ -33,9 +33,6 @@ class Match(TaskBase):
         super(Match, self).__init__(conf)
         self.task_type = 'match'
         self.conf = conf
-        self.pre = Preprocess()
-        self.model_loaded = False
-        self.zdy = {}
         self.read_data()
         self.num_class = len(set(self.label_list))
         logging.info(">>>>>>>>>>>> class num:%s <<<<<<<<<<<<<<<"%self.num_class)
@@ -53,6 +50,7 @@ class Match(TaskBase):
         self.encoder = encoder[self.encoder_type](**self.conf)
 
     def read_data(self):
+        self.pre = Preprocess()
         csv = pd.read_csv(self.ori_path, header = 0, sep="\t", error_bad_lines=False)
         if 'text' in csv.keys() and 'target' in csv.keys():
             #format: text \t target
