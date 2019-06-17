@@ -8,7 +8,7 @@
 ## Data
 train datas:
 
-    we use csv formats data as training data, and its head contains ['target','text']
+    for classification task, we use csv formats data as training data, and its head contains ['target','text']
 
 language model data:
 
@@ -21,21 +21,28 @@ language model data:
          
     [classify]
          1.tfrecords prepare and train:
-            python3 run.py classify mode=prepare
-            python3 run.py classify 
+            python3 run.py classify prepare_data=true mode=train
+            python3 run.py classify prepare_data=false mode=train
            or:
             sh scripts/restart.sh classify
          
-         2.test：python3 run.py classify model=test
-           test one：python3 run.py classify model=test_one
+         2.test：        
+            python3 run.py classify prepare_data=true model=test
+            python3 run.py classify prepare_data=false model=test
+           test one：
+            python3 run.py classify prepare_data=false model=test_one
     [match]
          1.tfrecords prepare and train:
-             python3 run.py match mode=prepare
-             python3 run.py match mode=train
-            or:
+            python3 run.py match prepare_data=true mode=train
+            python3 run.py match prepare_data=false mode=train
+           or:
              sh scripts/restart.sh match
-         2.test：python3 run.py match model=test
-           test one：python3 run.py match model=test_one
+         2.test
+            python3 run.py match prepare_data=true mode=test
+            python3 run.py match prepare_data=false model=test
+           test_one：
+            python3 run.py match prepare_data=false model=test_one 
+           
     [sequence tagging]
         ...
         sh scripts/restart.sh ner
@@ -50,7 +57,7 @@ language model data:
     1. classify, used to train classify model
     2. match   , used to train sentence match model
     3. ner     , used to train sequence tagging model
-    4. seq2seq , used to train sentence generation model
+    4. translation , used to train sentence generation model
 
 ## Module
 
