@@ -62,7 +62,7 @@ class NER(TaskBase):
 
             ################ encode ##################
             if not self.use_language_model:
-                self.embedding = self.init_embedding()
+                self.embedding, _ = self.init_embedding()
                 embed = self.embedding(features = features, name = 'x_query')
                 out = self.encoder(embed, 'x_query', features = features, middle_flag = True)
             else:

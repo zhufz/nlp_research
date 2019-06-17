@@ -1,31 +1,54 @@
+########## path ##########################
 path_root: "data/translation/"
-train_path: "turing"
-dict_path: "vocab.pkl"
+ori_path: "turing"
 
-checkpoint_path: "checkpoint"
-model_path: "model.pb"
+classes_path: "{encoder_type}/classes"
+dict_path: "{encoder_type}/dict.pkl"
+checkpoint_path: "{encoder_type}/checkpoint"
+model_path: "{encoder_type}/model.pb"
+label_path: "{encoder_type}/label"
+tfrecords_path: "{encoder_type}/tfrecords"
+export_dir_path: "{encoder_type}/model"
+########### embedding ###########
+embedding_size: 128
+embedding_type: 'char_embedding'
+rand_embedding: True
 use_language_model: False
 
-maxlen: 40
-embedding_size: 128
+############# optim #############
 learning_rate: 0.001
-batch_size: 64
-num_epochs: 350
-valid_step: 1000 #valid one time every valid_step 
-# embedding_type: char_embedding, word_embedding, subword_embedding
-embedding_type: 'char_embedding'
-embedding_type: 'region_embedding'
-rand_embedding: True
+optimizer_type: "Adam"
+#keep_prob: 0.5
+clip_grad: 5
+use_crf: True
 
+############# clr #####################
+use_clr: False
+clr_mode: 'triangular'
+max_learning_rate: 0.00005
+step_size: 500
+
+
+############ data ###############
+maxlen: 100
+batch_size: 64
+dev_size: 0.1
+epoch_num: 30
+valid_step: 1000 #valid one time every valid_step 
+tfrecords_mode: "translation"
+max_steps: 300
+
+############ model ##############
 num_hidden: 128
 num_layers: 1
-#for translation, encoder_type only support "seq2seq" up to now
-config_type: 1
+num_output: 256
+config_type: 0
 config: 
   0: {encoder_type: "seq2seq", rnn_type: 'gru', embedding_type: 'char_embedding', learning_rate: 0.005}
   1: {encoder_type: "seq2seq", rnn_type: 'bi_lstm', embedding_type: 'char_embedding', learning_rate: 0.005}
 
+prepare_data: "false"
 mode: "train"  #train\test\test_one
-#mode: "test_one"  #train\test\test_one
-
+# mode: "test_one"  #train\test\test_one
+# mode: "test"  #train\test\test_one
 

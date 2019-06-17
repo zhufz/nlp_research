@@ -180,6 +180,24 @@ class GenerateTfrecords(object):
                     'label': label}
             ret.update(encoder.parsed_to_features(parsed = parsed))
             return ret, label
+        elif self.tfrecords_mode == 'translation':
+            keys_to_features = {
+                "encode": tf.FixedLenFeature([self.maxlen], tf.int64),
+                "encode_length": tf.FixedLenFeature([1], tf.int64),
+                "decode": tf.FixedLenFeature([self.maxlen], tf.int64),
+                "decode_length": tf.FixedLenFeature([1], tf.int64),
+                "target": tf.FixedLenFeature([self.maxlen], tf.int64),
+                "target_length": tf.FixedLenFeature([1], tf.int64),
+            }
+            keys_to_features.update(encoder.keys_to_features())
+            parsed = tf.parse_single_example(record, keys_to_features)
+            label = tf.reshape(parsed['target'], [self.maxlen])
+            ret =  {'seq_encode': tf.reshape(parsed['encode'], [self.maxlen]),
+                    'seq_encode_length': tf.reshape(parsed['encode_length'], [1])[0],
+                    'seq_decode': tf.reshape(parsed['decode'], [self.maxlen]),
+                    'seq_decode_length': tf.reshape(parsed['decode_length'], [1])[0]}
+            ret.update(encoder.parsed_to_features(parsed = parsed))
+            return ret, label
         else:
             raise ValueError('unknown tfrecords mode')
 
@@ -390,6 +408,35 @@ class GenerateTfrecords(object):
             self._output_tfrecords(dataset, 0, output_path, "test")
             logging.info('output [%s] test tfrecords ...'%len(dataset))
 
+    def process_translation_data(self, encode_id_list, encode_len_list, 
+                            decode_id_list, decode_len_list, 
+                            target_id_list, target_len_list, 
+                            encoder_fun, output_path, dev_size, mode, **kwargs):
+        dataset = []
+        for idx,encode_id in enumerate(tqdm(encode_id_list, ncols = 70)):
+            label = target_id_list[idx]
+            input_dict = {'encode': encode_id_list[idx], 
+                          'encode_length': [encode_len_list[idx]], 
+                          'decode': decode_id_list[idx], 
+                          'decode_length': [decode_len_list[idx]], 
+                          'target': target_id_list[idx], 
+                          'target_length': [target_len_list[idx]], 
+                          }
+            serialized = self._serialized_example(**input_dict)
+            dataset.append(serialized)
+
+        logging.info('generating [%s] tfrecords ...'%mode)
+        if dev_size >0 and dev_size <1: dev_size = int(len(dataset)*dev_size)
+        if mode == 'train':
+            dataset_train = dataset[:-dev_size]
+            dataset_test = dataset[-dev_size:]
+            self._output_tfrecords(dataset_train, 0, output_path, "train")
+            self._output_tfrecords(dataset_test, 0, output_path, "dev")
+            logging.info('output [%s] train tfrecords ...'%len(dataset_train))
+            logging.info('output [%s] dev tfrecords ...'%len(dataset_test))
+        else:
+            self._output_tfrecords(dataset, 0, output_path, "test")
+            logging.info('output [%s] test tfrecords ...'%len(dataset))
 
     def process(self, text_list, label_list, sen2id_fun, encoder_fun, vocab_dict, path,
                 label_path, dev_size = 1, data_type = 'column_2', mode = 'train'):
@@ -440,6 +487,28 @@ class GenerateTfrecords(object):
                                 'text_b_pred_list': text_b_pred_list,
                                 'text_b_id_list': text_b_id_list,
                                 'len_b_list': len_b_list})
+        elif data_type == 'translation':
+            size = len(label_list)
+            encode_list = text_list[:size]
+            decode_list = text_list[-size:]
+            encode_pred_list, encode_id_list, encode_len_list = sen2id_fun(encode_list, 
+                                                               vocab_dict,
+                                                               self.maxlen, 
+                                                               need_preprocess=False)
+            decode_pred_list, decode_id_list, decode_len_list = sen2id_fun(decode_list, 
+                                                               vocab_dict,
+                                                               self.maxlen, 
+                                                               need_preprocess=False)
+            target_pred_list, target_id_list, target_len_list = sen2id_fun(label_list, 
+                                                               vocab_dict,
+                                                               self.maxlen, 
+                                                               need_preprocess=False)
+            params_dict.update({'encode_id_list': encode_id_list,
+                                'encode_len_list': encode_len_list, 
+                                'decode_id_list': decode_id_list,
+                                'decode_len_list': decode_len_list,
+                                'target_id_list': target_id_list,
+                                'target_len_list': target_len_list})
         else:
             raise ValueError('unknown data type error')
 
@@ -451,6 +520,8 @@ class GenerateTfrecords(object):
             self.process_point_data(**params_dict)
         elif self.tfrecords_mode == 'ner':
             self.process_ner_data(**params_dict)
+        elif self.tfrecords_mode == 'translation':
+            self.process_translation_data(**params_dict)
         else:
             raise ValueError('unknown tfrecords mode')
 

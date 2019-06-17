@@ -131,7 +131,7 @@ class Match(TaskBase):
 
             ############# encode #################
             if not self.use_language_model:
-                self.embedding = self.init_embedding()
+                self.embedding, _ = self.init_embedding()
                 if self.tfrecords_mode == 'class':
                     self.embed_query = self.embedding(features = features, name = 'x_query')
                     output = self.encoder(self.embed_query, 

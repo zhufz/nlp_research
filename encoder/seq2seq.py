@@ -20,8 +20,8 @@ class Seq2seq(EncoderBase):
     def __call__(self, net_encode, net_decode, name = 'seq2seq', 
                  features = None,  reuse = tf.AUTO_REUSE, **kwargs):
         #def create_model(encode_seqs, decode_seqs, src_vocab_size, emb_dim, is_train=True, reuse=False):
-        length_encode_name = name + "_encoder_length" 
-        length_decode_name = name + "_decoder_length" 
+        length_encode_name = name + "_encode_length" 
+        length_decode_name = name + "_decode_length" 
         self.placeholder[length_encode_name] = tf.placeholder(dtype=tf.int32, 
                                                     shape=[None], 
                                                     name = length_encode_name)
@@ -35,12 +35,12 @@ class Seq2seq(EncoderBase):
 
         outputs, final_state_encode, final_state_encode_for_feed = self.rnn_encode_layer(inputs = net_encode, 
                                                      seq_len = self.placeholder[length_encode_name],
-                                                     name = 'encoder')
+                                                     name = 'encode')
         # TODO: 修复decoder依赖encoder无法单个预测问题
         outputs, final_state_decode, final_state_decode_for_feed  = self.rnn_decode_layer(inputs = net_decode, 
                                                      seq_len = self.placeholder[length_decode_name], 
                                                      initial_state = final_state_encode,
-                                                     name = 'decoder')
+                                                     name = 'decode')
         outputs_shape = outputs.shape.as_list()
         outputs = tf.reshape(outputs, [-1, outputs_shape[2]])
         dense = tf.layers.dense(outputs, self.num_output, name='fc')
@@ -53,8 +53,8 @@ class Seq2seq(EncoderBase):
     def feed_dict(self, name = 'seq2seq', initial_state = None, **kwargs):
         feed_dict = {}
         for key in kwargs:
-            length_encode_name = name + "_encoder_length" 
-            length_decode_name = name + "_decoder_length" 
+            length_encode_name = name + "_encode_length" 
+            length_decode_name = name + "_decode_length" 
             if kwargs[key][0] != None:
                 feed_dict[self.placeholder[length_encode_name]] = kwargs[key][0]
             if kwargs[key][1] != None:
@@ -66,8 +66,8 @@ class Seq2seq(EncoderBase):
     def pb_feed_dict(self, graph, name = 'seq2seq', initial_state = None, **kwargs):
         feed_dict = {}
         for key in kwargs:
-            length_encode_name = name + "_encoder_length" 
-            length_decode_name = name + "_decoder_length" 
+            length_encode_name = name + "_encode_length" 
+            length_decode_name = name + "_decode_length" 
             key_node0 = graph.get_operation_by_name(length_encode_name).outputs[0]
             key_node1 = graph.get_operation_by_name(length_decode_name).outputs[0]
             if kwargs[key][0] != None:

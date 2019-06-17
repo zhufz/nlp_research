@@ -61,11 +61,11 @@ class Classify(TaskBase):
             #model params
             self.encoder.keep_prob = params['keep_prob']
             self.encoder.is_training = params['is_training']
+            global_step = tf.train.get_or_create_global_step()
 
             #############  encoder  #################
-            global_step = tf.train.get_or_create_global_step()
             if not self.use_language_model:
-                self.embedding = self.init_embedding()
+                self.embedding,_ = self.init_embedding()
                 self.embed_query = self.embedding(features = features, name = 'x_query')
                 out = self.encoder(self.embed_query, 
                                     name = 'x_query',

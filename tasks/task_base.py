@@ -49,7 +49,7 @@ class TaskBase(object):
                                                    batch_size = self.batch_size,
                                                    embedding_size = self.embedding_size,
                                                    conf = self.conf)
-        return _embedding
+        return _embedding, vocab_dict
 
     def train_estimator_spec(self, mode, loss, global_step, params):
         """generate optimizer which can apply different learning rate in base

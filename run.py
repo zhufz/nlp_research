@@ -88,7 +88,7 @@ if __name__ == '__main__':
     logging.info(conf)
 
     if conf['prepare_data'].lower() != 'false':
-        if task_type in ['match','classify','ner']:
+        if task_type in ['match','classify','ner', 'translation']:
             from tasks import dl_tasks
             cl = dl_tasks[task_type](conf)
             cl.prepare()
@@ -108,7 +108,7 @@ if __name__ == '__main__':
             from tasks import dl_tasks
             cl = dl_tasks[task_type](conf)
             cl.test('test')
-        elif conf['mode'] in ['test_one','test_unit','ner']:
+        elif conf['mode'] in ['test_one','test_unit']:
             #cl = dl_tasks[task_type](conf)
             conf['task_type'] = task_type
             ts = tests[task_type](conf)

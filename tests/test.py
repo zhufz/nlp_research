@@ -205,3 +205,28 @@ class TestNER(Test):
             pred_ids[idx] = [self.mp_label[id] for id in pred_ids[idx]]
         return pred_ids
 
+class TestTranslation(Test):
+    def __init__(self, conf, **kwargs):
+        super(TestNER, self).__init__(conf, **kwargs)
+        conf.update({
+            "keep_prob": 1,
+            "is_training": False
+        })
+        self.encoder = encoder[conf['encoder_type']](**conf)
+        self.mp_label = pickle.load(open(self.label_path, 'rb'))
+
+    def __call__(self, text):
+        text_list  = [text]
+        text_list_pred, x_query, x_query_length = self.text2id(text_list)
+        label = [0 for _ in range(len(text_list))]
+
+        input_dict = {'seq_encode': x_query, 
+                      'seq_encode_length': x_query_length}
+        input_dict.update(self.encoder.encoder_fun(**input_dict))
+        predictions = self.predict_fn(input_dict)
+        scores = [item for item in predictions['pred']]
+        max_scores = np.max(scores, axis = -1)
+        max_ids = np.argmax(scores, axis = -1)
+        ret =  (max_ids[0], max_scores[0])
+        return ret
+
