@@ -9,6 +9,7 @@ import logging
 from tqdm import tqdm
 import pdb
 from functools import partial
+from itertools import chain
 from collections import defaultdict
 from gensim import corpora,models,similarities
 import tensorflow as tf
@@ -378,16 +379,23 @@ class GenerateTfrecords(object):
                 self._output_tfrecords(serial_list, label, output_path, "test")
 
     def process_ner_data(self, text_id_list, text_pred_list, 
-                         len_list, text_list, label_list, 
+                         len_list, text_list, label_list, label_path,
                          encoder_fun, output_path, dev_size, mode, **kwargs):
+        _label_list = list(chain.from_iterable(label_list))
+        mp_label = {item:idx for idx,item in enumerate(list(set(_label_list)))}
+        pickle.dump(mp_label, open(label_path, 'wb'))
+
         dataset = []
         for idx,text_id in enumerate(tqdm(text_id_list, ncols = 70)):
-            label = label_list[idx]
+            labels = label_list[idx]
+            labels = [mp_label[item] for item in labels]
+            O_label = mp_label['O']
             input_dict = {'x_query': text_id, 
                           'x_query_pred': text_pred_list[idx], 
                           'x_query_raw': text_list[idx], 
                           'x_query_length': [len_list[idx]], 
-                          'label': label[:self.maxlen]+[0]*(max(self.maxlen-len(label),0))
+                          #'label': label[:self.maxlen]+[0]*(max(self.maxlen-len(label),0))
+                          'label': labels[:self.maxlen]+[O_label]*(max(self.maxlen-len(labels),0))
                           }
             input_dict.update(encoder_fun(**input_dict))
             del input_dict['x_query_pred']

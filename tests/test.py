@@ -189,9 +189,11 @@ class TestNER(Test):
         })
         self.encoder = encoder[conf['encoder_type']](**conf)
         self.mp_label = pickle.load(open(self.label_path, 'rb'))
+        self.mp_label_rev = {self.mp_label[item]:item for item in self.mp_label}
 
     def __call__(self, text):
         text_list  = [text]
+        length = len(text)
         text_list_pred, x_query, x_query_length = self.text2id(text_list)
         label = [0 for _ in range(len(text_list))]
 
@@ -202,7 +204,8 @@ class TestNER(Test):
         predictions = self.predict_fn(input_dict)
         pred_ids = [item for item in predictions['pred_ids']]
         for idx,item in enumerate(pred_ids):
-            pred_ids[idx] = [self.mp_label[id] for id in pred_ids[idx]]
+            pred_ids[idx] = [self.mp_label_rev[id] for id in
+                             pred_ids[idx]][:length]
         return pred_ids
 
 class TestTranslation(Test):

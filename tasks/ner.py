@@ -27,8 +27,6 @@ class NER(TaskBase):
         super(NER, self).__init__(conf)
         self.task_type = 'ner'
         self.conf = conf
-        self.label2tag = {self.tag2label[item]:item for item in self.tag2label}
-        pickle.dump(self.label2tag, open(self.label_path, 'wb'))
         self.read_data()
         #if self.maxlen == -1:
         #    self.maxlen = max([len(text.split()) for text in self.text_list])
@@ -50,7 +48,6 @@ class NER(TaskBase):
         self.util = NERUtil()
         self.text_list, self.label_list = self.util.load_ner_data(self.ori_path)
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
-        self.trans_label_list(self.label_list, self.tag2label)
         self.data_type = 'column_2'
 
     def create_model_fn(self):
@@ -146,12 +143,6 @@ class NER(TaskBase):
             return lambda : test_input_fn("dev")
         else:
             raise ValueError("unknown input_fn type!")
-
-
-    def trans_label_list(self, label_list, tag2label):
-        for idx,labels in enumerate(label_list):
-            for idy,label in enumerate(labels):
-                label_list[idx][idy] = tag2label[label_list[idx][idy]]
 
     def save(self):
         params = {
