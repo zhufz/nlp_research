@@ -75,6 +75,38 @@
     
     3. utils
         data process
+        
+## 参考文献
+    1. [2014 dcnn]A Convolutional Neural Network for Modelling Sentences
+    2. [2014 textcnn] Convolutional Neural Networks for Sentence Classification
+    3. [2015 charCNN] Character-level Convolutional Networks for TextClassification
+    4. [2016 HAN] Hierarchical Attention Networks for Document Classification
+    5. [2016-fasttext]Bag of Tricks for Efficient Text Classification
+    6. [2017 vdcnn] Very Deep Convolutional Networks for Text Classification
+    7. [2017_ACL dpcnn] Deep Pyramid Convolutional Neural Networks for Text Categorization
+    8. [2018] Investigating Capsule Networks with Dynamic Routing for Text Classification
+    9. [2018_ACL] Disconnected Recurrent Neural Networks for Text Categorization
+    10.[2018] Investigating Capsule Networks with Dynamic Routing for Text Classification
+    11.[2018] Topic Memory Networks for Short Text Classification
+    12.Learning Deep Structured Semantic Models for Web Search using Clickthrough Data
+    13.[2016] A Deep Relevance Matching Model for Ad-hoc Retrieval
+    14.[2016] ABCNN Attention-Based Convolutional Neural Network for Modeling Sentence Pairs
+    15.[2016] Person Re-Identification by Multi-Channel Parts-Based CNN with Improved Triplet Loss Function
+    16.[2016] Text Matching as Image Recognition
+    17.[2017 ACL,smn] Sequential Matching Network A New Architecture for Multi-turn Response Selection in Retrieval-based Chatbots
+    18.[2017 bimpm] Bilateral Multi-Perspective Matching for Natural Language Sentences
+    19.[2017 esim] Enhanced LSTM for Natural Language Inference
+    20.[2017] IRGAN A Minimax Game for Unifying Generative and Discriminative Information Retrieval Models
+    21.[2018] MIX Multi-Channel Information Crossing for Text Matching
+    22.[2017-NIPS] Attention-is-all-you-need
+    23.[2018-AAAI] DiSAN Directional Self-Attention Network for RNNCNN-Free Language Understanding
+    24.[2018-ICLR]Bi-Directional Block Self-Attention for Fast and Memory-Efficient Sequence Modeling
+    25.[2018] An Introductory Survey on Attention Mechanisms in NLP Problems
+    26.[2018] Universal Transformers
+    27.[2018 naacl ELMo]  Deep contextualized word representations
+    28.[2018 iclr quick-thoughts]An efficient framework for learning sentence representations
+    29.[2017 subword] EnrichingWord Vectors with Subword Information
+    30.[2018] Universal Language Model Fine-tuning for Text Classification
 ## 联系
 
     如果有任何问题，欢迎发邮件到zfz1015@outlook.com
