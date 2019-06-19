@@ -52,6 +52,7 @@
         fasttext
         text_cnn
         dcnn
+        idcnn
         dpcnn
         vdcnn
         rnn        
