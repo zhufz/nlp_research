@@ -17,32 +17,27 @@
     如果使用到bert作为预训练，请提前运行"sh scripts/prepare.sh"
 
 ## 快速开始
-
     [依赖]
          环境：python3+tensorflow 1.10(python2.7已支持)
          pip3 install --user -r requirements.txt
          
+    各类任务的参数分别定义在conf/model/的，以任务名命名的yml文件中"conf/model/{task}.yml"
+    目前已支持的常见任务如下：       
     [分类]
          1.生成tfrecords数据，训练:
-            python3 run.py classify prepare_data=true mode=train
-            python3 run.py classify prepare_data=false mode=train
+            python3 run.py classify mode=train
            或者直接使用脚本:
             sh scripts/restart.sh classify
          
          2.测试：
-             python3 run.py classify prepare_data=true model=test
-             python3 run.py classify prepare_data=false model=test
-           单个测试：python3 run.py classify prepare_data=false model=test_one
+           单个测试：python3 run.py classify model=test_one
     [匹配]
          1.生成tfrecords数据，训练:
-             python3 run.py match prepare_data=true mode=train
-             python3 run.py match prepare_data=false mode=train
+             python3 run.py match mode=train
            或者直接使用脚本:
              sh scripts/restart.sh match
          2.测试：
-            python3 run.py match prepare_data=true mode=test
-            python3 run.py match prepare_data=false model=test
-            单个测试：python3 run.py match prepare_data=false model=test_one
+            单个测试：python3 run.py match model=test_one
     [序列标注]
         ...
         sh scripts/restart.sh ner
@@ -51,12 +46,7 @@
         sh scripts/restart.sh translation
 ## 任务
 
-    各类任务的参数分别定义在conf/model/的，以任务名命名的yml文件中"conf/model/{task}.yml"
-    目前已支持的常见任务如下：
-    1. classify, 训练
-    2. match   , 匹配
-    3. ner     , 序列标注
-    4. translation , 翻译任务
+
 
 ## 模块
 
