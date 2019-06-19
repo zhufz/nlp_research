@@ -21,7 +21,7 @@
          环境：python3+tensorflow 1.10(python2.7已支持)
          pip3 install --user -r requirements.txt
          
-    各类任务的参数分别定义在conf/model/的，以任务名命名的yml文件中"conf/model/{task}.yml"
+    各类任务的参数定义在conf/model/内的以任务名命名的yml文件中"conf/model/{task}.yml"
     目前已支持的常见任务如下：       
     [分类]
          1.生成tfrecords数据，训练:
