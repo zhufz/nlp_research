@@ -9,7 +9,7 @@
 
 ## 数据
 
-    训练数据:
+    训练数据(目前data下均内置了样例数据):
     （1）对于分类任务的数据使用csv格式，csv头部包括列名‘target’和‘text’;
     （2）对于匹配任务的数据使用csv格式，csv头部包括列名‘target’,‘text’ 或者 ‘target’,‘text_a’,‘text_b’
     （3）对于NER任务的数据，参考"data/ner/train_data",或者使用其它格式的数据的话，修改task/ner.py中的read_data方法即可。
