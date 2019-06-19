@@ -126,7 +126,7 @@ class NERUtil():
                 out_lines =  self.generate_from_gen(gen_line, 
                                                     type_ac,
                                                     mp_type2word,
-                                                    100)
+                                                    50)
                 for line in out_lines:
                     res = ac.search(line)
                     mp = {}

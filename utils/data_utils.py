@@ -488,9 +488,11 @@ class GenerateTfrecords(object):
                                                                vocab_dict,
                                                                self.maxlen, 
                                                                need_preprocess=False)
-            params_dict.update({'text_a_pred_list': text_a_pred_list,
+            params_dict.update({'text_a_list': text_a_list,
+                                'text_a_pred_list': text_a_pred_list,
                                 'text_a_id_list': text_a_id_list,
                                 'len_a_list': len_a_list,
+                                'text_b_list': text_b_list,
                                 'text_b_pred_list': text_b_pred_list,
                                 'text_b_id_list': text_b_id_list,
                                 'len_b_list': len_b_list})

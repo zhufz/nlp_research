@@ -209,7 +209,7 @@ class TestNER(Test):
         for idx,item in enumerate(pred_ids):
             pred_ids[idx] = [self.mp_label_rev[id] for id in
                              pred_ids[idx]][:length]
-        return pred_ids
+        return pred_ids[0]
 
 class TestTranslation(Test):
     def __init__(self, conf, **kwargs):
