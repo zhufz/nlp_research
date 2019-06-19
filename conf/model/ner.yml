@@ -2,7 +2,6 @@
 path_root: "data/ner/"
 ori_path: "train_data"
 # ori_path: "intent_ner.csv"
-# ori_path: "test_data"
 
 classes_path: "{encoder_type}/classes"
 dict_path: "{encoder_type}/dict.pkl"
@@ -38,7 +37,7 @@ dev_size: 0.1
 epoch_num: 30
 valid_step: 1000 #valid one time every valid_step 
 tfrecords_mode: "ner"
-max_steps: 1000
+max_steps: 1500
 
 ############ model ##############
 num_hidden: 256
@@ -48,7 +47,7 @@ config:
   0: {encoder_type: "rnn", rnn_type: "bi_lstm"}
   1: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True,
       base_learning_rate: 0.000001}
-  2: {encoder_type: "idcnn", learning_rate: 0.00001}
+  2: {encoder_type: "idcnn", learning_rate: 0.0005}
 
 prepare_data: "false"
 mode: "train"  #train\test\test_one
