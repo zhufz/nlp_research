@@ -1,7 +1,7 @@
 ########## path ##########################
 path_root: "data/ner/"
 ori_path: "train_data"
-ori_path: "intent_ner.csv"
+# ori_path: "intent_ner.csv"
 # ori_path: "test_data"
 
 classes_path: "{encoder_type}/classes"
@@ -38,7 +38,7 @@ dev_size: 0.1
 epoch_num: 30
 valid_step: 1000 #valid one time every valid_step 
 tfrecords_mode: "ner"
-max_steps: 2000
+max_steps: 1000
 
 ############ model ##############
 num_hidden: 256

@@ -36,14 +36,14 @@ maxlen: 20
 batch_size: 64
 num_class_per_batch: 2 #num_class_per_batch should be small than num_class
 dev_size: 0.1
-max_steps: 300
+max_steps: 3000
 
 # loss_type: "am_softmax_loss"
 
 ############ model ##############
 config_type: 0
 config: 
-  0: {encoder_type: "fasttext", learning_rate: 0.003}
+  0: {encoder_type: "fasttext", learning_rate: 0.00001}
   1: {encoder_type: "transformer", learning_rate: 0.0001}
   2: {encoder_type: "transformer", embedding_type: 'subword_embedding', learning_rate: 0.0001}
   3: {encoder_type: "rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}
