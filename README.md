@@ -44,9 +44,6 @@
     [翻译]    
         ...
         sh scripts/restart.sh translation
-## 任务
-
-
 
 ## 模块
 
@@ -107,6 +104,8 @@
     28.[2018 iclr quick-thoughts]An efficient framework for learning sentence representations
     29.[2017 subword] EnrichingWord Vectors with Subword Information
     30.[2018] Universal Language Model Fine-tuning for Text Classification
+
+
 ## 联系
 
     如果有任何问题，欢迎发邮件到zfz1015@outlook.com
