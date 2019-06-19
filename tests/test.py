@@ -53,7 +53,7 @@ class Test(object):
         self.text2id = partial(embedding[self.embedding_type].text2id,
                                vocab_dict = self.vocab_dict,
                                maxlen = self.maxlen,
-                               need_preprocess = True)
+                               )
 
 class TestClassify(Test):
     def __init__(self, conf, **kwargs):
@@ -68,7 +68,8 @@ class TestClassify(Test):
 
     def __call__(self, text):
         text_list  = [text]
-        text_list_pred, x_query, x_query_length = self.text2id(text_list)
+        text_list_pred, x_query, x_query_length = self.text2id(text_list, 
+                                                               need_preprocess = True)
         label = [0 for _ in range(len(text_list))]
 
         input_dict = {'x_query': x_query, 
@@ -146,7 +147,8 @@ class TestMatch(Test):
 
     def _get_vecs(self, text_list, need_preprocess = False):
         #根据batches数据生成向量
-        text_list_pred, x_query, x_query_length = self.text2id(text_list)
+        text_list_pred, x_query, x_query_length = self.text2id(text_list,
+                                                               need_preprocess = True)
         label = [0 for _ in range(len(text_list))]
         input_dict = {'x_query': x_query, 
                       'x_query_raw': text_list_pred,
@@ -159,8 +161,10 @@ class TestMatch(Test):
 
     def _get_label(self, query_list, sample_list, need_preprocess = False):
         #计算query_list 与 sample_list的匹配分数
-        x_query_pred, x_query, x_query_length = self.text2id(query_list)
-        x_sample_pred, x_sample, x_sample_length = self.text2id(sample_list)
+        x_query_pred, x_query, x_query_length = self.text2id(query_list,
+                                                             need_preprocess = True)
+        x_sample_pred, x_sample, x_sample_length = self.text2id(sample_list,
+                                                                need_preprocess = True)
         label = [0 for _ in range(len(sample_list))]
         if len(x_query) != len(x_sample):
             x_query = np.tile(x_query[0],(len(x_sample),1))
@@ -194,12 +198,11 @@ class TestNER(Test):
     def __call__(self, text):
         text_list  = [text]
         length = len(text)
-        text_list_pred, x_query, x_query_length = self.text2id(text_list)
-        label = [0 for _ in range(len(text_list))]
-
+        text_list_pred, x_query, x_query_length = self.text2id(text_list,
+                                                               need_preprocess = False)
         input_dict = {'x_query': x_query, 
                       'x_query_length': x_query_length, 
-                      'label': label}
+                      }
         input_dict.update(self.encoder.encoder_fun(**input_dict))
         predictions = self.predict_fn(input_dict)
         pred_ids = [item for item in predictions['pred_ids']]
@@ -220,8 +223,8 @@ class TestTranslation(Test):
 
     def __call__(self, text):
         text_list  = [text]
-        text_list_pred, x_query, x_query_length = self.text2id(text_list)
-        label = [0 for _ in range(len(text_list))]
+        text_list_pred, x_query, x_query_length = self.text2id(text_list,
+                                                               need_preprocess = True)
 
         input_dict = {'seq_encode': x_query, 
                       'seq_encode_length': x_query_length}

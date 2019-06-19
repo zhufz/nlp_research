@@ -1,9 +1,8 @@
 ########## path ##########################
 path_root: "data/ner/"
 ori_path: "train_data"
+ori_path: "intent_ner.csv"
 # ori_path: "test_data"
-# test_path: "test_data"
-# result_path: "result"
 
 classes_path: "{encoder_type}/classes"
 dict_path: "{encoder_type}/dict.pkl"
@@ -28,26 +27,22 @@ use_crf: True
 ############# clr #####################
 use_clr: False
 clr_mode: 'triangular'
-max_learning_rate: 0.00005
+max_learning_rate: 0.00001
 step_size: 500
 
 
 ############ data ###############
-num_class: 7
-num_output: 7
-maxlen: 100
+maxlen: 64
 batch_size: 64
 dev_size: 0.1
 epoch_num: 30
 valid_step: 1000 #valid one time every valid_step 
 tfrecords_mode: "ner"
-max_steps: 200
+max_steps: 2000
 
 ############ model ##############
 num_hidden: 256
 num_layers: 1
-tag2label: {"O": 0, "B-PER": 1, "I-PER": 2, 
-            "B-LOC": 3, "I-LOC": 4, "B-ORG": 5, "I-ORG": 6}
 config_type: 0
 config: 
   0: {encoder_type: "rnn", rnn_type: "bi_lstm"}
@@ -56,6 +51,4 @@ config:
 
 prepare_data: "false"
 mode: "train"  #train\test\test_one
-# mode: "test_one"  #train\test\test_one
-# mode: "test"  #train\test\test_one
 

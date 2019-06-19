@@ -113,7 +113,11 @@ class Classify(TaskBase):
 
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
                          os.listdir(self.tfrecords_path) if item.startswith('train')]
-            assert len(filenames) > 0, "Can't find any tfrecords file for train!"
+            if len(filenames) == 0:
+                logging.warn("Can't find any tfrecords file for train, prepare now!")
+                self.prepare()
+                filenames = [os.path.join(self.tfrecords_path,item) for item in 
+                             os.listdir(self.tfrecords_path) if item.startswith('train')]
             logging.info("tfrecords train class num: {}".format(len(filenames)))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]

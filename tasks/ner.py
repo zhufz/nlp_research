@@ -48,6 +48,7 @@ class NER(TaskBase):
         self.util = NERUtil()
         self.text_list, self.label_list = self.util.load_ner_data(self.ori_path)
         self.text_list = [self.pre.get_dl_input_by_text(text) for text in self.text_list]
+        self.num_class = self.num_output = len(set(list(chain.from_iterable(self.label_list))))
         self.data_type = 'column_2'
 
     def create_model_fn(self):
@@ -96,21 +97,16 @@ class NER(TaskBase):
                                                       eval_metric_ops=metrics)
         return model_fn
 
-    def train(self):
-        params = {
-            'is_training': True,
-            'keep_prob': 0.7
-        }
-        estimator = self.get_train_estimator(self.create_model_fn(), params)
-        estimator.train(input_fn = self.create_input_fn("train"), max_steps =
-                        self.max_steps)
-        self.save()
-
     def create_input_fn(self, mode):
         n_cpu = multiprocessing.cpu_count()
         def train_input_fn():
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
                          os.listdir(self.tfrecords_path) if item.startswith('train')]
+            if len(filenames) == 0:
+                logging.warn("Can't find any tfrecords file for train, prepare now!")
+                self.prepare()
+                filenames = [os.path.join(self.tfrecords_path,item) for item in 
+                             os.listdir(self.tfrecords_path) if item.startswith('train')]
             dataset = tf.data.TFRecordDataset(filenames)
             dataset = dataset.repeat()
             gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
@@ -125,6 +121,7 @@ class NER(TaskBase):
         def test_input_fn(mode):
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
                          os.listdir(self.tfrecords_path) if item.startswith(mode)]
+            assert len(filenames) > 0, "Can't find any tfrecords file for %s!"%mode
             dataset = tf.data.TFRecordDataset(filenames)
             gt = GenerateTfrecords(self.tfrecords_mode, self.maxlen)
             dataset = dataset.map(lambda record: gt.parse_record(record, self.encoder),
@@ -156,12 +153,23 @@ class NER(TaskBase):
                         'x_query_length': tf.placeholder(dtype=tf.int64,
                                                          shape=[None],
                                                          name='x_query_length'),
-                        'label': tf.placeholder(dtype=tf.int64, 
-                                                shape=[None],
-                                                name='label')}
+                        }
+                        #'label': tf.placeholder(dtype=tf.int64, 
+                        #                        shape=[None],
+                        #                        name='label')}
             features.update(self.encoder.get_features())
             return features
         self.save_model(self.create_model_fn(), params, get_features)
+
+    def train(self):
+        params = {
+            'is_training': True,
+            'keep_prob': 0.7
+        }
+        estimator = self.get_train_estimator(self.create_model_fn(), params)
+        estimator.train(input_fn = self.create_input_fn("train"), max_steps =
+                        self.max_steps)
+        self.save()
 
     def test(self, mode = 'test'):
         params = {

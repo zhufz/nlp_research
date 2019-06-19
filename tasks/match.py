@@ -216,9 +216,12 @@ class Match(TaskBase):
             #                 for i in range(size)]
             filenames = [os.path.join(self.tfrecords_path,item) for item in 
                          os.listdir(self.tfrecords_path) if item.startswith('train')]
+            if len(filenames) == 0:
+                logging.warn("Can't find any tfrecords file for train, prepare now!")
+                self.prepare()
+                filenames = [os.path.join(self.tfrecords_path,item) for item in 
+                             os.listdir(self.tfrecords_path) if item.startswith('train')]
             size = len(filenames)
-            if size == 0:
-                logging.error('no processed tfrecords data finded!')
             logging.info("tfrecords train class num: {}".format(size))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]

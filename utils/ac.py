@@ -74,8 +74,8 @@ class AC(object):
 if __name__ == '__main__':
     ac = AC()
     ac.add('指示灯')
-    ac.add('垃圾话')
+    ac.add('垃圾')
     ac.add('生存游戏')
     res = ac.search('打开指示灯')
-    #res = ac.search('汕话')
     print(res)
+    #{'指示灯': [(2, 5)]}

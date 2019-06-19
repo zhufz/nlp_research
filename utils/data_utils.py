@@ -394,7 +394,6 @@ class GenerateTfrecords(object):
                           'x_query_pred': text_pred_list[idx], 
                           'x_query_raw': text_list[idx], 
                           'x_query_length': [len_list[idx]], 
-                          #'label': label[:self.maxlen]+[0]*(max(self.maxlen-len(label),0))
                           'label': labels[:self.maxlen]+[O_label]*(max(self.maxlen-len(labels),0))
                           }
             input_dict.update(encoder_fun(**input_dict))
