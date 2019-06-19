@@ -43,11 +43,12 @@ max_steps: 1000
 ############ model ##############
 num_hidden: 256
 num_layers: 1
-config_type: 0
+config_type: 2
 config: 
   0: {encoder_type: "rnn", rnn_type: "bi_lstm"}
   1: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True,
       base_learning_rate: 0.000001}
+  2: {encoder_type: "idcnn", learning_rate: 0.00001}
 
 prepare_data: "false"
 mode: "train"  #train\test\test_one

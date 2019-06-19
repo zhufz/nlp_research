@@ -26,3 +26,11 @@ class EncoderBase(object):
     def get_features(self, **kwargs):
         features = {}
         return features
+
+    def feed_dict(self, name = 'encoder', **kwargs):
+        feed_dict = {}
+        return feed_dict
+
+    def pb_feed_dict(self, graph, name = 'encoder', **kwargs):
+        feed_dict = {}
+        return feed_dict

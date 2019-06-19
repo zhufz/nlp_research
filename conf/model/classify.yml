@@ -53,7 +53,7 @@ config:
   7: {encoder_type: "capsule", caps_type: "A", embedding_type: 'char_embedding', learning_rate: 0.001, loss_type: "margin_loss"}
   8: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True, valid_step: 400,
       base_learning_rate: 0.000001}
-  # 9: {encoder_type: "leaf", learning_rate: 0.003}
+  9: {encoder_type: "idcnn", learning_rate: 0.00001}
 
 prepare_data: "false"
 mode: "train"  #train\test\test_one

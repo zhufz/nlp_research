@@ -9,6 +9,7 @@ encoder = {}
 from cnn import CNN
 from dcnn import DCNN
 from dpcnn import DPCNN
+from idcnn import IDCNN
 from vdcnn import VDCNN
 from rcnn import RCNN
 from rnn import RNN
@@ -25,6 +26,7 @@ from leaf import LEAF
 encoder["cnn"] = CNN
 encoder["dcnn"] = DCNN
 encoder["vdcnn"] = VDCNN
+encoder["idcnn"] = IDCNN
 encoder["dpcnn"] = DPCNN
 encoder["text_cnn"] = TextCNN
 encoder["rcnn"] = RCNN
