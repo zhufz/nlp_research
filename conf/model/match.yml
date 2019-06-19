@@ -1,8 +1,8 @@
 ############### path ############
 # path_root: "/content/data/match/"
 path_root: "data/match/"
-ori_path: "intent.csv"
-# ori_path: "atec.csv"
+# ori_path: "intent.csv"
+ori_path: "atec.csv"
 no_train_path: "no_train.csv"
 index_path: "index.csv"
 relation_path: "relation.csv"
@@ -55,7 +55,7 @@ score_thre: 0.65
 ############ model ##############
 # sim_mode=cross: 对于交互的匹配方法
 # sim_mode=represent: 基于表示的匹配方法
-config_type: 10
+config_type: 30
 config: 
   0: {encoder_type: "match_pyramid", sim_mode: "cross", num_output: 2, 
     learning_rate: 0.0005, tfrecords_mode: "pair", loss_type: "hinge_loss"}
