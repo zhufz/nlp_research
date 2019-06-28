@@ -218,8 +218,10 @@ def get_initializer(type = 'random_uniform', **kwargs):
                                              maxval = maxval, 
                                              seed=None, 
                                              dtype=tf.float32)
-    elif type == 'xavier':
+    elif type == 'xavier' or type == 'xavior_uniform':
         return tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtype=tf.float32)
+    elif type == 'xavier_normal':
+        return tf.contrib.layers.xavier_initializer(uniform=False, seed=None, dtype=tf.float32)
     elif type =='variance_scaling':
         return tf.variance_scaling_initializer(scale=1.0,mode="fan_in",
                                                         distribution="uniform",seed=None,dtype=tf.float32)

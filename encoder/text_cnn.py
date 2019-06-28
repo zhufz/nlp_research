@@ -1,6 +1,7 @@
 #-*- coding:utf-8 -*-
 import tensorflow as tf
 from common.layers import get_initializer
+from common.activations import get_activation
 from encoder import EncoderBase
 #from kim cnn 2014:https://arxiv.org/abs/1408.5882
 
@@ -33,27 +34,20 @@ class TextCNN(EncoderBase):
                     )
                     output = tf.nn.conv2d(embed, conv_filter, [1, 1, 1, 1], "VALID") + bias
                     # Applying non-linearity
-                    output = tf.nn.relu(output)
+                    output = get_activation('swish')(output)
                     # Pooling layer, max over time for each channel
                     output = tf.reduce_max(output, axis=[1, 2])
                     conv_outputs.append(output)
 
             # Concatenate all different filter outputs before fully connected layers
             conv_outputs = tf.concat(conv_outputs, axis=1)
-            #total_channels = conv_outputs.get_shape()[-1]
             h_pool_flat = tf.reshape(conv_outputs, [-1, self.num_filters * len(self.filter_sizes)])
             h_drop = tf.nn.dropout(h_pool_flat, self.keep_prob)
-            #dense = tf.layers.dense(h_drop, self.num_output, activation=None)
             dense = tf.layers.dense(h_pool_flat, 
                                     self.num_output, 
                                     kernel_regularizer=tf.contrib.layers.l2_regularizer(0.001),
                                     activation=None,
                                     reuse = reuse)
-                #logits = tf.layers.dense(mean_sentence,
-                #                        self.num_output,
-                #                        kernel_regularizer=tf.contrib.layers.l2_regularizer(0.001),
-                #                        name='fc',
-                #                        reuse = reuse)
         return dense
 
     def feed_dict(self, **kwargs):

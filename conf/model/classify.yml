@@ -32,20 +32,18 @@ loss_type: "softmax_loss"
 learning_rate: 0.001
 
 ############# data ####################
-maxlen: 20
-batch_size: 64
+maxlen: 32
+batch_size: 128
 num_class_per_batch: 2 #num_class_per_batch should be small than num_class
 dev_size: 0.1
-max_steps: 3000
-
-# loss_type: "am_softmax_loss"
+max_steps: 8000
 
 ############ model ##############
 config_type: 0
 config: 
-  0: {encoder_type: "fasttext", learning_rate: 0.00001}
+  0: {encoder_type: "fasttext", learning_rate: 0.001}
   1: {encoder_type: "transformer", learning_rate: 0.0001}
-  2: {encoder_type: "transformer", embedding_type: 'subword_embedding', learning_rate: 0.0001}
+  2: {encoder_type: "text_cnn", learning_rate: 0.001}
   3: {encoder_type: "rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}
   4: {encoder_type: "rnn", rnn_type: "lstm", embedding_type: 'char_embedding', learning_rate: 0.001}
   5: {encoder_type: "attention_rnn", rnn_type: "gru", embedding_type: 'char_embedding', learning_rate: 0.001}

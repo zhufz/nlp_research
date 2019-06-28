@@ -6,7 +6,6 @@ sys.path.append(ROOT_PATH)
 from encoder_base import EncoderBase
 encoder = {}
 #sentence encoder
-from cnn import CNN
 from dcnn import DCNN
 from dpcnn import DPCNN
 from idcnn import IDCNN
@@ -21,9 +20,7 @@ from fast_attention_text import FastAttentionText
 from han import HAN
 from capsule import Capsule
 from seq2seq import Seq2seq
-from leaf import LEAF
 
-encoder["cnn"] = CNN
 encoder["dcnn"] = DCNN
 encoder["vdcnn"] = VDCNN
 encoder["idcnn"] = IDCNN
@@ -34,7 +31,6 @@ encoder["rnn"] = RNN
 encoder["attention_rnn"] = AttentionRNN
 encoder["transformer"] = Transformer
 encoder["fasttext"] = FastText
-encoder["leaf"] = LEAF
 encoder["fast_attention_text"] = FastAttentionText
 encoder["han"] = HAN
 encoder["capsule"] = Capsule

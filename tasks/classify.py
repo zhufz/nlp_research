@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.contrib import predictor
 import pdb
 import re
+import time
 import traceback
 import pickle
 import logging
@@ -42,7 +43,7 @@ class Classify(TaskBase):
 
     def read_data(self):
         self.pre = Preprocess()
-        csv = pd.read_csv(self.ori_path, header = 0, sep=",", error_bad_lines=False)
+        csv = pd.read_csv(self.ori_path, header = 0, sep="\t", error_bad_lines=False)
         self.text_list = list(csv['text'])
         self.label_list = list(csv['target'])
         for idx,text in enumerate(self.text_list):
@@ -118,7 +119,10 @@ class Classify(TaskBase):
                 self.prepare()
                 filenames = [os.path.join(self.tfrecords_path,item) for item in 
                              os.listdir(self.tfrecords_path) if item.startswith('train')]
+            assert size == len(filenames), "each file represent one class"
             logging.info("tfrecords train class num: {}".format(len(filenames)))
+            logging.info("tfrecords num_sentences_per_class:{}".format(num_sentences_per_class ))
+            logging.info("tfrecords num_classes_per_batch:{}".format(num_classes_per_batch))
             datasets = [tf.data.TFRecordDataset(filename) for filename in filenames]
             datasets = [dataset.repeat() for dataset in datasets]
             #assert self.batch_size == num_sentences_per_class* num_classes_per_batch
