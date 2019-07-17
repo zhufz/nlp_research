@@ -8,6 +8,8 @@ import logging
 
 ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-1])
 sys.path.append(ROOT_PATH)
+import tensorflow as tf
+tf.logging.set_verbosity(tf.logging.INFO)
 
 class Run():
     def __init__(self, init_log = False):
@@ -54,7 +56,8 @@ class Run():
         self._change_path(conf)
         #加载base信息
         for k,v in base.items():
-            conf[k] = v
+            if k not in conf:
+                conf[k] = v
         #更新encoder_type信息
         for k,v in conf.items():
             if type(v) == str and (v.find('{encoder_type}')) != -1:
@@ -88,31 +91,36 @@ if __name__ == '__main__':
     logging.info(conf)
 
     if conf['prepare_data'].lower() != 'false':
-        if task_type in ['match','classify','ner', 'translation']:
-            from tasks import dl_tasks
-            cl = dl_tasks[task_type](conf)
-            cl.prepare()
-        else:
-            logging.warn('unknown task type for prepare data step!')
+        from tasks import dl_tasks
+        cl = dl_tasks[task_type](conf)
+        cl.prepare()
     else:
-        if conf['mode'] == 'train':
+        if conf['mode'] == 'train': #训练
             from tasks import dl_tasks
             cl = dl_tasks[task_type](conf)
-            cl.train()
-            cl.test('dev')
-        elif conf['mode'] == 'dev':
+            try:
+                cl.train_and_evaluate()
+            except:
+                cl.train()
+                cl.test('dev')
+        elif conf['mode'] == 'dev': #验证集测试
             from tasks import dl_tasks
             cl = dl_tasks[task_type](conf)
             cl.test('dev')
-        elif conf['mode'] == 'test':
+        elif conf['mode'] == 'test': #带标签测试
             from tasks import dl_tasks
             cl = dl_tasks[task_type](conf)
             cl.test('test')
-        elif conf['mode'] in ['test_one','test_unit']:
-            #cl = dl_tasks[task_type](conf)
+        elif conf['mode'] == 'predict': #不带标签测试
             conf['task_type'] = task_type
             ts = tests[task_type](conf)
-
+            if 'test_path' in conf:
+                ts.test_file(conf['test_path'])
+            else:
+                ts.test_file(conf['ori_path'])
+        elif conf['mode'] in ['test_one','test_unit']: #单个测试
+            conf['task_type'] = task_type
+            ts = tests[task_type](conf)
             while True:
                 a = input('input:')
                 start = time.time()
@@ -121,7 +129,7 @@ if __name__ == '__main__':
                 end = time.time()
                 consume = end-start
                 print('consume: {}'.format(consume))
-        elif conf['mode'] == 'save':
+        elif conf['mode'] == 'save': #保存模型到pb
             from tasks import dl_tasks
             cl = dl_tasks[task_type](conf)
             cl.save()

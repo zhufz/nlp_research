@@ -1,7 +1,8 @@
 ########## path ##########################
 path_root: "data/ner/"
 ori_path: "train_data"
-# ori_path: "intent_ner.csv"
+ori_path: "intent_ner.csv"
+
 
 classes_path: "{encoder_type}/classes"
 dict_path: "{encoder_type}/dict.pkl"
@@ -29,25 +30,32 @@ clr_mode: 'triangular'
 max_learning_rate: 0.00001
 step_size: 500
 
-
 ############ data ###############
-maxlen: 64
-batch_size: 64
-dev_size: 0.1
-epoch_num: 30
-valid_step: 1000 #valid one time every valid_step 
+maxlen: 256
+batch_size: 128
+dev_size: 1500
 tfrecords_mode: "ner"
-max_steps: 1500
+max_steps: 5000
+save_interval: 300
+use_generalization: True
 
 ############ model ##############
-num_hidden: 256
-num_layers: 1
-config_type: 2
+num_hidden: 128
+num_layers: 3
+config_type: 0
 config: 
   0: {encoder_type: "rnn", rnn_type: "bi_lstm"}
   1: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True,
       base_learning_rate: 0.000001}
   2: {encoder_type: "idcnn", learning_rate: 0.0005}
+  3: {encoder_type: "transformer", learning_rate: 0.001, use_position: True}
+
+  ######### daguan ###############
+  4: {path_root: "data/ner/daguan/", ori_path: "train.txt", 
+      test_path: "test.txt", encoder_type: "rnn", rnn_type: "bi_lstm", 
+      learning_rate: 0.05, embedding_size: 128, embedding_type: 'word_embedding', 
+      word_embedding_path: "corpus.txt.vec", rand_embedding: False, 
+      use_language_model: False, use_generalization: False}
 
 prepare_data: "false"
 mode: "train"  #train\test\test_one

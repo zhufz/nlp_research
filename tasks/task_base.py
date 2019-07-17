@@ -7,6 +7,7 @@ from embedding import embedding
 from encoder import encoder
 from utils.data_utils import GenerateTfrecords
 import logging
+import re
 import pdb
 
 class TaskBase(object):

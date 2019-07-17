@@ -125,8 +125,13 @@ class Match(TaskBase):
 
         def model_fn(features, labels, mode, params):
             #model params
-            self.encoder.keep_prob = params['keep_prob']
-            self.encoder.is_training = params['is_training']
+            if mode == tf.estimator.ModeKeys.TRAIN:
+                self.encoder.keep_prob = 0.7
+                self.encoder.is_training = True
+            else:
+                self.encoder.keep_prob = 1
+                self.encoder.is_training = False
+
             global_step = tf.train.get_or_create_global_step()
 
             ############# encode #################
@@ -281,19 +286,11 @@ class Match(TaskBase):
             raise ValueError("unknown input_fn type!")
 
     def train(self):
-        params = {
-            'is_training': True,
-            'keep_prob': 0.7,
-        }
-        estimator = self.get_train_estimator(self.create_model_fn(), params)
+        estimator = self.get_train_estimator(self.create_model_fn(), None)
         estimator.train(input_fn = self.create_input_fn("train"), max_steps =
                         self.max_steps)
 
     def save(self):
-        params = {
-            'is_training': False,
-            'keep_prob': 1
-        }
         def get_features():
             features = {'x_query': tf.placeholder(dtype=tf.int64, 
                                                   shape=[None, self.maxlen],
@@ -313,18 +310,13 @@ class Match(TaskBase):
                                                              name='x_sample_length')})
             features.update(self.encoder.get_features())
             return features
-        self.save_model(self.create_model_fn(), params, get_features)
+        self.save_model(self.create_model_fn(), None, get_features)
 
     def test(self, mode = 'test'):
-        params = {
-            'is_training': False,
-            'keep_prob': 1
-        }
         config = tf.estimator.RunConfig(tf_random_seed=230,
                                         model_dir=self.checkpoint_path)
         estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
-                                           config = config,
-                                           params = params)
+                                           config = config)
         predictions = estimator.predict(input_fn=self.create_input_fn(mode))
         predictions = list(predictions)
 

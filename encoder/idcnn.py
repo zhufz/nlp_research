@@ -12,6 +12,7 @@ class IDCNN(EncoderBase):
         super(IDCNN, self).__init__(**kwargs)
         self.embedding_dim = kwargs['embedding_size']
         self.maxlen = kwargs['maxlen']
+        self.keep_prob = kwargs['keep_prob']
         self.filter_width = 3
         self.num_filter = 100
         self.repeat_times = 4
@@ -20,10 +21,10 @@ class IDCNN(EncoderBase):
                 'dilation': 1
             },
             {
-                'dilation': 1
+                'dilation': 3
             },
             {
-                'dilation': 2
+                'dilation': 5
             },
         ]
         self.placeholder = {}
@@ -78,7 +79,7 @@ class IDCNN(EncoderBase):
                             total_width_for_last_dim += self.num_filter
                         layerInput = conv
             final_out = tf.concat(axis=3, values=final_out_from_layers)
-            #final_out = tf.nn.dropout(final_out, keepProb)
+            final_out = tf.nn.dropout(final_out, self.keep_prob)
             final_out = tf.squeeze(final_out, [1])
             if middle_flag:
                 final_out = tf.reshape(final_out, [-1, self.maxlen, total_width_for_last_dim])

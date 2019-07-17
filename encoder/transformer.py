@@ -234,15 +234,17 @@ class Transformer(EncoderBase):
         feed_dict = {}
         return feed_dict
 
-    def __call__(self, enc, name = 'encoder', reuse = tf.AUTO_REUSE, **kwargs):
+    def __call__(self, enc, name = 'encoder', middle_flag = False, 
+                 reuse = tf.AUTO_REUSE, **kwargs):
         '''
         Returns
         memory: encoder outputs. (N, T1, d_model)
         '''
         #pdb.set_trace()
         with tf.variable_scope("transformer", reuse = reuse):
-            #enc += self.positional_encoding(enc, self.maxlen)
-            #enc = tf.layers.dropout(enc, dropout_rate, training=self.training)
+            if 'use_position' in kwargs and kwargs['use_position'] == True:
+                enc += self.positional_encoding(enc, self.maxlen)
+                enc = tf.layers.dropout(enc, self.dropout_rate, training=self.training)
 
             ## Blocks
             for i in range(self.num_blocks):
@@ -259,6 +261,10 @@ class Transformer(EncoderBase):
                     # feed forward
                     enc = self.ff(enc, num_units=[self.d_ff, self.d_model],
                                   reuse=reuse)
+            if middle_flag:
+                final_out = tf.reshape(enc, [-1, self.maxlen, self.d_model])
+                dense = tf.layers.dense(final_out, self.num_output, name='fc')
+                return dense
             memory = tf.reshape(enc, [-1, self.maxlen*self.d_model])
             dense = tf.layers.dense(memory, self.num_output, activation=None)
         return dense

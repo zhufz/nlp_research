@@ -175,6 +175,7 @@ class Bert(EncoderBase):
                 x_sample_raw = [x_sample_raw]
 
         input_ids, input_mask, segment_ids = [],[],[]
+        pdb.set_trace()
         for idx, item in enumerate(x_query_raw):
             if x_sample_raw != None:
                 x_sample_raw_item = x_sample_raw[idx]

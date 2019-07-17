@@ -93,7 +93,7 @@ class WordEmbedding(Base):
             pre = Preprocess()
             text_list = [pre.get_dl_input_by_text(text) for text in text_list]
         x = list(map(lambda d: word_tokenize(clean_str(d)), text_list))
-        x_len = [len(text) for text in x]
+        x_len = [min(len(text), maxlen) for text in x]
         x = list(map(lambda d: list(map(lambda w: vocab_dict.get(w, vocab_dict["<unk>"]), d)), x))
         x = list(map(lambda d: d[:maxlen], x))
         x = list(map(lambda d: d + (maxlen - len(d)) * [vocab_dict["<pad>"]], x))

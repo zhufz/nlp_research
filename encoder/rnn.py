@@ -12,6 +12,8 @@ class RNN(EncoderBase):
         super(RNN, self).__init__(**kwargs)
         self.num_hidden = kwargs['num_hidden'] if 'num_hidden' in kwargs else 256
         self.num_layers = kwargs['num_layers'] if 'num_layers' in kwargs else 2
+        self.is_training = kwargs['is_training']
+        self.keep_prob = kwargs['keep_prob']
         self.rnn_type = kwargs['rnn_type']
         self.rnn_layer = RNNLayer(self.rnn_type, 
                                   self.num_hidden,
@@ -36,11 +38,13 @@ class RNN(EncoderBase):
 
             outputs, _, state = self.rnn_layer(inputs = embed,
                               seq_len = self.placeholder[length_name])
+            outputs = tf.nn.dropout(outputs, self.keep_prob)
             #flatten:
             outputs_shape = outputs.shape.as_list()
             if middle_flag:
                 outputs = tf.reshape(outputs, [-1, outputs_shape[2]])
                 dense = tf.layers.dense(outputs, self.num_output, name='fc')
+                dense = tf.nn.dropout(dense, self.keep_prob)
                 #[batch_size, max_time, num_output]
                 dense = tf.reshape(dense, [-1, outputs_shape[1], self.num_output])
             else:

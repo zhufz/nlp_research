@@ -18,14 +18,17 @@ class NERUtil():
         with open(path) as fr:
             lines = fr.readlines()
         sent_, tag_ = [], []
-        for line in lines:
-            if line != '\n':
-                [char, label] = line.strip().split()
+        for idx,line in enumerate(lines):
+            line = line.strip()
+            if line != '':
+                if '\t' in line:
+                    [char, label] = line.split('\t')
+                else:
+                    [char, label] = line.split()
                 sent_.append(char)
                 tag_.append(label)
             else:
                 data.append(' '.join(sent_))
-                #data_label.append(' '.join(tag_))
                 data_label.append(tag_)
                 sent_, tag_ = [], []
         return data, data_label
@@ -177,8 +180,135 @@ class NERUtil():
         self.process_class_data(mp_type2word, cls_data_path, tmp_path)
         self.generate_ner_data(mp_word2type, mp_type2word, tmp_path, out_path)
 
+class DGNERUtil():
+
+    def load_data(self, path):
+        #将dg(daguan)数据转为BMES格式
+        res_list = []
+        maxlen = 0
+        lensum = 0
+        for idx,line in enumerate(open(path)):
+            arr = line.strip().split()
+            texts = []
+            labels = []
+            for item in arr:
+                words = item.split('/')[0]
+                if words != '':
+                    char_list = words.split('_')
+                else:
+                    char_list = []
+                word_type = item.split('/')[1]
+                tmp_labels = []
+                if word_type != 'o':
+                    if len(char_list) == 0:
+                        continue
+                    if len(char_list) == 1:
+                        tmp_labels.append('S-'+word_type)
+                    else:
+                        for char in char_list:
+                            tmp_labels.append('M-'+word_type)
+                        tmp_labels[0] = 'B-'+word_type
+                        tmp_labels[-1] = 'E-'+word_type
+                else:
+                    for char in char_list:
+                        tmp_labels.append('O')
+                texts += char_list
+                labels += tmp_labels
+            if len(texts) > maxlen: 
+                maxlen = len(texts)
+            lensum+=len(texts)
+            res_list.append('\n'.join([texts[i]+'\t'+labels[i] for i in
+                                       range(len(texts))]))
+        with open(path+'.bmes.txt','w') as f_out:
+            for item in res_list:
+                f_out.write(item+"\n\n")
+
+    def load_test_data(self,path):
+        f_out = open(path+'.bmes.txt','w')
+        for line in open(path):
+            new_line = ' '.join(line.strip().split('_'))
+            f_out.write(new_line+"\n")
+        f_out.close()
+
+    def convert_bmes_to_dg(self, file, maxlen=128):
+        #将BIO格式重新转回dg需要的格式
+        with open(file) as f_in, open(file+'.out.txt','w') as f_out:
+            lines = f_in.readlines()
+            out_lines = []
+            res = []
+            words = []
+            tags = []
+            for idx,line in enumerate(lines):
+                if line.strip()=="" and idx != 0:
+                    out_lines.append(' '.join(words))
+                    res.append(tags)
+                    words = []
+                    tags = []
+                else:
+                    words.append(line.strip().split('\t')[0])
+                    tags.append(line.strip().split('\t')[1])
+
+            for idx,line in enumerate(out_lines):
+                char_list = line.split()
+                tag_list = res[idx][:len(char_list)]
+                result = []
+                tmp = []
+                ctype = ""
+                for idy,char in enumerate(char_list):
+                    if idy == len(char_list) - 1:
+                        result.append('_'.join(tmp)+'/'+ctype)
+                    if tag_list[idy].startswith("E-") \
+                            or tag_list[idy].startswith("S-"):
+                        tmp.append(char)
+                        if ctype == "":ctype = tag_list[idy][2]
+                        result.append('_'.join(tmp)+'/'+ctype)
+                        tmp = []
+                        ctype = ""
+                    elif tag_list[idy].startswith("M-"):
+                        tmp.append(char)
+                        ctype = tag_list[idy][2]
+                    elif tag_list[idy].startswith("B-"):
+                        if len(tmp) >= 1:
+                            if ctype == "":ctype = tag_list[idy-1][2]
+                            result.append('_'.join(tmp)+'/'+ctype)
+                            tmp = []
+                            ctype = ""
+                        tmp.append(char)
+                        ctype = tag_list[idy][2]
+                    elif tag_list[idy].startswith("O"):
+                        if len(tmp) >= 1 and ctype != "o":
+                            if ctype == "":ctype = tag_list[idy-1][2]
+                            result.append('_'.join(tmp)+'/'+ctype)
+                            tmp = []
+                            ctype = ""
+                        ctype = 'o'
+                        tmp.append(char)
+                    else:
+                        print("error occured in line %s"%idx)
+                        pdb.set_trace()
+                f_out.write('  '.join(result)+'\n')
+
+    def __call__(self, text):
+        text_list  = [text]
+        return self.test(text_list)[0]
+
+
+    def process(self):
+        #self.load_data(path='../data/ner/daguan/ori/train.txt')
+        #self.load_test_data(path='../data/ner/daguan/ori/test.txt')
+        self.convert_bmes_to_dg("../data/ner/daguan/test.txt.out.txt")
+
+
 if __name__ == '__main__':
-    util =  NERUtil()
-    util.convert_class_to_ner()
+    #将分类模型格式的数据转换为ner模型所需要的BIO格式
+    #util =  NERUtil()
+    #util.convert_class_to_ner()
+
+
+    #daguan比赛数据转换为BMES
+    util =  DGNERUtil()
+    util.process()
+
+
 
 

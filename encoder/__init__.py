@@ -6,50 +6,31 @@ sys.path.append(ROOT_PATH)
 from encoder_base import EncoderBase
 encoder = {}
 #sentence encoder
-from dcnn import DCNN
-from dpcnn import DPCNN
-from idcnn import IDCNN
-from vdcnn import VDCNN
-from rcnn import RCNN
-from rnn import RNN
-from attention_rnn import AttentionRNN
-from text_cnn import TextCNN
-from transformer import Transformer
-from fasttext import FastText
-from fast_attention_text import FastAttentionText
-from han import HAN
-from capsule import Capsule
-from seq2seq import Seq2seq
 
-encoder["dcnn"] = DCNN
-encoder["vdcnn"] = VDCNN
-encoder["idcnn"] = IDCNN
-encoder["dpcnn"] = DPCNN
-encoder["text_cnn"] = TextCNN
-encoder["rcnn"] = RCNN
-encoder["rnn"] = RNN
-encoder["attention_rnn"] = AttentionRNN
-encoder["transformer"] = Transformer
-encoder["fasttext"] = FastText
-encoder["fast_attention_text"] = FastAttentionText
-encoder["han"] = HAN
-encoder["capsule"] = Capsule
+encoder["dcnn"] = getattr(__import__('dcnn'),'DCNN')
+encoder["vdcnn"] = getattr(__import__('vdcnn'),'VDCNN')
+encoder["idcnn"] = getattr(__import__('idcnn'),'IDCNN')
+encoder["dpcnn"] = getattr(__import__('dpcnn'),'DPCNN')
+encoder["text_cnn"] = getattr(__import__('text_cnn'),'TextCNN')
+encoder["rcnn"] = getattr(__import__('rcnn'),'RCNN')
+encoder["rnn"] = getattr(__import__('rnn'),'RNN')
+encoder["attention_rnn"] = getattr(__import__('attention_rnn'),'AttentionRNN')
+encoder["transformer"] = getattr(__import__('transformer'),'Transformer')
+encoder["fasttext"] = getattr(__import__('fasttext'),'FastText')
+encoder["fast_attention_text"] = getattr(__import__('fast_attention_text'),'FastAttentionText')
+encoder["han"] = getattr(__import__('han'),'HAN')
+encoder["capsule"] = getattr(__import__('capsule'),'Capsule')
 #translation:
-encoder["seq2seq"] = Seq2seq
+encoder["seq2seq"] = getattr(__import__('seq2seq'),'Seq2seq')
 
 #with pretrain language model
 #such as elmo, bert...
-from bert import Bert
-encoder["bert"] = Bert
+encoder["bert"] = getattr(__import__('bert'), 'Bert')
 
 #pair sentence encoder
-from match_pyramid import MatchPyramid
-from abcnn import ABCNN
-from esim import ESIM
-
-encoder["match_pyramid"] = MatchPyramid
-encoder["abcnn"] = ABCNN
-encoder["esim"] = ESIM
+encoder["match_pyramid"] = getattr(__import__('match_pyramid'),'MatchPyramid')
+encoder["abcnn"] = getattr(__import__('abcnn'),'ABCNN')
+encoder["esim"] = getattr(__import__('esim'),'ESIM')
 
 
 

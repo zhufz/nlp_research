@@ -199,10 +199,11 @@ class Preprocess():
         dataframe = pd.DataFrame({'text':ret,'intent':dt['intent']})
         dataframe.to_csv(file+'.feature.csv',sep=',',columns=['text','intent'])
 
-    def get_dl_input_by_text(self, text):
+    def get_dl_input_by_text(self, text, use_generalization = True):
         seg_list = self.segment(text)
         new_list = self.merge_gene(seg_list)
-        new_list = self.generalization(new_list)
+        if use_generalization:
+            new_list = self.generalization(new_list)
         return ' '.join(new_list)
 
 
