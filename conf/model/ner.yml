@@ -1,7 +1,7 @@
 ########## path ##########################
 path_root: "data/ner/"
 ori_path: "train_data"
-ori_path: "intent_ner.csv"
+# ori_path: "intent_ner.csv"
 
 
 classes_path: "{encoder_type}/classes"
