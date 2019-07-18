@@ -66,7 +66,7 @@ class TaskBase(object):
             self.learning_rate = tf.train.exponential_decay(self.learning_rate, 
                                                             global_step,
                                                             1,
-                                                            0.95,
+                                                            0.99,
                                                             staircase=True)
         optim_func = partial(get_train_op,
                              global_step, 
