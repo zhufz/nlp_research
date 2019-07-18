@@ -44,7 +44,7 @@ num_hidden: 128
 num_layers: 3
 config_type: 0
 config: 
-  0: {encoder_type: "rnn", rnn_type: "bi_lstm"}
+  0: {encoder_type: "rnn", rnn_type: "bi", cell_type: "lstm"}
   1: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True,
       base_learning_rate: 0.000001}
   2: {encoder_type: "idcnn", learning_rate: 0.0005}
