@@ -16,7 +16,7 @@ class RNNLayer:
         self.use_attention = use_attention
 
     def __call__(self, inputs, seq_len, initial_state = None, 
-                 name = 'rnn', rnn_keep_prob = 0.5, maxlen = None, reuse = tf.AUTO_REUSE):
+                 name = 'rnn', rnn_keep_prob = 0.8, maxlen = None, reuse = tf.AUTO_REUSE):
         with tf.variable_scope("rnn_"+name, reuse = reuse):
             assert self.num_layers >0, "num_layers need larger than 0"
             assert self.num_hidden >0, "num_hidden need larger than 0"
@@ -24,7 +24,6 @@ class RNNLayer:
             def cell(embedded, hidden_size, cell_type = 'lstm', reuse = False):
                 if cell_type == 'gru':
                     _cell = tf.contrib.rnn.GRUCell(hidden_size,
-                                                    initializer = tf.orthogonal_initializer(), 
                                                     reuse = reuse)
                     return tf.contrib.rnn.DropoutWrapper(_cell, 
                                                      output_keep_prob = rnn_keep_prob)
