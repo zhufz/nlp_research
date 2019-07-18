@@ -226,14 +226,6 @@ class Transformer(EncoderBase):
 
         return tf.to_float(outputs)
 
-    def feed_dict(self, **kwargs):
-        feed_dict = {}
-        return feed_dict
-
-    def pb_feed_dict(self, graph, **kwargs):
-        feed_dict = {}
-        return feed_dict
-
     def __call__(self, enc, name = 'encoder', middle_flag = False, 
                  reuse = tf.AUTO_REUSE, **kwargs):
         '''

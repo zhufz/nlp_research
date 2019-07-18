@@ -87,6 +87,3 @@ class HAN(EncoderBase):
 
         return doc_vec
 
-    def feed_dict(self, **kwargs):
-        feed_dict = {}
-        return feed_dict

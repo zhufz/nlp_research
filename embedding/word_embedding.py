@@ -24,11 +24,12 @@ class WordEmbedding(Base):
         self.maxlen= maxlen
         self.dict_path = dict_path
         self.size = embedding_size
+        self.trainable = kwargs['conf'].get('embedding_trainable', True)
         if random:
             self.embedding = tf.get_variable("embeddings",
                                          shape = [len(self.vocab_dict), self.size],
                                          initializer=get_initializer('xavier'),
-                                         trainable = True)
+                                         trainable = self.trainable)
 
 
         else:
@@ -36,7 +37,7 @@ class WordEmbedding(Base):
             self.embedding = tf.get_variable("embeddings",
                                      shape = [len(self.vocab_dict),self.size],
                                      initializer=get_initializer('xavier'),
-                                     trainable = True)
+                                     trainable = self.trainable)
             tf.assign(self.embedding, loaded_embedding)
         self.input_ids = {}
 

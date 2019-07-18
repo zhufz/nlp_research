@@ -73,8 +73,7 @@ class Translation(TaskBase):
                                                    'seq_encode')
                 self.embed_decode = self.embedding(features = features,name =
                                                    'seq_decode')
-                out, self.final_state_encode, self.final_state_decode, \
-                    pb_nodes  = self.encoder(self.embed_encode,
+                out = self.encoder(self.embed_encode,
                                              self.embed_decode,
                                              features = features,
                                              name = 'seq')

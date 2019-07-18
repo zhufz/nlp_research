@@ -30,7 +30,7 @@ class AttentionRNN(EncoderBase):
 
         with tf.variable_scope("attention_rnn", reuse = reuse):
             pdb.set_trace()
-            outputs, _, state = self.rnn_layer(inputs = embed,
+            outputs, state = self.rnn_layer(inputs = embed,
                               seq_len = self.placeholder[length_name])
             with tf.variable_scope("attention", reuse = reuse):
                 attention_score = tf.nn.softmax(tf.layers.dense(outputs, 1, activation=tf.nn.tanh), axis=1)
@@ -40,20 +40,4 @@ class AttentionRNN(EncoderBase):
                 h_drop = tf.nn.dropout(attention_out, self.keep_prob)
                 dense = tf.layers.dense(h_drop, self.num_output, activation=None)
                 return dense
-
-    def feed_dict(self, name = 'encoder', **kwargs):
-        feed_dict = {}
-        for key in kwargs:
-            length_name = key + "_length" 
-            feed_dict[self.placeholder[length_name]] = kwargs[key]
-
-        return feed_dict
-
-    def pb_feed_dict(self, graph, name = 'encoder', **kwargs):
-        feed_dict = {}
-        for key in kwargs:
-            length_name = key + "_length" 
-            key_node = graph.get_operation_by_name(length_name).outputs[0]
-            feed_dict[key_node] = kwargs[key]
-        return feed_dict
 

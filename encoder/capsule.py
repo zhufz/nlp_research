@@ -394,14 +394,6 @@ class Capsule(EncoderBase):
             poses, activations = self.capsule_fc_layer(nets, self.num_output, 3, 'fc2') 
         return activations
 
-    def feed_dict(self, **kwargs):
-        feed_dict = {}
-        return feed_dict
-
-    def pb_feed_dict(self, graph, **kwargs):
-        feed_dict = {}
-        return feed_dict
-
     def __call__(self, embed, reuse = tf.AUTO_REUSE, **kwargs):
         embed = tf.expand_dims(embed, -1)
         if self.caps_type == 'A':

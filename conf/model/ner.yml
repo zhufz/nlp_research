@@ -25,18 +25,18 @@ clip_grad: 5
 use_crf: True
 
 ############# clr #####################
-use_clr: False
+use_clr: True
 clr_mode: 'triangular'
-max_learning_rate: 0.00001
-step_size: 500
+max_learning_rate: 0.1
+step_size: 100
 
 ############ data ###############
-maxlen: 256
-batch_size: 128
+maxlen: 128
+batch_size: 64
 dev_size: 1500
 tfrecords_mode: "ner"
 max_steps: 5000
-save_interval: 300
+save_interval: 500
 use_generalization: True
 
 ############ model ##############
@@ -52,9 +52,10 @@ config:
 
   ######### daguan ###############
   4: {path_root: "data/ner/daguan/", ori_path: "train.txt", 
-      test_path: "test.txt", encoder_type: "rnn", rnn_type: "bi_lstm", 
-      learning_rate: 0.05, embedding_size: 128, embedding_type: 'word_embedding', 
-      word_embedding_path: "corpus.txt.vec", rand_embedding: False, 
+      test_path: "test.txt", encoder_type: "rnn", use_clr: False,
+      rnn_type: "bi", cell_type: "lstm", use_attention: False,
+      learning_rate: 0.00001, embedding_size: 128, embedding_type: 'word_embedding', 
+      word_embedding_path: "corpus.txt.vec", rand_embedding: False, embedding_trainable: True,
       use_language_model: False, use_generalization: False}
 
 prepare_data: "false"

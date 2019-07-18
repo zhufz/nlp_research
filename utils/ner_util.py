@@ -256,7 +256,15 @@ class DGNERUtil():
                 ctype = ""
                 for idy,char in enumerate(char_list):
                     if idy == len(char_list) - 1:
-                        result.append('_'.join(tmp)+'/'+ctype)
+                        last_ctype = tag_list[idy][2] if tag_list[idy] != 'O' else 'o'
+                        if last_ctype == ctype:
+                            tmp.append(char)
+                            result.append('_'.join(tmp)+'/'+ctype)
+                        else:
+                            if tmp != []:
+                                result.append('_'.join(tmp)+'/'+ctype)
+                            result.append(char+'/'+last_ctype)
+
                     if tag_list[idy].startswith("E-") \
                             or tag_list[idy].startswith("S-"):
                         tmp.append(char)

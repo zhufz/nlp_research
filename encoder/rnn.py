@@ -15,9 +15,13 @@ class RNN(EncoderBase):
         self.is_training = kwargs['is_training']
         self.keep_prob = kwargs['keep_prob']
         self.rnn_type = kwargs['rnn_type']
+        self.cell_type = kwargs['cell_type']
+        self.maxlen = kwargs['maxlen']
         self.rnn_layer = RNNLayer(self.rnn_type, 
                                   self.num_hidden,
-                                  self.num_layers)
+                                  self.num_layers,
+                                  self.cell_type,
+                                  use_attention = True)
         self.placeholder = {}
 
     def __call__(self, embed, name = 'encoder', middle_flag = False, hidden_flag
@@ -36,8 +40,9 @@ class RNN(EncoderBase):
             #for gru,lstm outputs:[batch_size, max_time, num_hidden]
             #for bi_gru,bi_lstm outputs:[batch_size, max_time, num_hidden*2]
 
-            outputs, _, state = self.rnn_layer(inputs = embed,
-                              seq_len = self.placeholder[length_name])
+            outputs, state = self.rnn_layer(inputs = embed,
+                                            seq_len = self.placeholder[length_name],
+                                            maxlen = self.maxlen)
             outputs = tf.nn.dropout(outputs, self.keep_prob)
             #flatten:
             outputs_shape = outputs.shape.as_list()
@@ -54,30 +59,9 @@ class RNN(EncoderBase):
             #使用最后一个time的输出
             #outputs = outputs[:, -1, :]
             if hidden_flag:
-                return dense, state, self.rnn_layer.pb_nodes
+                return dense, state
             else:
                 return dense
-
-    def feed_dict(self, name = 'encoder', initial_state = None,  **kwargs):
-        feed_dict = {}
-        for key in kwargs:
-            length_name = name + "_length" 
-            feed_dict[self.placeholder[length_name]] = kwargs[key]
-        #初始状态值传入
-        if initial_state != None:
-            feed_dict.update(self.rnn_layer.feed_dict(initial_state))
-        return feed_dict
-
-    def pb_feed_dict(self, graph, name = 'encoder', initial_state = None, **kwargs):
-        feed_dict = {}
-        for key in kwargs:
-            length_name = name + "_length" 
-            key_node = graph.get_operation_by_name(length_name).outputs[0]
-            feed_dict[key_node] = kwargs[key]
-        #初始状态值传入
-        if initial_state != None:
-            feed_dict.update(self.rnn_layer.feed_dict(initial_state, graph))
-        return feed_dict
 
     def get_features(self, name = 'encoder'):
         features = {}

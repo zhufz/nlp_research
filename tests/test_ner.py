@@ -31,7 +31,8 @@ class TestNER(Test):
 
 
     def test(self, text_list):
-        length = len(text_list[0])
+        length_list = [len(item.split()) for item in text_list]
+        #pdb.set_trace()
         text_list_pred, x_query, x_query_length = self.text2id(text_list,
                                                                need_preprocess = False)
         input_dict = {'x_query': x_query, 
@@ -41,8 +42,8 @@ class TestNER(Test):
         predictions = self.predict_fn(input_dict)
         pred_ids = [item for item in predictions['pred_ids']]
         for idx,item in enumerate(pred_ids):
-            pred_ids[idx] = [self.mp_label_rev[id] for id in
-                             pred_ids[idx] if id in self.mp_label_rev][:length]
+            pred_ids[idx] = pred_ids[idx][1:length_list[idx]+1]
+            pred_ids[idx] = [self.mp_label_rev[id] for id in pred_ids[idx]]
         return pred_ids
 
     def test_file(self, file):
@@ -58,6 +59,7 @@ class TestNER(Test):
                 for word,tag in pred:
                     f_out.write(word + "\t" + tag +'\n')
                 f_out.write('\n')
+            print("predict finished!")
 
     def __call__(self, text):
         text_list  = [text]

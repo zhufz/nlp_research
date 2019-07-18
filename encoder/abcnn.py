@@ -180,18 +180,6 @@ class ABCNN(EncoderBase):
 
             return left_wp, left_ap, right_wp, right_ap
 
-    def feed_dict(self, x_query, x_sample):
-        feed_dict = {}
-        feed_dict[self.placeholder['len1']] = x_query
-        feed_dict[self.placeholder['len2']] = x_sample
-        return feed_dict
-
-    def pb_feed_dict(self, graph, x_query, x_sample):
-        feed_dict = {}
-        feed_dict[graph.get_operation_by_name("x_query_length").outputs[0]] = x_query
-        feed_dict[graph.get_operation_by_name("x_sample_length").outputs[0]] = x_sample
-        return feed_dict
-
     def get_features(self):
         features = {}
         features['len1'] = tf.placeholder(tf.float32, shape=[None],

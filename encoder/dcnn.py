@@ -90,11 +90,3 @@ class DCNN(EncoderBase):
             fold_flatten = tf.reshape(fold, [-1, int(self.top_k*self.embed_dim*14/4)])
             dense = tf.layers.dense(fold_flatten, self.num_output, activation=None)
             return dense
-
-    def feed_dict(self, **kwargs):
-        feed_dict = {}
-        return feed_dict
-
-    def pb_feed_dict(self, graph, **kwargs):
-        feed_dict = {}
-        return feed_dict

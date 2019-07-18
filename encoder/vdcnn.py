@@ -99,11 +99,3 @@ class VDCNN(EncoderBase):
                 return pool
             else:
                 return conv
-
-    def feed_dict(self, **kwargs):
-        feed_dict = {}
-        return feed_dict
-
-    def pb_feed_dict(self, graph, **kwargs):
-        feed_dict = {}
-        return feed_dict

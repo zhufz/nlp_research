@@ -59,7 +59,15 @@ class TaskBase(object):
         if self.use_clr:
             self.learning_rate = cyclic_learning_rate(global_step=global_step,
                                                   learning_rate = self.learning_rate, 
+                                                  max_lr = self.max_learning_rate,
+                                                  step_size = self.step_size,
                                                   mode = self.clr_mode)
+        else:
+            self.learning_rate = tf.train.exponential_decay(self.learning_rate, 
+                                                            global_step,
+                                                            1,
+                                                            0.95,
+                                                            staircase=True)
         optim_func = partial(get_train_op,
                              global_step, 
                              self.optimizer_type, 

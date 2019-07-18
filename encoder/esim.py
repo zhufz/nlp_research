@@ -18,14 +18,6 @@ class ESIM(EncoderBase):
         self.recurrent_units = 300
         self.dense_units = 300
 
-    def feed_dict(self, **kwargs):
-        feed_dict = {}
-        return feed_dict
-
-    def pb_feed_dict(self,graph, name = 'esim',  **kwargs):
-        feed_dict = {}
-        return feed_dict
-
     def update_features(self, features):
         pass
 

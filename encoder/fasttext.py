@@ -32,21 +32,6 @@ class FastText(EncoderBase):
                                     reuse = reuse)
             return logits
 
-    def feed_dict(self, name = 'encoder', **kwargs):
-        feed_dict = {}
-        for key in kwargs:
-            length_name = name + "_length" 
-            feed_dict[self.placeholder[length_name]] = kwargs[key]
-        return feed_dict
-
-    def pb_feed_dict(self, graph, name = 'encoder', **kwargs):
-        feed_dict = {}
-        for key in kwargs:
-            length_name = name + "_length" 
-            key_node = graph.get_operation_by_name(length_name).outputs[0]
-            feed_dict[key_node] = kwargs[key]
-        return feed_dict
-
     def get_features(self, name = 'encoder'):
         features = {}
         length_name = name+'_length'

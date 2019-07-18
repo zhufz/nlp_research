@@ -28,11 +28,3 @@ class FastAttentionText(EncoderBase):
             h_drop = tf.nn.dropout(logits, self.keep_prob)
             dense = tf.layers.dense(h_drop, self.num_output, activation=None)
             return dense
-
-    def feed_dict(self, **kwargs):
-        feed_dict = {}
-        return feed_dict
-
-    def pb_feed_dict(self, graph, **kwargs):
-        feed_dict = {}
-        return feed_dict
