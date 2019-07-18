@@ -42,14 +42,14 @@ class RNN(EncoderBase):
 
             outputs, state = self.rnn_layer(inputs = embed,
                                             seq_len = self.placeholder[length_name],
-                                            maxlen = self.maxlen)
+                                            maxlen = self.maxlen,
+                                            rnn_keep_prob = self.keep_prob)
             outputs = tf.nn.dropout(outputs, self.keep_prob)
             #flatten:
             outputs_shape = outputs.shape.as_list()
             if middle_flag:
                 outputs = tf.reshape(outputs, [-1, outputs_shape[2]])
                 dense = tf.layers.dense(outputs, self.num_output, name='fc')
-                dense = tf.nn.dropout(dense, self.keep_prob)
                 #[batch_size, max_time, num_output]
                 dense = tf.reshape(dense, [-1, outputs_shape[1], self.num_output])
             else:
