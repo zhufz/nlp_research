@@ -23,6 +23,7 @@ class Elmo(EncoderBase):
         self.options_file = kwargs['elmo_options_path']
         self.placeholder = {}
         self.batcher = TokenBatcher(self.vocab_file)
+        self.model = None
 
     def __call__(self, name = 'encoder', features = None, reuse = tf.AUTO_REUSE, **kwargs):
 
@@ -36,9 +37,10 @@ class Elmo(EncoderBase):
         with open(self.options_file, 'r') as fin:
             options = json.load(fin)
 
-        model = BidirectionalLanguageModel(options,
+        if self.model == None:
+            self.model = BidirectionalLanguageModel(options,
                                            use_character_inputs=False)
-        ops = model(self.placeholder[name+'_input_ids'])
+        ops = self.model(self.placeholder[name+'_input_ids'])
 
         out = ops['lm_embeddings']
         out = tf.concat([out,out[:,:,-2:,:]],2)

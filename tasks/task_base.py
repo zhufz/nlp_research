@@ -79,6 +79,9 @@ class TaskBase(object):
             tvars = tf.trainable_variables()
             new_var_list = []
             base_var_list = []
+            new_var_name_list = []
+            base_var_name_list = []
+
             for var in tvars:
                 name = var.name
                 m = re.match("^(.*):\\d+$", name)
@@ -86,8 +89,10 @@ class TaskBase(object):
                     name = m.group(1)
                 if name in params['base_var']: 
                     base_var_list.append(var)
+                    base_var_name_list.append(name)
                     continue
                 new_var_list.append(var)
+                new_var_name_list.append(name)
             assert len(base_var_list)>0, "base_var_list can't be empty! if \
                 it is emtpy, not any variable will be restored"
             optimizer_base = optim_func(learning_rate = self.base_learning_rate,
@@ -102,9 +107,10 @@ class TaskBase(object):
                 optimizer = optimizer_now
             else:
                 optimizer = tf.group(optimizer_base, optimizer_now)
-            logging.info("base variables found in params!")
+            logging.info("base variables: %s"%(",".join(base_var_name_list)))
+            logging.info("new variables: %s"%(",".join(new_var_name_list)))
         else:
-            logging.info("not any base variables found!")
+            logging.info("no base variable found!")
             optimizer = optim_func(learning_rate = self.learning_rate)
         return tf.estimator.EstimatorSpec(mode, loss = loss,
                                               train_op=optimizer)
