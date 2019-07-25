@@ -14,8 +14,10 @@
     （2）对于匹配任务的数据使用csv格式，csv头部包括列名‘target’,‘text’ 或者 ‘target’,‘text_a’,‘text_b’
     （3）对于NER任务的数据，参考"data/ner/train_data",或者使用其它格式的数据的话，修改task/ner.py中的read_data方法即可。
     预训练数据(目前在分类和匹配任务上已支持):
-    如果使用到bert作为预训练，请提前运行"sh scripts/prepare.sh"
-
+    - 如果使用到bert作为预训练，请提前运行"sh scripts/prepare.sh"
+    - 如果使用elmo作为预训练，需要准备一份corpus.txt训练语料放在language_model/bilm_tf/data/目录下
+          执行： cd language_model/bilm_tf
+                sh start.sh
 ## 快速开始
     [依赖]
          环境：python3+tensorflow 1.10(python2.7已支持)
