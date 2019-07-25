@@ -26,6 +26,7 @@ encoder["seq2seq"] = getattr(__import__('seq2seq'),'Seq2seq')
 #with pretrain language model
 #such as elmo, bert...
 encoder["bert"] = getattr(__import__('bert'), 'Bert')
+encoder["elmo"] = getattr(__import__('elmo'), 'Elmo')
 
 #pair sentence encoder
 encoder["match_pyramid"] = getattr(__import__('match_pyramid'),'MatchPyramid')

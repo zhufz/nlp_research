@@ -28,9 +28,10 @@ class NERUtil():
                 sent_.append(char)
                 tag_.append(label)
             else:
-                data.append(' '.join(sent_))
-                data_label.append(tag_)
-                sent_, tag_ = [], []
+                if len(sent_)>0:
+                    data.append(' '.join(sent_))
+                    data_label.append(tag_)
+                    sent_, tag_ = [], []
         return data, data_label
 
     def replace_by_position(self, string, pos, subs):
@@ -302,9 +303,9 @@ class DGNERUtil():
 
 
     def process(self):
-        #self.load_data(path='../data/ner/daguan/ori/train.txt')
-        #self.load_test_data(path='../data/ner/daguan/ori/test.txt')
-        self.convert_bmes_to_dg("../data/ner/daguan/test.txt.out.txt")
+        #self.load_data(path='../data/ner/daguan/ori/train1.txt')
+        self.load_test_data(path='../data/ner/daguan/ori/test.txt')
+        #self.convert_bmes_to_dg("../data/ner/daguan/test.txt.out.txt")
 
 
 if __name__ == '__main__':

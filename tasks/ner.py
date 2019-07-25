@@ -16,6 +16,7 @@ ROOT_PATH = '/'.join(os.path.abspath(__file__).split('/')[:-2])
 sys.path.append(ROOT_PATH)
 from utils.preprocess import Preprocess
 from utils.tf_utils import get_placeholder_batch_size
+from common.layers import get_initializer
 from embedding import embedding
 from encoder import encoder
 
@@ -42,11 +43,11 @@ class NER(TaskBase):
             "keep_prob": 1,
             "is_training": False,
         })
-
         #params['num_output'] = 128
-        #self.encoder_base = encoder['transformer'](**params)
-        #params['num_output'] = self.num_class
         self.encoder = encoder[self.encoder_type](**params)
+        #params['num_output'] = self.num_class
+        #self.encoder1 = encoder["idcnn"](**params)
+        #self.encoder2 = encoder["transformer"](**params)
 
 
     def read_data(self):
@@ -60,7 +61,7 @@ class NER(TaskBase):
     def create_model_fn(self):
         def model_fn(features, labels, mode, params):
             if mode == tf.estimator.ModeKeys.TRAIN:
-                self.encoder.keep_prob = 0.5
+                self.encoder.keep_prob = 0.7
                 self.encoder.is_training = True
             else:
                 self.encoder.keep_prob = 1
@@ -73,9 +74,11 @@ class NER(TaskBase):
             if not self.use_language_model:
                 self.embedding, _ = self.init_embedding()
                 embed = self.embedding(features = features, name = 'x_query')
+                embed = tf.nn.dropout(embed, self.encoder.keep_prob)
                 out = self.encoder(embed, 'x_query', features = features, middle_flag = True)
-                #out = self.encoder_base(embed, 'x_query', features = features, middle_flag = True)
-                #out = self.encoder(out, 'x_query', features = features, middle_flag = True)
+                #out = self.encoder1(out, 'x_query', features = features, middle_flag = True)
+                #out2 = self.encoder2(embed, 'x_query', features = features, middle_flag = True)
+                #out = out + out1 + out2
             else:
                 out = self.encoder(features = features)
 
@@ -94,6 +97,7 @@ class NER(TaskBase):
             seq_len += 1
             transition_params = tf.get_variable('crf', 
                                          [self.num_class + 1,self.num_class + 1], 
+                                         initializer=get_initializer(type='xavier'),
                                          dtype=tf.float32)
             pred_ids, _ = tf.contrib.crf.crf_decode(logits, transition_params, seq_len)
 
@@ -208,15 +212,14 @@ class NER(TaskBase):
                                         save_checkpoints_steps=self.save_interval,
                                         keep_checkpoint_max=5)
 
-        estimator = tf.estimator.Estimator(model_fn = self.create_model_fn(),
-                                           config = config)
+        estimator = self.get_train_estimator(self.create_model_fn(), None)
 
         early_stop = tf.estimator.experimental.stop_if_no_decrease_hook(
             estimator=estimator,
             metric_name="loss",
-            max_steps_without_decrease=estimator.config.save_checkpoints_steps * 2,
+            max_steps_without_decrease=self.save_interval * 2,
             run_every_secs=None,
-            run_every_steps=estimator.config.save_checkpoints_steps,
+            run_every_steps=self.save_interval,
         )
 
         train_spec=tf.estimator.TrainSpec(

@@ -98,9 +98,9 @@ if __name__ == '__main__':
         if conf['mode'] == 'train': #训练
             from tasks import dl_tasks
             cl = dl_tasks[task_type](conf)
-            try:
+            if hasattr(cl, "train_and_evaluate"):
                 cl.train_and_evaluate()
-            except:
+            else:
                 cl.train()
                 cl.test('dev')
         elif conf['mode'] == 'dev': #验证集测试

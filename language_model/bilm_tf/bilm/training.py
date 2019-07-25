@@ -683,6 +683,7 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
     with tf.device('/cpu:0'):
         global_step = tf.get_variable(
             'global_step', [],
+            dtype = tf.int64,
             initializer=tf.constant_initializer(0), trainable=False)
 
         # set up the optimizer

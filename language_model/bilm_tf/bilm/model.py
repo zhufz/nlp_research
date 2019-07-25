@@ -14,8 +14,8 @@ DTYPE_INT = 'int64'
 class BidirectionalLanguageModel(object):
     def __init__(
             self,
-            options_file: str,
-            weight_file: str,
+            options,
+            weight_file=None,
             use_character_inputs=True,
             embedding_weight_file=None,
             max_batch_size=128,
@@ -40,17 +40,18 @@ class BidirectionalLanguageModel(object):
             otherwise use token ids
         max_batch_size: the maximum allowable batch size 
         '''
-        with open(options_file, 'r') as fin:
-            options = json.load(fin)
+        #with open(options_file, 'r') as fin:
+        #    options = json.load(fin)
 
-        if not use_character_inputs:
-            if embedding_weight_file is None:
-                raise ValueError(
-                    "embedding_weight_file is required input with "
-                    "not use_character_inputs"
-                )
+        #if not use_character_inputs:
+        #    if embedding_weight_file is None:
+        #        raise ValueError(
+        #            "embedding_weight_file is required input with "
+        #            "not use_character_inputs"
+        #        )
 
         self._options = options
+        self._n_tokens_vocab = options['n_tokens_vocab']
         self._weight_file = weight_file
         self._embedding_weight_file = embedding_weight_file
         self._use_character_inputs = use_character_inputs
@@ -92,6 +93,7 @@ class BidirectionalLanguageModel(object):
                     self._options,
                     self._weight_file,
                     ids_placeholder,
+                    _n_tokens_vocab = self._n_tokens_vocab,
                     embedding_weight_file=self._embedding_weight_file,
                     use_character_inputs=self._use_character_inputs,
                     max_batch_size=self._max_batch_size)
@@ -101,6 +103,7 @@ class BidirectionalLanguageModel(object):
                         self._options,
                         self._weight_file,
                         ids_placeholder,
+                        _n_tokens_vocab = self._n_tokens_vocab,
                         embedding_weight_file=self._embedding_weight_file,
                         use_character_inputs=self._use_character_inputs,
                         max_batch_size=self._max_batch_size)
@@ -248,8 +251,8 @@ class BidirectionalLanguageModelGraph(object):
     a bidirectional language model
     '''
     def __init__(self, options, weight_file, ids_placeholder,
-                 use_character_inputs=True, embedding_weight_file=None,
-                 max_batch_size=128):
+                 _n_tokens_vocab = None, use_character_inputs=True, embedding_weight_file=None,
+                 max_batch_size=128): 
 
         self.options = options
         self._max_batch_size = max_batch_size
@@ -258,22 +261,26 @@ class BidirectionalLanguageModelGraph(object):
 
         # this custom_getter will make all variables not trainable and
         # override the default initializer
-        def custom_getter(getter, name, *args, **kwargs):
-            kwargs['trainable'] = False
-            kwargs['initializer'] = _pretrained_initializer(
-                name, weight_file, embedding_weight_file
-            )
-            return getter(name, *args, **kwargs)
 
-        if embedding_weight_file is not None:
-            # get the vocab size
-            with h5py.File(embedding_weight_file, 'r') as fin:
-                # +1 for padding
-                self._n_tokens_vocab = fin['embedding'].shape[0] + 1
-        else:
-            self._n_tokens_vocab = None
+        #def custom_getter(getter, name, *args, **kwargs):
+        #    kwargs['trainable'] = False
+        #    kwargs['initializer'] = _pretrained_initializer(
+        #        name, weight_file, embedding_weight_file
+        #    )
+        #    return getter(name, *args, **kwargs)
 
-        with tf.variable_scope('bilm', custom_getter=custom_getter):
+        #if embedding_weight_file is not None:
+        #    # get the vocab size
+        #    with h5py.File(embedding_weight_file, 'r') as fin:
+        #        # +1 for padding
+        #        self._n_tokens_vocab = fin['embedding'].shape[0] + 1
+        #else:
+        #    self._n_tokens_vocab = None
+
+        #with tf.variable_scope('bilm', custom_getter=custom_getter):
+        #    self._build()
+        self._n_tokens_vocab = _n_tokens_vocab 
+        with tf.variable_scope('lm'):
             self._build()
 
     def _build(self):
@@ -558,8 +565,8 @@ class BidirectionalLanguageModelGraph(object):
                     i_direction = 0
                 else:
                     i_direction = 1
-                variable_scope_name = 'RNN_{0}/RNN/MultiRNNCell/Cell{1}'.format(
-                    i_direction, i)
+                #variable_scope_name = 'RNN_{0}/rnn/multi_rnn_cell'.format(
+                variable_scope_name = 'RNN_{0}'.format(i_direction)
                 with tf.variable_scope(variable_scope_name):
                     layer_output, final_state = tf.nn.dynamic_rnn(
                         lstm_cell,
@@ -567,6 +574,8 @@ class BidirectionalLanguageModelGraph(object):
                         sequence_length=sequence_lengths,
                         initial_state=tf.nn.rnn_cell.LSTMStateTuple(
                             *batch_init_states),
+                        #scope = "cell_{0}".format(i)
+                        scope = "rnn"
                     )
 
                 self.lstm_state_sizes[direction].append(lstm_cell.state_size)

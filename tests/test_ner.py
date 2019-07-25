@@ -51,8 +51,10 @@ class TestNER(Test):
             lines = f_in.readlines()
             lines = [line.strip() for line in lines]
             #res = self.test(lines)
+            #pdb.set_trace()
             res0 = self.test(lines[:1500])
             res1 = self.test(lines[1500:])
+
             res = res0 +res1
             for idx,line in enumerate(lines):
                 pred = zip(line.split(),res[idx])

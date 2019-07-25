@@ -88,6 +88,8 @@ class TaskBase(object):
                     base_var_list.append(var)
                     continue
                 new_var_list.append(var)
+            assert len(base_var_list)>0, "base_var_list can't be empty! if \
+                it is emtpy, not any variable will be restored"
             optimizer_base = optim_func(learning_rate = self.base_learning_rate,
                                         var_list = base_var_list)
             optimizer_now = optim_func(learning_rate = self.learning_rate,
@@ -100,17 +102,22 @@ class TaskBase(object):
                 optimizer = optimizer_now
             else:
                 optimizer = tf.group(optimizer_base, optimizer_now)
+            logging.info("base variables found in params!")
         else:
+            logging.info("not any base variables found!")
             optimizer = optim_func(learning_rate = self.learning_rate)
         return tf.estimator.EstimatorSpec(mode, loss = loss,
                                               train_op=optimizer)
 
-    def get_train_estimator(self, model_fn, params):
+    def get_train_estimator(self, model_fn, params, config = None):
         """use params and model_fn to init estimator for training
            if 'base_var' is exited in params, so base model will be initialized
         """
-        config = tf.estimator.RunConfig(tf_random_seed=230,
+        if config == None:
+            config = tf.estimator.RunConfig(tf_random_seed=230,
                                         model_dir=self.checkpoint_path)
+        if params == None: params = {}
+
         if self.use_language_model:
             init_vars = tf.train.list_variables(self.init_checkpoint_path)
             init_vars_name = []

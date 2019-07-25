@@ -4,6 +4,7 @@ from tensorflow.contrib import rnn
 import numpy as np
 import pdb
 from common.layers import RNNLayer
+from common.layers import get_initializer
 from encoder import EncoderBase
 import copy
 
@@ -23,6 +24,34 @@ class RNN(EncoderBase):
                                   self.cell_type,
                                   use_attention = True)
         self.placeholder = {}
+
+    def project_bilstm_layer(self, lstm_outputs, name=None):
+        """
+        hidden layer between lstm layer and logits
+        return: [batch_size, maxlen, num_output]
+        """
+        with tf.variable_scope("project" if not name else name):
+            outputs_shape = lstm_outputs.shape.as_list()
+
+            with tf.variable_scope("hidden"):
+                W = tf.get_variable("W", shape=[outputs_shape[-1], self.num_hidden],
+                                    dtype=tf.float32, initializer= get_initializer(type = 'xavier'))
+
+                b = tf.get_variable("b", shape=[self.num_hidden], dtype=tf.float32,
+                                    initializer=tf.zeros_initializer())
+                output = tf.reshape(lstm_outputs, shape=[-1, outputs_shape[-1]])
+                hidden = tf.tanh(tf.nn.xw_plus_b(output, W, b))
+
+            # project to score of tags
+            with tf.variable_scope("logits"):
+                W = tf.get_variable("W", shape=[self.num_hidden, self.num_output],
+                                    dtype=tf.float32, initializer= get_initializer(type = 'xavier'))
+
+                b = tf.get_variable("b", shape=[self.num_output], dtype=tf.float32,
+                                    initializer=tf.zeros_initializer())
+
+                pred = tf.nn.xw_plus_b(hidden, W, b)
+            return tf.reshape(pred, [-1, self.maxlen, self.num_output])
 
     def __call__(self, embed, name = 'encoder', middle_flag = False, hidden_flag
                  = False,  features = None, reuse = tf.AUTO_REUSE, **kwargs):
@@ -44,14 +73,15 @@ class RNN(EncoderBase):
                                             seq_len = self.placeholder[length_name],
                                             maxlen = self.maxlen,
                                             rnn_keep_prob = self.keep_prob)
-            outputs = tf.nn.dropout(outputs, self.keep_prob)
             #flatten:
             outputs_shape = outputs.shape.as_list()
             if middle_flag:
-                outputs = tf.reshape(outputs, [-1, outputs_shape[2]])
-                dense = tf.layers.dense(outputs, self.num_output, name='fc')
-                #[batch_size, max_time, num_output]
-                dense = tf.reshape(dense, [-1, outputs_shape[1], self.num_output])
+                #outputs = tf.reshape(outputs, [-1, outputs_shape[2]])
+                #dense = tf.layers.dense(outputs, self.num_output, name='fc')
+                ##[batch_size, max_time, num_output]
+                #dense = tf.reshape(dense, [-1, outputs_shape[1], self.num_output])
+
+                dense = self.project_bilstm_layer(outputs)
             else:
                 outputs = tf.reshape(outputs, [-1, outputs_shape[1]*outputs_shape[2]])
                 #[batch_size, num_output]

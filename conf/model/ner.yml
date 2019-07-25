@@ -18,8 +18,9 @@ rand_embedding: True
 use_language_model: False
 
 ############# optim #############
+base_learning_rate: 0.00001
 learning_rate: 0.001
-optimizer_type: "Adam"
+optimizer_type: "Nadam"
 #keep_prob: 0.5
 clip_grad: 5
 use_crf: True
@@ -31,18 +32,19 @@ max_learning_rate: 0.1
 step_size: 100
 
 ############ data ###############
+# maxlen: 128
 maxlen: 128
 batch_size: 64
 dev_size: 1500
 tfrecords_mode: "ner"
-max_steps: 5000
+max_steps: 80000
 save_interval: 500
 use_generalization: True
 
 ############ model ##############
 num_hidden: 128
-num_layers: 3
-config_type: 0
+num_layers: 2
+config_type: 4
 config: 
   0: {encoder_type: "rnn", rnn_type: "bi", cell_type: "lstm"}
   1: {encoder_type: "bert", learning_rate: 0.00002, use_language_model: True,
@@ -52,11 +54,12 @@ config:
 
   ######### daguan ###############
   4: {path_root: "data/ner/daguan/", ori_path: "train.txt", 
-      test_path: "test.txt", encoder_type: "rnn", use_clr: False,
+      test_path: "test.txt", encoder_type: "elmo", use_clr: False,
       rnn_type: "bi", cell_type: "lstm", use_attention: False,
-      learning_rate: 0.00001, embedding_size: 128, embedding_type: 'word_embedding', 
+      clr_mode: 'triangular2', max_learning_rate: 0.01, step_size: 500,
+      learning_rate: 0.005, embedding_size: 128, embedding_type: 'word_embedding', 
       word_embedding_path: "corpus.txt.vec", rand_embedding: False, embedding_trainable: True,
-      use_language_model: False, use_generalization: False}
+      use_language_model: True, base_learning_rate: 0.0001, use_generalization: False}
 
 prepare_data: "false"
 mode: "train"  #train\test\test_one

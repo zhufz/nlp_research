@@ -24,7 +24,7 @@ class RNNLayer:
             def cell(embedded, hidden_size, cell_type = 'lstm', reuse = False):
                 if cell_type == 'gru':
                     _cell = tf.contrib.rnn.GRUCell(hidden_size,
-                                                    reuse = reuse)
+                                                   reuse = reuse)
                     return tf.contrib.rnn.DropoutWrapper(_cell, 
                                                      output_keep_prob = rnn_keep_prob)
                 elif cell_type == 'lstm':
@@ -133,10 +133,13 @@ def get_initializer(type = 'random_uniform', **kwargs):
     else:
         raise ValueError('unknown type of initializer!')
 
-def get_train_op(global_step, optimizer_type, loss, learning_rate, var_list = None, clip_grad = 5):
+def get_train_op(global_step, optimizer_type, loss, learning_rate, var_list =
+                 None, clip_grad = 0.5):
     with tf.variable_scope("train_step"):
         if optimizer_type == 'Adam':
             optim = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        if optimizer_type == 'Nadam':
+            optim = tf.contrib.opt.NadamOptimizer(learning_rate=learning_rate)
         elif optimizer_type == 'Adadelta':
             optim = tf.train.AdadeltaOptimizer(learning_rate=learning_rate)
         elif optimizer_type == 'Adagrad':
