@@ -1,0 +1,14 @@
+task_type: "xgb"
+path_root: "data/classify/"
+# ori_path: "intent.csv"
+ori_path: "review.csv"
+classes_path: "{encoder_type}classes"
+dict_path: "{encoder_type}/dict.txt"
+model_path: "{encoder_type}/model"
+label_path: "{encoder_type}/label"
+
+test_size: 0.1
+encoder_type: "xgb"
+
+prepare_data: "false"
+mode: "train"  #train\test\test_one

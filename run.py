@@ -42,7 +42,7 @@ class Run():
             config_type = conf['config_type']
             for k,v in (conf['config'][config_type]).items():
                 conf[k] = v
-        del conf['config']
+            del conf['config']
 
     def read_conf(self, conf_name):
         base_yml = os.path.join(ROOT_PATH, "conf/model/base.yml")
@@ -59,9 +59,10 @@ class Run():
             if k not in conf:
                 conf[k] = v
         #更新encoder_type信息
-        for k,v in conf.items():
-            if type(v) == str and (v.find('{encoder_type}')) != -1:
-                conf[k] = v.replace("{encoder_type}", conf['encoder_type'])
+        if 'encoder_type' in conf:
+            for k,v in conf.items():
+                if type(v) == str and (v.find('{encoder_type}')) != -1:
+                    conf[k] = v.replace("{encoder_type}", conf['encoder_type'])
         #创建相关目录
         model_path = '/'.join(conf['model_path'].split('/')[:-1])
         if not os.path.exists(model_path):
@@ -91,26 +92,26 @@ if __name__ == '__main__':
     logging.info(conf)
 
     task_type = conf['task_type']
-    if conf['prepare_data'].lower() != 'false':
-        from tasks import dl_tasks
-        cl = dl_tasks[task_type](conf)
+    if 'prepare_data' in conf and conf['prepare_data'].lower() != 'false':
+        from tasks import tasks
+        cl = tasks[task_type](conf)
         cl.prepare()
     else:
         if conf['mode'] == 'train': #训练
-            from tasks import dl_tasks
-            cl = dl_tasks[task_type](conf)
+            from tasks import tasks
+            cl = tasks[task_type](conf)
             if hasattr(cl, "train_and_evaluate"):
                 cl.train_and_evaluate()
             else:
                 cl.train()
                 cl.test('dev')
         elif conf['mode'] == 'dev': #验证集测试
-            from tasks import dl_tasks
-            cl = dl_tasks[task_type](conf)
+            from tasks import tasks
+            cl = tasks[task_type](conf)
             cl.test('dev')
         elif conf['mode'] == 'test': #带标签测试
-            from tasks import dl_tasks
-            cl = dl_tasks[task_type](conf)
+            from tasks import tasks
+            cl = tasks[task_type](conf)
             cl.test('test')
         elif conf['mode'] == 'predict': #不带标签测试
             conf['task_type'] = task_type
@@ -131,8 +132,8 @@ if __name__ == '__main__':
                 consume = end-start
                 print('consume: {}'.format(consume))
         elif conf['mode'] == 'save': #保存模型到pb
-            from tasks import dl_tasks
-            cl = dl_tasks[task_type](conf)
+            from tasks import tasks
+            cl = tasks[task_type](conf)
             cl.save()
         else:
             logging.error('unknown mode!')
