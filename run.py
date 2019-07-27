@@ -44,10 +44,10 @@ class Run():
                 conf[k] = v
         del conf['config']
 
-    def read_conf(self, task_type):
+    def read_conf(self, conf_name):
         base_yml = os.path.join(ROOT_PATH, "conf/model/base.yml")
-        task_yml = os.path.join(ROOT_PATH, "conf/model/{}.yml".format(task_type))
-        assert os.path.exists(task_yml),'model [%s] does not exists!'%task_type
+        task_yml = os.path.join(ROOT_PATH, "conf/model/{}".format(conf_name))
+        assert os.path.exists(task_yml),'yml conf [%s] does not exists!'%task_yml
         conf = yaml.load(open(task_yml))
         self.read_config_type(conf)
         base = yaml.load(open(base_yml))
@@ -84,12 +84,13 @@ class Run():
 
 if __name__ == '__main__':
     assert len(sys.argv) > 1,"task type missed, classify, match, ner...?"
-    task_type = sys.argv[1]
+    conf_path = sys.argv[1]
 
     run = Run(init_log = True)
-    conf = run.read_conf(task_type)
+    conf = run.read_conf(conf_path)
     logging.info(conf)
 
+    task_type = conf['task_type']
     if conf['prepare_data'].lower() != 'false':
         from tasks import dl_tasks
         cl = dl_tasks[task_type](conf)

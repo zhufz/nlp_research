@@ -1,3 +1,4 @@
+task_type: "classify"
 ############### path ############
 # path_root: "/content/data/classify/"
 path_root: "data/classify/"

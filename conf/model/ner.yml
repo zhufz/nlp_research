@@ -1,3 +1,4 @@
+task_type: "ner"
 ########## path ##########################
 path_root: "data/ner/"
 ori_path: "train_data"

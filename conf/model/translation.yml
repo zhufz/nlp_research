@@ -1,3 +1,4 @@
+task_type: "translation"
 ########## path ##########################
 path_root: "data/translation/"
 ori_path: "turing"

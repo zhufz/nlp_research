@@ -1,3 +1,4 @@
+task_type: "match"
 ############### path ############
 # path_root: "/content/data/match/"
 path_root: "data/match/"
