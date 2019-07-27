@@ -24,29 +24,29 @@
          环境：python3+tensorflow 1.10(python2.7已支持)
          pip3 install --user -r requirements.txt
          
-    各类任务的参数定义在conf/model/内的以任务名命名的yml文件中"conf/model/{task}.yml"
+    各类任务的参数定义在conf/model/内的以任务名命名的yml文件中"conf/model/***.yml"
     目前已支持的常见任务如下：       
     [分类]
          1.生成tfrecords数据，训练:
-            python3 run.py classify mode=train
+            python3 run.py classify.yml mode=train
            或者直接使用脚本:
-            sh scripts/restart.sh classify
+            sh scripts/restart.sh classify.yml
          
          2.测试：
-           单个测试：python3 run.py classify model=test_one
+           单个测试：python3 run.py classify.yml model=test_one
     [匹配]
          1.生成tfrecords数据，训练:
-             python3 run.py match mode=train
+             python3 run.py match.yml mode=train
            或者直接使用脚本:
-             sh scripts/restart.sh match
+             sh scripts/restart.sh match.yml
          2.测试：
-            单个测试：python3 run.py match model=test_one
+            单个测试：python3 run.py match.yml model=test_one
     [序列标注]
         ...
-        sh scripts/restart.sh ner
+        sh scripts/restart.sh ner.yml
     [翻译]    
         ...
-        sh scripts/restart.sh translation
+        sh scripts/restart.sh translation.yml
 
 ## 模块
 
