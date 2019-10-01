@@ -5,8 +5,8 @@ xgboost>=0.82
 jieba>=0.39
 gensim>=3.7.1
 pyyaml>=3.12
-annoy==1.15.2
-nltk==3.2.5
+annoy>=1.15.2
+nltk>=3.2.5
 #tensorflow-gpu==1.10
 #tensorflow==1.10
 keras>=2.2.4
