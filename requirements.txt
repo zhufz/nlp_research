@@ -10,3 +10,4 @@ nltk>=3.2.5
 #tensorflow-gpu==1.10
 #tensorflow==1.10
 keras>=2.2.4
+tqdm
